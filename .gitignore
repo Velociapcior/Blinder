@@ -147,6 +147,9 @@ $RECYCLE.BIN/
 !.vscode/settings.json
 !.vscode/tasks.json
 
+# Claude local agent settings (machine-local, not shared)
+.claude/settings.local.json
+
 # ------------------------------------------------------------
 # Certificates & keys
 # ------------------------------------------------------------
