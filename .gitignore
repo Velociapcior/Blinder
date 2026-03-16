@@ -1,0 +1,183 @@
+# ============================================================
+# Blinder — .gitignore
+# Stack: .NET 10 / ASP.NET Core, Expo SDK 55 / React Native,
+#         PostgreSQL, MinIO, Docker Compose, VS Code
+# ============================================================
+
+# ------------------------------------------------------------
+# Environment & Secrets (NEVER commit real credentials)
+# .env.example MUST stay tracked — see non-negotiable rule #12
+# ------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+!.env.example
+
+# ------------------------------------------------------------
+# .NET / C# / MSBuild
+# ------------------------------------------------------------
+bin/
+obj/
+out/
+publish/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Test results & coverage
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+lcov.info
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+!packages/.gitkeep
+nuget.config.local
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# Publish profiles
+**/Properties/PublishProfiles/
+**/publish/
+
+# ------------------------------------------------------------
+# EF Core — generated SQL migration scripts (build artefacts)
+# Source migrations in Migrations/ ARE tracked
+# ------------------------------------------------------------
+migrations/latest.sql
+migrations/*.sql
+
+# ------------------------------------------------------------
+# Node.js / npm / yarn / pnpm
+# ------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnp/
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+*.tgz
+
+# ------------------------------------------------------------
+# Expo / React Native / EAS
+# ------------------------------------------------------------
+.expo/
+.expo-shared/
+dist/
+web-build/
+expo-env.d.ts
+*.jsbundle
+
+# EAS Build
+.easignore
+
+# Metro bundler cache
+.metro-health-check*
+
+# ------------------------------------------------------------
+# TypeScript
+# ------------------------------------------------------------
+*.tsbuildinfo
+
+# ------------------------------------------------------------
+# Docker
+# ------------------------------------------------------------
+# Never commit docker-compose overrides with real secrets
+docker-compose.override.yml
+docker-compose.prod.yml
+
+# ------------------------------------------------------------
+# Logs
+# ------------------------------------------------------------
+logs/
+*.log
+*.log.*
+
+# ------------------------------------------------------------
+# OS-generated files
+# ------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+
+# ------------------------------------------------------------
+# VS Code — keep workspace settings, ignore personal overrides
+# ------------------------------------------------------------
+.vscode/launch.json
+.vscode/*.code-snippets
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+
+# ------------------------------------------------------------
+# Certificates & keys
+# ------------------------------------------------------------
+*.pem
+*.key
+*.pfx
+*.p12
+*.cer
+*.crt
+!*.crt.example
+
+# ------------------------------------------------------------
+# Firebase / Google services
+# ------------------------------------------------------------
+google-services.json
+GoogleService-Info.plist
+firebase-adminsdk*.json
+
+# ------------------------------------------------------------
+# MinIO / S3 credentials
+# ------------------------------------------------------------
+.minio/
+mc/
+
+# ------------------------------------------------------------
+# Miscellaneous
+# ------------------------------------------------------------
+*.bak
+*.tmp
+*.temp
+*.swp
+*.swo
+.cache/

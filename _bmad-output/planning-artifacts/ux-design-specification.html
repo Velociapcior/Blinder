@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blinder — UX Design Specification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Design Tokens ─────────────────────────────────────────────────────── */
+    :root {
+      --bg-primary:    #1A1814;
+      --bg-surface:    #252219;
+      --bg-input:      #2E2922;
+      --bg-reveal:     #0F0D0B;
+      --accent:        #C8833A;
+      --accent-muted:  #8A5A28;
+      --accent-gold:   #D4A843;
+      --text-primary:  #F2EDE6;
+      --text-secondary:#9E9589;
+      --text-muted:    #635D57;
+      --safety:        #4A9E8A;
+      --danger:        #D94F4F;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+
+      --space-1:  4px;
+      --space-2:  8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-10:40px;
+      --space-12:48px;
+      --space-16:64px;
+
+      --font: "DM Sans", "SF Pro Text", "Roboto", system-ui, sans-serif;
+    }
+
+    /* ─── Reset & Base ──────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Layout ────────────────────────────────────────────────────────────── */
+    .page-wrapper {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: var(--space-16) var(--space-5);
+    }
+
+    /* ─── Sidebar TOC ───────────────────────────────────────────────────────── */
+    .toc-sidebar {
+      position: fixed;
+      top: var(--space-10);
+      left: max(var(--space-4), calc(50% - 580px));
+      width: 200px;
+      display: none;
+    }
+    @media (min-width: 1260px) { .toc-sidebar { display: block; } }
+
+    .toc-sidebar nav {
+      background: var(--bg-surface);
+      border: 1px solid var(--bg-input);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+    }
+
+    .toc-sidebar h3 {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: var(--space-3);
+    }
+
+    .toc-sidebar a {
+      display: block;
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 3px 0;
+      line-height: 1.4;
+      transition: color .15s;
+    }
+    .toc-sidebar a:hover { color: var(--accent); }
+    .toc-sidebar a.sub { padding-left: var(--space-3); font-size: 11px; }
+
+    /* ─── Cover ─────────────────────────────────────────────────────────────── */
+    .cover {
+      text-align: center;
+      padding: var(--space-16) 0 var(--space-12);
+      border-bottom: 1px solid var(--bg-input);
+      margin-bottom: var(--space-12);
+    }
+
+    .cover-eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: var(--space-4);
+    }
+
+    .cover h1 {
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--text-primary);
+      margin-bottom: var(--space-5);
+    }
+
+    .cover h1 span { color: var(--accent); }
+
+    .cover-sub {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto var(--space-8);
+      line-height: 1.55;
+    }
+
+    .cover-meta {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-6);
+      flex-wrap: wrap;
+    }
+
+    .cover-meta-item {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .cover-meta-item strong { color: var(--text-secondary); }
+
+    /* ─── Section Headers ───────────────────────────────────────────────────── */
+    .section {
+      margin-bottom: var(--space-16);
+    }
+
+    .section-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(200,131,58,.12);
+      border: 1px solid rgba(200,131,58,.25);
+      border-radius: var(--radius-sm);
+      padding: 3px var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: var(--space-6);
+      line-height: 1.25;
+    }
+
+    h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: var(--space-8) 0 var(--space-4);
+      line-height: 1.3;
+    }
+
+    h4 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent);
+      margin: var(--space-6) 0 var(--space-3);
+    }
+
+    p {
+      margin-bottom: var(--space-4);
+      color: var(--text-primary);
+    }
+
+    p em {
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    strong { font-weight: 600; color: var(--text-primary); }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--bg-input);
+      margin: var(--space-8) 0;
+    }
+
+    /* ─── Personas ──────────────────────────────────────────────────────────── */
+    .personas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-5) 0;
+    }
+
+    .persona-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--bg-input);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+    }
+
+    .persona-card.primary { border-color: rgba(200,131,58,.35); }
+    .persona-card.discovery { border-color: rgba(74,158,138,.3); }
+    .persona-card.operator { border-color: var(--bg-input); }
+
+    .persona-tag {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-2);
+    }
+    .persona-card.primary .persona-tag { color: var(--accent); }
+    .persona-card.discovery .persona-tag { color: var(--safety); }
+    .persona-card.operator .persona-tag { color: var(--text-muted); }
+
+    .persona-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: var(--space-1);
+    }
+
+    .persona-detail {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-3);
+    }
+
+    .persona-need {
+      font-size: 13px;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .persona-success {
+      margin-top: var(--space-3);
+      font-size: 12px;
+      color: var(--safety);
+      border-left: 2px solid var(--safety);
+      padding-left: var(--space-3);
+      line-height: 1.5;
+    }
+
+    /* ─── Callout Blocks ────────────────────────────────────────────────────── */
+    .callout {
+      border-radius: var(--radius-md);
+      padding: var(--space-5) var(--space-5);
+      margin: var(--space-5) 0;
+    }
+
+    .callout-accent {
+      background: rgba(200,131,58,.1);
+      border-left: 3px solid var(--accent);
+    }
+
+    .callout-safety {
+      background: rgba(74,158,138,.1);
+      border-left: 3px solid var(--safety);
+    }
+
+    .callout-reveal {
+      background: rgba(212,168,67,.08);
+      border-left: 3px solid var(--accent-gold);
+    }
+
+    .callout-danger {
+      background: rgba(217,79,79,.08);
+      border-left: 3px solid var(--danger);
+    }
+
+    .callout p:last-child { margin-bottom: 0; }
+
+    .callout-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-2);
+    }
+    .callout-accent .callout-title { color: var(--accent); }
+    .callout-safety .callout-title { color: var(--safety); }
+    .callout-reveal .callout-title { color: var(--accent-gold); }
+    .callout-danger .callout-title { color: var(--danger); }
+
+    /* ─── Principle Cards ───────────────────────────────────────────────────── */
+    .principles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-5) 0;
+    }
+
+    .principle-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--bg-input);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+    }
+
+    .principle-num {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: var(--space-2);
+    }
+
+    .principle-card h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 var(--space-3);
+    }
+
+    .principle-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin: 0;
+      line-height: 1.55;
+    }
+
+    /* ─── Journey Table ─────────────────────────────────────────────────────── */
+    .journey-table-wrap {
+      overflow-x: auto;
+      margin: var(--space-5) 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead th {
+      background: var(--bg-input);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      text-align: left;
+      padding: var(--space-3) var(--space-4);
+    }
+
+    thead th:first-child { border-radius: var(--radius-sm) 0 0 0; }
+    thead th:last-child  { border-radius: 0 var(--radius-sm) 0 0; }
+
+    tbody tr { border-bottom: 1px solid var(--bg-input); }
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody td {
+      padding: var(--space-3) var(--space-4);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    tbody tr:hover td { background: rgba(255,255,255,.02); }
+
+    .stage-label {
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .emotion-positive { color: var(--safety); }
+    .emotion-risk     { color: var(--text-secondary); font-style: italic; }
+
+    /* ─── Colour Swatches ───────────────────────────────────────────────────── */
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: var(--space-3);
+      margin: var(--space-5) 0;
+    }
+
+    .swatch {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--bg-input);
+    }
+
+    .swatch-color {
+      height: 64px;
+      width: 100%;
+    }
+
+    .swatch-info {
+      background: var(--bg-surface);
+      padding: var(--space-3);
+    }
+
+    .swatch-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .swatch-hex {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .swatch-role {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    /* ─── Type Scale Specimen ───────────────────────────────────────────────── */
+    .type-specimen {
+      background: var(--bg-surface);
+      border: 1px solid var(--bg-input);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin: var(--space-5) 0;
+    }
+
+    .type-row {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--bg-input);
+    }
+    .type-row:last-child { border-bottom: none; }
+
+    .type-meta {
+      width: 120px;
+      flex-shrink: 0;
+      text-align: right;
+    }
+
+    .type-token {
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--accent);
+      display: block;
+    }
+
+    .type-spec {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: block;
+    }
+
+    .type-sample {
+      flex: 1;
+      color: var(--text-primary);
+    }
+
+    /* ─── Reveal Arc ────────────────────────────────────────────────────────── */
+    .reveal-arc {
+      position: relative;
+      margin: var(--space-8) 0;
+    }
+
+    .arc-phases {
+      display: flex;
+      gap: 0;
+      position: relative;
+    }
+
+    .arc-phases::before {
+      content: '';
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      right: 24px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-muted), var(--accent-gold));
+      z-index: 0;
+    }
+
+    .arc-phase {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-3);
+      position: relative;
+      z-index: 1;
+    }
+
+    .arc-node {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 2px solid var(--accent-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .arc-phase.climax .arc-node {
+      background: var(--bg-reveal);
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
+      box-shadow: 0 0 16px rgba(212,168,67,.3);
+    }
+
+    .arc-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 1.35;
+      max-width: 90px;
+    }
+
+    .arc-phase.climax .arc-label { color: var(--accent-gold); }
+
+    /* ─── Reveal Screen Mock ────────────────────────────────────────────────── */
+    .reveal-mock {
+      background: var(--bg-reveal);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(212,168,67,.2);
+      padding: var(--space-10) var(--space-8);
+      text-align: center;
+      margin: var(--space-5) 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .reveal-mock::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(ellipse, rgba(212,168,67,.08) 0%, transparent 70%);
+    }
+
+    .reveal-mock-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(212,168,67,.5);
+      margin-bottom: var(--space-6);
+    }
+
+    .reveal-avatars {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: var(--space-6);
+      margin-bottom: var(--space-6);
+    }
+
+    .reveal-avatar {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      border: 2px solid rgba(212,168,67,.4);
+      background: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .reveal-and {
+      font-size: 20px;
+      color: var(--accent-gold);
+      opacity: .6;
+    }
+
+    .reveal-mock h3 {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--accent-gold);
+      margin: 0 0 var(--space-3);
+    }
+
+    .reveal-mock p {
+      font-size: 15px;
+      color: rgba(242,237,230,.5);
+      margin: 0;
+    }
+
+    /* ─── Anti-patterns List ────────────────────────────────────────────────── */
+    .anti-list {
+      list-style: none;
+      margin: var(--space-4) 0;
+    }
+
+    .anti-list li {
+      display: flex;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--bg-input);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .anti-list li:last-child { border-bottom: none; }
+
+    .anti-icon {
+      color: var(--danger);
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .anti-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .anti-desc {
+      color: var(--text-secondary);
+    }
+
+    /* ─── Pattern Matrix Table ──────────────────────────────────────────────── */
+    .pattern-table tbody td:first-child { color: var(--accent); font-weight: 600; }
+    .pattern-table tbody td:nth-child(2) { color: var(--text-secondary); font-style: italic; }
+
+    /* ─── Component Tokens ──────────────────────────────────────────────────── */
+    .token-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    .token-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--bg-input);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .token-swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+
+    .token-name {
+      font-size: 12px;
+      font-family: monospace;
+      color: var(--accent);
+      display: block;
+    }
+
+    .token-val {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .token-role {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* ─── Spacing Visual ────────────────────────────────────────────────────── */
+    .spacing-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      margin-bottom: var(--space-2);
+    }
+
+    .spacing-box {
+      background: rgba(200,131,58,.3);
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .spacing-label {
+      font-size: 12px;
+      font-family: monospace;
+      color: var(--text-secondary);
+      width: 80px;
+    }
+
+    .spacing-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ─── Radius Visual ─────────────────────────────────────────────────────── */
+    .radius-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+      margin: var(--space-4) 0;
+      align-items: flex-end;
+    }
+
+    .radius-sample {
+      background: var(--bg-surface);
+      border: 2px solid var(--accent-muted);
+      width: 80px;
+      height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .radius-name {
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .radius-val {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* ─── Bubble Mock ───────────────────────────────────────────────────────── */
+    .chat-mock {
+      background: var(--bg-primary);
+      border: 1px solid var(--bg-input);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      margin: var(--space-5) 0;
+    }
+
+    .chat-mock-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding-bottom: var(--space-4);
+      border-bottom: 1px solid var(--bg-input);
+      margin-bottom: var(--space-4);
+    }
+
+    .chat-avatar {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-input);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .chat-name {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .chat-status {
+      font-size: 12px;
+      color: var(--safety);
+    }
+
+    .chat-privacy {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--safety);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .bubble-row {
+      display: flex;
+      margin-bottom: var(--space-2);
+    }
+
+    .bubble-row.received { justify-content: flex-start; }
+    .bubble-row.sent     { justify-content: flex-end; }
+
+    .bubble {
+      max-width: 72%;
+      padding: 10px 14px;
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--text-primary);
+    }
+
+    .bubble.received {
+      background: var(--bg-surface);
+      border-radius: 18px 18px 18px 4px;
+    }
+
+    .bubble.sent {
+      background: rgba(200,131,58,.18);
+      border: 1px solid rgba(200,131,58,.2);
+      border-radius: 18px 18px 4px 18px;
+    }
+
+    .bubble-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .reveal-affordance {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-3);
+      margin: var(--space-4) 0 var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      background: rgba(212,168,67,.07);
+      border: 1px solid rgba(212,168,67,.2);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      color: rgba(212,168,67,.8);
+      text-align: center;
+    }
+
+    .chat-input-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--bg-input);
+    }
+
+    .chat-input-field {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--bg-surface);
+      border-radius: 22px;
+      padding: 10px 16px;
+      font-size: 15px;
+      color: var(--text-muted);
+      font-family: var(--font);
+    }
+
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+    }
+
+    /* ─── Motion Spec ───────────────────────────────────────────────────────── */
+    .motion-table tbody td:first-child {
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .motion-table tr.reveal-row td { background: rgba(212,168,67,.05); }
+
+    /* ─── Component Chips ───────────────────────────────────────────────────── */
+    .component-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin: var(--space-4) 0;
+    }
+
+    .chip {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px var(--space-3);
+      border-radius: 9999px;
+      border: 1px solid var(--bg-input);
+      color: var(--text-secondary);
+      background: var(--bg-surface);
+    }
+
+    .chip.custom {
+      border-color: rgba(200,131,58,.3);
+      color: var(--accent);
+      background: rgba(200,131,58,.08);
+    }
+
+    /* ─── Moment Cards ──────────────────────────────────────────────────────── */
+    .moments-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      margin: var(--space-5) 0;
+    }
+
+    .moment-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--bg-input);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      display: flex;
+      gap: var(--space-4);
+      align-items: flex-start;
+    }
+
+    .moment-num {
+      width: 36px;
+      height: 36px;
+      background: rgba(200,131,58,.12);
+      border: 1px solid rgba(200,131,58,.25);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .moment-content h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 var(--space-2);
+    }
+
+    .moment-content p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin: 0;
+      line-height: 1.55;
+    }
+
+    /* ─── Footer ────────────────────────────────────────────────────────────── */
+    .doc-footer {
+      border-top: 1px solid var(--bg-input);
+      padding-top: var(--space-8);
+      margin-top: var(--space-16);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: gap;
+      gap: var(--space-4);
+    }
+
+    .footer-brand {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .footer-brand span { color: var(--accent); }
+
+    .footer-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: right;
+      line-height: 1.6;
+    }
+
+    /* ─── Utilities ─────────────────────────────────────────────────────────── */
+    .text-accent  { color: var(--accent); }
+    .text-gold    { color: var(--accent-gold); }
+    .text-safety  { color: var(--safety); }
+    .text-muted   { color: var(--text-muted); }
+    .text-secondary { color: var(--text-secondary); }
+    .mono { font-family: monospace; font-size: .9em; }
+    .mt-4 { margin-top: var(--space-4); }
+    .mt-5 { margin-top: var(--space-5); }
+    .mb-0 { margin-bottom: 0; }
+
+    ul, ol {
+      padding-left: var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+    li {
+      margin-bottom: var(--space-2);
+      color: var(--text-primary);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    li strong { color: var(--text-primary); }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     SIDEBAR TABLE OF CONTENTS
+═══════════════════════════════════════════════════════════ -->
+<div class="toc-sidebar">
+  <nav>
+    <h3>Contents</h3>
+    <a href="#executive-summary">Executive Summary</a>
+    <a href="#core-ux" class="sub">Core UX</a>
+    <a href="#emotional-design" class="sub">Emotional Design</a>
+    <a href="#ux-patterns" class="sub">UX Patterns</a>
+    <a href="#design-system">Design System</a>
+    <a href="#colour" class="sub">Colour</a>
+    <a href="#typography" class="sub">Typography</a>
+    <a href="#spacing" class="sub">Spacing &amp; Shape</a>
+    <a href="#core-interaction">Core Interaction</a>
+    <a href="#reveal-arc" class="sub">Reveal Arc</a>
+  </nav>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MAIN CONTENT
+═══════════════════════════════════════════════════════════ -->
+<div class="page-wrapper">
+
+  <!-- COVER -->
+  <div class="cover">
+    <div class="cover-eyebrow">UX Design Specification</div>
+    <h1>Blind<span>er</span></h1>
+    <p class="cover-sub">
+      A slow dating platform built on a structural conviction: genuine human connection begins with personality, not appearance.
+    </p>
+    <div class="cover-meta">
+      <span class="cover-meta-item">📅 <strong>Date</strong> 2026-03-11</span>
+      <span class="cover-meta-item">✍️ <strong>Author</strong> Piotr.palej</span>
+      <span class="cover-meta-item">📱 <strong>Platform</strong> React Native — iOS &amp; Android</span>
+      <span class="cover-meta-item">🌍 <strong>Launch market</strong> Poland (MVP)</span>
+    </div>
+  </div>
+
+  <!-- ══ 1. EXECUTIVE SUMMARY ══════════════════════════════ -->
+  <section class="section" id="executive-summary">
+    <div class="section-tag">01 — Executive Summary</div>
+    <h2>Project Vision</h2>
+
+    <p>
+      Blinder removes the visual layer from matching and early interaction entirely. Users are matched by values and personality via a short onboarding quiz, enter a real-time chat with a curated match, and unlock a consensual mutual photo reveal only after both parties independently opt in — with a minimum message threshold required first.
+    </p>
+
+    <div class="callout callout-accent">
+      <div class="callout-title">Brand North Star</div>
+      <p>At least one person who uses Blinder believes they are no longer lonely.</p>
+    </div>
+
+    <h3>Target Users</h3>
+
+    <div class="personas-grid">
+      <div class="persona-card primary">
+        <div class="persona-tag">Primary</div>
+        <div class="persona-name">Marek</div>
+        <div class="persona-detail">28, Kraków — The Invisible Man</div>
+        <p class="persona-need">Real depth, not conventionally attractive by Tinder's standards. Self-excluded after photo-first apps rejected him before he could speak.</p>
+        <div class="persona-success">Success moment: a conversation that goes deep before anyone has seen his face.</div>
+      </div>
+      <div class="persona-card primary">
+        <div class="persona-tag">Primary</div>
+        <div class="persona-name">Kasia</div>
+        <div class="persona-detail">26, Warsaw — The Burned-Out Woman</div>
+        <p class="persona-need">Left Tinder due to volume fatigue and objectification. Does not want better filtering — she wants structural relief.</p>
+        <div class="persona-success">Success moment: realising the conversation feels like meeting someone at a dinner party, not being selected from a catalogue.</div>
+      </div>
+      <div class="persona-card discovery">
+        <div class="persona-tag">Discovery</div>
+        <div class="persona-name">Natalia</div>
+        <div class="persona-detail">23, Gdańsk — The Woman Who Never Tried</div>
+        <p class="persona-need">Ambient self-exclusion — never downloaded a dating app because she assumed apps are for people who look a certain way.</p>
+        <div class="persona-success">Success moment: getting through onboarding without being asked to compete visually.</div>
+      </div>
+      <div class="persona-card operator">
+        <div class="persona-tag">Operator</div>
+        <div class="persona-name">Moderator</div>
+        <div class="persona-detail">1–2 people at MVP</div>
+        <p class="persona-need">Reviews flagged content, applies moderation actions, views automated pre-screening signals. Needs a minimal but functional admin interface.</p>
+      </div>
+    </div>
+
+    <h3>Key Design Challenges</h3>
+    <ol>
+      <li><strong>Designing for radical unfamiliarity.</strong> The no-browse, no-swipe model is a fundamental departure from every existing dating app. Every screen must feel intentional, not broken.</li>
+      <li><strong>The reveal as a high-stakes emotional moment.</strong> Simultaneous exchange, appropriate friction, and a design that honours the courage it took to get there. It cannot feel like clicking a button.</li>
+      <li><strong>Waiting without anxiety.</strong> Empty states and waiting states must feel like reassurance, not rejection.</li>
+      <li><strong>Onboarding that converts Natalia.</strong> The photo upload step — the most anxiety-producing moment — needs exceptional copy and UX treatment to prevent abandonment.</li>
+      <li><strong>Trust without social proof.</strong> The UI itself must communicate trustworthiness without conventional signals (reviews, followers).</li>
+    </ol>
+  </section>
+
+  <!-- ══ 2. CORE UX ══════════════════════════════════════════ -->
+  <section class="section" id="core-ux">
+    <div class="section-tag">02 — Core User Experience</div>
+    <h2>The Core Loop</h2>
+
+    <div class="callout callout-reveal">
+      <div class="callout-title">Defining Interaction</div>
+      <p><strong>Match → First message → Conversation deepens → Reveal readiness builds → Mutual opt-in → Simultaneous reveal → Continued connection</strong></p>
+    </div>
+
+    <h3>Critical Success Moments</h3>
+    <div class="moments-list">
+      <div class="moment-card">
+        <div class="moment-num">1</div>
+        <div class="moment-content">
+          <h4>End of Onboarding: "There is already someone waiting for you."</h4>
+          <p>The product must be ready to present a match — or a holding message that feels warm and anticipatory, not like rejection.</p>
+        </div>
+      </div>
+      <div class="moment-card">
+        <div class="moment-num">2</div>
+        <div class="moment-content">
+          <h4>The First Real Reply</h4>
+          <p>When the other person responds in a way that shows they actually read what was said — the notification design must make this feel significant, not routine.</p>
+        </div>
+      </div>
+      <div class="moment-card">
+        <div class="moment-num">3</div>
+        <div class="moment-content">
+          <h4>The Mutual Reveal</h4>
+          <p>The waiting state must feel suspenseful and warm, the reveal delivered with ceremony, and both users given a moment to absorb before the next action.</p>
+        </div>
+      </div>
+      <div class="moment-card">
+        <div class="moment-num">4</div>
+        <div class="moment-content">
+          <h4>Returning After a Reveal</h4>
+          <p>The product must gently acknowledge their return. If the match did not continue, the next-match flow must feel like a fresh start, not a reminder of what didn't work.</p>
+        </div>
+      </div>
+      <div class="moment-card">
+        <div class="moment-num">5</div>
+        <div class="moment-content">
+          <h4>The Empty State (Match Not Yet Available)</h4>
+          <p>For Marek and Natalia, a waiting screen is high-risk. Must actively communicate: <em>"You have not been forgotten. Your match is being found carefully."</em></p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Experience Principles</h3>
+    <div class="principles-grid">
+      <div class="principle-card">
+        <div class="principle-num">Principle 1</div>
+        <h4>Personality is the UI</h4>
+        <p>Every element not in direct service of the conversation should be removed or made invisible. Quiet, uncluttered, calm.</p>
+      </div>
+      <div class="principle-card">
+        <div class="principle-num">Principle 2</div>
+        <h4>Waiting is not failure</h4>
+        <p>Empty states and loading states must be designed with the same care as primary interactions. Reassurance is a first-class UX deliverable.</p>
+      </div>
+      <div class="principle-card">
+        <div class="principle-num">Principle 3</div>
+        <h4>The reveal deserves ceremony</h4>
+        <p>The mutual photo reveal is the product's signature moment. Every design choice leading to and through the reveal must acknowledge that something significant just happened.</p>
+      </div>
+      <div class="principle-card">
+        <div class="principle-num">Principle 4</div>
+        <h4>Safety is never hidden</h4>
+        <p>Trust mechanics must be surfaced clearly. Users — especially women — must be able to see <em>how</em> they are protected, not just be promised that they are.</p>
+      </div>
+      <div class="principle-card">
+        <div class="principle-num">Principle 5</div>
+        <h4>The dropout cohort belongs here</h4>
+        <p>Every screen, every piece of microcopy, every empty state reinforces: this product was built for people who were told the current system isn't for them.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 3. EMOTIONAL DESIGN ════════════════════════════════ -->
+  <section class="section" id="emotional-design">
+    <div class="section-tag">03 — Emotional Design</div>
+    <h2>Desired Emotional Response</h2>
+
+    <div class="callout callout-accent">
+      <div class="callout-title">Primary Emotional Goal</div>
+      <p><strong>Make users feel seen as a whole person — before they are seen at all.</strong></p>
+      <p>The product converts courage into connection. Every design decision must ask: does this lower the cost of being genuine, or raise it?</p>
+    </div>
+
+    <h3>Emotional Journey</h3>
+    <div class="journey-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Stage</th>
+            <th>Target Emotion</th>
+            <th>Risk to Avoid</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="stage-label">Discovery</td><td class="emotion-positive">Curiosity + recognition</td><td class="emotion-risk">Scepticism</td></tr>
+          <tr><td class="stage-label">Onboarding start</td><td class="emotion-positive">Calm confidence</td><td class="emotion-risk">Anxiety ("what will they see?")</td></tr>
+          <tr><td class="stage-label">Photo upload</td><td class="emotion-positive">Private safety</td><td class="emotion-risk">Exposure dread</td></tr>
+          <tr><td class="stage-label">Post-quiz / match arrival</td><td class="emotion-positive">Anticipation + warmth</td><td class="emotion-risk">Emptiness / rejection</td></tr>
+          <tr><td class="stage-label">First messages</td><td class="emotion-positive">Curiosity + genuine interest</td><td class="emotion-risk">Performance anxiety</td></tr>
+          <tr><td class="stage-label">Deep conversation</td><td class="emotion-positive">Investment + belonging</td><td class="emotion-risk">Vulnerability fatigue</td></tr>
+          <tr><td class="stage-label">Reveal readiness</td><td class="emotion-positive">Nervous excitement (positive)</td><td class="emotion-risk">Dread / regret</td></tr>
+          <tr><td class="stage-label">Mutual reveal</td><td class="emotion-positive">Wonder + relief + connection</td><td class="emotion-risk">Deflation / poor UX amplifying awkwardness</td></tr>
+          <tr><td class="stage-label">Post-reveal, continued</td><td class="emotion-positive">Warmth + safety proven</td><td class="emotion-risk">Pressure to perform</td></tr>
+          <tr><td class="stage-label">Post-reveal, moved on</td><td class="emotion-positive">Resilience + dignity</td><td class="emotion-risk">Shame / embarrassment</td></tr>
+          <tr><td class="stage-label">Return visit</td><td class="emotion-positive">"I want to be here"</td><td class="emotion-risk">Obligation / FOMO</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Emotional Arc</h3>
+    <div class="callout callout-reveal">
+      <p style="text-align:center; font-size:15px;">
+        <strong>Cautious hope</strong>
+        <span class="text-muted"> → </span>
+        Growing trust
+        <span class="text-muted"> → </span>
+        Genuine investment
+        <span class="text-muted"> → </span>
+        Courageous vulnerability
+        <span class="text-muted"> → </span>
+        <span class="text-gold"><strong>Reward proportional to courage</strong></span>
+      </p>
+    </div>
+
+    <h3>Emotions to Cultivate vs. Prevent</h3>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4); margin:var(--space-4) 0;">
+      <div class="callout callout-safety" style="margin:0">
+        <div class="callout-title">Cultivate</div>
+        <ul style="padding-left:var(--space-4); margin:0;">
+          <li style="color:var(--text-primary);">Belonging — "This was made for someone like me"</li>
+          <li style="color:var(--text-primary);">Quiet confidence</li>
+          <li style="color:var(--text-primary);">Anticipation</li>
+          <li style="color:var(--text-primary);">Positive surprise</li>
+          <li style="color:var(--text-primary);">Earned pride</li>
+          <li style="color:var(--text-primary);">Safety — "Nothing without my consent"</li>
+        </ul>
+      </div>
+      <div class="callout callout-danger" style="margin:0">
+        <div class="callout-title">Prevent</div>
+        <ul style="padding-left:var(--space-4); margin:0;">
+          <li>Inadequacy (visible ranking)</li>
+          <li>Ghosting dread</li>
+          <li>Exposure anxiety</li>
+          <li>Volume anxiety (inbox flood)</li>
+          <li>Performance pressure</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 4. UX PATTERNS ═════════════════════════════════════ -->
+  <section class="section" id="ux-patterns">
+    <div class="section-tag">04 — UX Pattern Analysis &amp; Inspiration</div>
+    <h2>Transferable Patterns</h2>
+
+    <div class="journey-table-wrap">
+      <table class="pattern-table">
+        <thead>
+          <tr><th>Pattern</th><th>Source</th><th>Applied to Blinder</th><th>Why it works for the dropout cohort</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Emotional waypoints</td>
+            <td>Calm wayfinding</td>
+            <td>All screens — tell users where they are on their journey</td>
+            <td>Marek and Natalia need reassurance they haven't been forgotten</td>
+          </tr>
+          <tr>
+            <td>Typography-led visual hierarchy</td>
+            <td>Calm wayfinding</td>
+            <td>Home, match arrival, waiting states, reveal arc</td>
+            <td>Reduces cognitive load for emotionally tense users</td>
+          </tr>
+          <tr>
+            <td>Invisible chat interface</td>
+            <td>WhatsApp</td>
+            <td>Chat view — no reinvention of conventions</td>
+            <td>Zero learning curve; users focus on conversation, not the tool</td>
+          </tr>
+          <tr>
+            <td>Conversation as unit of value</td>
+            <td>WhatsApp</td>
+            <td>No reactions, no likes, no engagement mechanics in chat</td>
+            <td>Removes performance layer; personality is the only currency</td>
+          </tr>
+          <tr>
+            <td>Discreet, non-anxious status</td>
+            <td>WhatsApp</td>
+            <td>"Active recently" — never precise timestamps</td>
+            <td>Removes dread; availability without surveillance</td>
+          </tr>
+          <tr>
+            <td>Explicit structural trust</td>
+            <td>Signal</td>
+            <td>Chat header indicator + reveal consent statement</td>
+            <td>Kasia and Natalia need to see <em>how</em> they're protected</td>
+          </tr>
+          <tr>
+            <td>Macro-reward at milestones</td>
+            <td>Blinder-native</td>
+            <td>Match arrival + reveal + continue confirmation ceremonies</td>
+            <td>Earned reward is proportionally larger; sustainable motivation</td>
+          </tr>
+          <tr>
+            <td>Mutual consent gate</td>
+            <td>Blinder-native</td>
+            <td>Post-reveal "continue?" flow</td>
+            <td>Every step is chosen, never imposed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Anti-Patterns to Avoid</h3>
+    <ul class="anti-list">
+      <li>
+        <span class="anti-icon">✕</span>
+        <span><span class="anti-name">The Browse Grid</span> — <span class="anti-desc">gallery of profile photos invites snap judgment before conversation can begin. Architecture of objectification. Never used.</span></span>
+      </li>
+      <li>
+        <span class="anti-icon">✕</span>
+        <span><span class="anti-name">The Swipe Mechanic</span> — <span class="anti-desc">binary judgment is a dopamine loop, not a connection tool. Nothing in Blinder should echo the swipe. Its absence is a moral position.</span></span>
+      </li>
+      <li>
+        <span class="anti-icon">✕</span>
+        <span><span class="anti-name">Engagement Metrics as Status Signals</span> — <span class="anti-desc">"47 new likes." None of these signals exist in Blinder. The only feedback that matters is the quality of the conversation right now.</span></span>
+      </li>
+      <li>
+        <span class="anti-icon">✕</span>
+        <span><span class="anti-name">Inbox-as-Flood</span> — <span class="anti-desc">3-conversation structural limit eliminates harassment. UI must never surface volume as a feature or status signal.</span></span>
+      </li>
+      <li>
+        <span class="anti-icon">✕</span>
+        <span><span class="anti-name">Premium Urgency Gating</span> — <span class="anti-desc">"Upgrade to see who liked you." Blinder's premium never gates expected access. Upgrade = capability expansion, not hostage-taking.</span></span>
+      </li>
+      <li>
+        <span class="anti-icon">✕</span>
+        <span><span class="anti-name">Precise Activity Status</span> — <span class="anti-desc">"Last seen 2 minutes ago" transforms anticipation into dread. Status indicators must be warm and vague only.</span></span>
+      </li>
+      <li>
+        <span class="anti-icon">✕</span>
+        <span><span class="anti-name">Micro-Reward Mechanics</span> — <span class="anti-desc">daily streaks, reaction counts, visitor logs recreate the Tinder dopamine architecture Blinder is designed to replace.</span></span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ══ 5. DESIGN SYSTEM ═══════════════════════════════════ -->
+  <section class="section" id="design-system">
+    <div class="section-tag">05 — Design System Foundation</div>
+    <h2>Design System</h2>
+
+    <p>Blinder uses a <strong>Themeable System with Design Token Layer</strong> — primary library NativeWind (Tailwind CSS for React Native) or Tamagui. Battle-tested component primitives; brand expression fully owned through tokens.</p>
+
+    <div class="callout callout-accent">
+      <div class="callout-title">Framework Decision Required</div>
+      <p><strong>NativeWind</strong> — lower learning curve for Tailwind-familiar teams. <strong>Tamagui</strong> — more powerful; better long-term fit for bespoke animation (reveal motion). Decision must not be deferred past Sprint 1.</p>
+    </div>
+
+    <!-- COLOUR -->
+    <h3 id="colour">Colour System — "Well-lit Room at Dusk"</h3>
+    <p>Warm, intimate, and calm. Not bright primary colours. Not aggressive reds. Not cold greys. Dark mode is primary — dating apps are used at night.</p>
+
+    <div class="callout callout-reveal" style="margin-bottom:var(--space-5)">
+      <div class="callout-title">Amber Bookend Principle</div>
+      <p>The amber accent appears at two emotional peaks — the very beginning (onboarding entry, within the first 3 seconds) and the climax (reveal trigger). This creates a visual through-line users feel subconsciously.</p>
+    </div>
+
+    <h4>Dark Mode — Primary Palette</h4>
+    <div class="swatches">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#1A1814;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Background Primary</div>
+          <div class="swatch-hex">#1A1814</div>
+          <div class="swatch-role">App background — warm-tinted, not pure black</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#252219;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Background Surface</div>
+          <div class="swatch-hex">#252219</div>
+          <div class="swatch-role">Cards, received chat bubbles, modals</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#2E2922;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Background Input</div>
+          <div class="swatch-hex">#2E2922</div>
+          <div class="swatch-role">Input fields, secondary surfaces</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#0F0D0B; border:1px solid rgba(212,168,67,.3);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Background Reveal ★</div>
+          <div class="swatch-hex">#0F0D0B</div>
+          <div class="swatch-role">Reveal screen only — deliberate deeper exception</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#C8833A;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Accent Primary</div>
+          <div class="swatch-hex">#C8833A</div>
+          <div class="swatch-role">CTAs, reveal trigger affordance, active states</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#D4A843;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Reveal Gold ★</div>
+          <div class="swatch-hex">#D4A843</div>
+          <div class="swatch-role">Reveal screen only — luminous, more saturated</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#F2EDE6;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Text Primary</div>
+          <div class="swatch-hex">#F2EDE6</div>
+          <div class="swatch-role">Body text, names — warm white (contrast ~12:1)</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#9E9589;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Text Secondary</div>
+          <div class="swatch-hex">#9E9589</div>
+          <div class="swatch-role">Timestamps, labels, captions</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#635D57;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Text Muted</div>
+          <div class="swatch-hex">#635D57</div>
+          <div class="swatch-role">Placeholder text, disabled states</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#4A9E8A;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Safety / Trust</div>
+          <div class="swatch-hex">#4A9E8A</div>
+          <div class="swatch-role">Consent statements, privacy indicators</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#D94F4F;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Danger</div>
+          <div class="swatch-hex">#D94F4F</div>
+          <div class="swatch-role">Report button only — reserved, never decorative</div>
+        </div>
+      </div>
+    </div>
+
+    <h4>Accessibility — Contrast Ratios (WCAG)</h4>
+    <div class="journey-table-wrap">
+      <table>
+        <thead><tr><th>Foreground</th><th>Background</th><th>Ratio</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">#F2EDE6 Text primary</td><td class="mono">#1A1814 BG primary</td><td>~12:1</td><td class="text-safety">✅ AAA</td></tr>
+          <tr><td class="mono">#9E9589 Text secondary</td><td class="mono">#1A1814 BG primary</td><td>~4.8:1</td><td class="text-safety">✅ AA</td></tr>
+          <tr><td class="mono">#C8833A Accent</td><td class="mono">#1A1814 BG primary</td><td>~4.6:1</td><td class="text-safety">✅ AA</td></tr>
+          <tr><td class="mono">#4A9E8A Safety</td><td class="mono">#1A1814 BG primary</td><td>~4.5:1</td><td class="text-safety">✅ AA</td></tr>
+          <tr><td class="mono">#D4A843 Reveal gold</td><td class="mono">#0F0D0B BG reveal</td><td>~9:1</td><td class="text-safety">✅ AAA</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TYPOGRAPHY -->
+    <h3 id="typography">Typography — DM Sans</h3>
+    <p>
+      <strong>Primary typeface: DM Sans</strong> — low-contrast geometric humanist sans-serif. Warm, approachable character. Highly legible at small sizes, warm at display sizes.
+      Variable font ~85KB. <strong>Must not be substituted with <span class="mono">system-ui</span> during performance optimisation passes.</strong> The typeface is brand delivery, not decoration.
+    </p>
+
+    <div class="type-specimen">
+      <div class="type-row">
+        <div class="type-meta"><span class="type-token">display.xl</span><span class="type-spec">32px / 700 / 1.2</span></div>
+        <div class="type-sample" style="font-size:32px; font-weight:700; line-height:1.2;">Be known first.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-token">display.lg</span><span class="type-spec">26px / 700 / 1.25</span></div>
+        <div class="type-sample" style="font-size:26px; font-weight:700; line-height:1.25;">Your match is waiting.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-token">title.md</span><span class="type-spec">20px / 600 / 1.3</span></div>
+        <div class="type-sample" style="font-size:20px; font-weight:600; line-height:1.3;">You've had a real conversation.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-token">title.sm</span><span class="type-spec">17px / 600 / 1.35</span></div>
+        <div class="type-sample" style="font-size:17px; font-weight:600; line-height:1.35;">Anna · active recently</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-token">body.lg</span><span class="type-spec">16px / 400 / 1.6</span></div>
+        <div class="type-sample" style="font-size:16px; font-weight:400; line-height:1.6;">Chat messages — the primary reading surface. Generous line height signals that this conversation matters.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-token">body.md</span><span class="type-spec">15px / 400 / 1.55</span></div>
+        <div class="type-sample" style="font-size:15px; font-weight:400; line-height:1.55;">Your photo is stored privately and only appears when you both choose.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-token">caption.md</span><span class="type-spec">12px / 400 / 1.4</span></div>
+        <div class="type-sample" style="font-size:12px; font-weight:400; line-height:1.4; color:var(--text-secondary);">Today, 21:47 · Private &amp; protected</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-token">label.md</span><span class="type-spec">14px / 500 / 1.2</span></div>
+        <div class="type-sample" style="font-size:14px; font-weight:500; line-height:1.2;">I'm ready to share my photo</div>
+      </div>
+    </div>
+
+    <!-- SPACING -->
+    <h3 id="spacing">Spacing System — 4px Base</h3>
+    <p>All spacing derived from a 4px base unit. Practical working unit is 8px.</p>
+
+    <div style="margin:var(--space-4) 0;">
+      <div class="spacing-row"><div class="spacing-box" style="width:4px;"></div><span class="spacing-label">space.1 — 4px</span><span class="spacing-desc">Micro spacing: icon gaps, tight label pairs</span></div>
+      <div class="spacing-row"><div class="spacing-box" style="width:8px;"></div><span class="spacing-label">space.2 — 8px</span><span class="spacing-desc">Default small gap</span></div>
+      <div class="spacing-row"><div class="spacing-box" style="width:12px;"></div><span class="spacing-label">space.3 — 12px</span><span class="spacing-desc">Icon padding, compact list items</span></div>
+      <div class="spacing-row"><div class="spacing-box" style="width:16px;"></div><span class="spacing-label">space.4 — 16px</span><span class="spacing-desc">Standard component padding</span></div>
+      <div class="spacing-row"><div class="spacing-box" style="width:24px;"></div><span class="spacing-label">space.6 — 24px</span><span class="spacing-desc">Between major UI sections</span></div>
+      <div class="spacing-row"><div class="spacing-box" style="width:32px;"></div><span class="spacing-label">space.8 — 32px</span><span class="spacing-desc">Screen-level section separation</span></div>
+      <div class="spacing-row"><div class="spacing-box" style="width:40px;"></div><span class="spacing-label">space.10 — 40px</span><span class="spacing-desc">Generous breathing room (reveal, onboarding)</span></div>
+      <div class="spacing-row"><div class="spacing-box" style="width:64px;"></div><span class="spacing-label">space.16 — 64px</span><span class="spacing-desc">Screen-level top/bottom padding</span></div>
+    </div>
+
+    <h4>Component Shape (Border Radius)</h4>
+    <div class="radius-grid">
+      <div>
+        <div class="radius-sample" style="border-radius:8px;">
+          <span class="radius-name">radius.sm</span><span class="radius-val">8px</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Tags, badges</div>
+      </div>
+      <div>
+        <div class="radius-sample" style="border-radius:12px;">
+          <span class="radius-name">radius.md</span><span class="radius-val">12px</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Inputs</div>
+      </div>
+      <div>
+        <div class="radius-sample" style="border-radius:16px;">
+          <span class="radius-name">radius.lg</span><span class="radius-val">16px</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Cards, modals</div>
+      </div>
+      <div>
+        <div class="radius-sample" style="border-radius:18px 18px 4px 18px; width:100px; height:60px;">
+          <span class="radius-name">bubble.sent</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Sent bubble</div>
+      </div>
+      <div>
+        <div class="radius-sample" style="border-radius:18px 18px 18px 4px; width:100px; height:60px;">
+          <span class="radius-name">bubble.recv</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Received bubble</div>
+      </div>
+      <div>
+        <div class="radius-sample" style="border-radius:9999px; width:80px; height:40px;">
+          <span class="radius-name">radius.full</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Pill / Avatar</div>
+      </div>
+    </div>
+
+    <!-- MVP COMPONENT LIST -->
+    <h3>MVP Component Library</h3>
+    <p>Minimum component set for MVP screens. Custom components (marked amber) have no off-the-shelf equivalent.</p>
+    <div class="component-chips">
+      <span class="chip">Typography</span>
+      <span class="chip">Button (primary / secondary / ghost / danger)</span>
+      <span class="chip">Input</span>
+      <span class="chip">Card</span>
+      <span class="chip">ChatBubble</span>
+      <span class="chip">ChatInput</span>
+      <span class="chip">StatusIndicator</span>
+      <span class="chip custom">RevealProgress ★</span>
+      <span class="chip custom">ConsentIndicator ★</span>
+      <span class="chip custom">RevealModal ★</span>
+      <span class="chip custom">ContinuePrompt ★</span>
+      <span class="chip custom">EmptyState variants ★</span>
+      <span class="chip">Modal</span>
+    </div>
+  </section>
+
+  <!-- ══ 6. CORE INTERACTION ════════════════════════════════ -->
+  <section class="section" id="core-interaction">
+    <div class="section-tag">06 — Core Interaction Design</div>
+    <h2>The Defining Experience</h2>
+
+    <div class="callout callout-reveal">
+      <div class="callout-title">The Product Story</div>
+      <p>"You chat first, and then you both decide together when to share your photos — at the same time. Neither of you knows what the other looks like until you both say yes."</p>
+    </div>
+
+    <!-- CHAT MOCK -->
+    <h3>Chat Interface Mock</h3>
+    <p>The chat layer uses <strong>WhatsApp conventions wholesale</strong> — no education required. The UI disappears so the conversation can do its work.</p>
+
+    <div class="chat-mock">
+      <div class="chat-mock-header">
+        <div class="chat-avatar">A</div>
+        <div>
+          <div class="chat-name">Anna</div>
+          <div class="chat-status">active recently</div>
+        </div>
+        <div class="chat-privacy">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Private &amp; protected
+        </div>
+      </div>
+
+      <div class="bubble-row received">
+        <div>
+          <div class="bubble received">That question about what you'd do if you could start over — I've been thinking about it since yesterday.</div>
+          <div class="bubble-time" style="text-align:left;">21:12</div>
+        </div>
+      </div>
+      <div class="bubble-row sent">
+        <div>
+          <div class="bubble sent">I wouldn't change the path, just the speed. Stayed too long being careful.</div>
+          <div class="bubble-time">21:14</div>
+        </div>
+      </div>
+      <div class="bubble-row received">
+        <div>
+          <div class="bubble received">That's one of the most honest things anyone has said to me on here.</div>
+          <div class="bubble-time" style="text-align:left;">21:15</div>
+        </div>
+      </div>
+
+      <div class="reveal-affordance">
+        ✦ You've had a real conversation. The reveal is available when you're both ready.
+      </div>
+
+      <div class="chat-input-bar">
+        <div class="chat-input-field">Message Anna…</div>
+        <div class="send-btn">→</div>
+      </div>
+    </div>
+
+    <!-- REVEAL ARC -->
+    <h3 id="reveal-arc">The Reveal Arc</h3>
+    <p>The reveal is not a single screen — it is a 5-phase arc. Every phase has a distinct design requirement.</p>
+
+    <div class="reveal-arc">
+      <div class="arc-phases">
+        <div class="arc-phase">
+          <div class="arc-node">1</div>
+          <div class="arc-label">Readiness Build-Up</div>
+        </div>
+        <div class="arc-phase">
+          <div class="arc-node">2</div>
+          <div class="arc-label">Solo Indication</div>
+        </div>
+        <div class="arc-phase">
+          <div class="arc-node">3</div>
+          <div class="arc-label">Waiting State</div>
+        </div>
+        <div class="arc-phase climax">
+          <div class="arc-node">4</div>
+          <div class="arc-label">Mutual Trigger &amp; Reveal</div>
+        </div>
+        <div class="arc-phase">
+          <div class="arc-node">5</div>
+          <div class="arc-label">Continuation Gate</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:var(--space-4); margin:var(--space-6) 0;">
+      <div class="callout callout-accent">
+        <div class="callout-title">Phase 1 — Readiness Build-Up (In-Conversation)</div>
+        <p>A subtle, non-intrusive reveal affordance quietly appears in the conversation when the message threshold is reached. Not a push notification. Not a modal. A door that has <em>quietly opened</em>.</p>
+        <p style="margin:0; font-style:italic; color:var(--text-secondary);">"You've had a real conversation. The reveal is available when you're both ready."</p>
+      </div>
+
+      <div class="callout callout-accent">
+        <div class="callout-title">Phase 2 — Readiness Indication (Solo Action)</div>
+        <p>Full-screen transition (not a modal). Explanation surfaced here with structural consent architecture visible. "Not yet" option is <strong>visually equal</strong> to "ready" — no dark patterns nudging toward readiness.</p>
+      </div>
+
+      <div class="callout callout-accent">
+        <div class="callout-title">Phase 3 — Waiting State</div>
+        <p>One party ready, one not yet. Must never feel like being stood up. Both parties on the eve of something — <em>shared patience</em>. No timer, no read receipt equivalent.</p>
+        <p style="margin:0; font-style:italic; color:var(--text-secondary);">"You've indicated you're ready. Waiting for them."</p>
+      </div>
+
+      <div class="callout callout-reveal">
+        <div class="callout-title">Phase 4 — Mutual Trigger &amp; Reveal Delivery ★ Most Important Screen</div>
+        <p>System detects mutual readiness. Both devices receive a simultaneous transition. Full-screen reveal moment. <strong>600–800ms motion treatment</strong> — long enough to feel momentous, short enough to not feel like buffering. 1–2 seconds of space before anything interactive appears.</p>
+      </div>
+
+      <div class="callout callout-accent">
+        <div class="callout-title">Phase 5 — Post-Reveal Continuation Gate</div>
+        <p>Both users independently asked: "Would you like to keep talking?" Neither sees the other's answer until both respond. Asymmetric outcome protected — dignity preserved for both parties.</p>
+      </div>
+    </div>
+
+    <!-- REVEAL SCREEN MOCK -->
+    <h4>Reveal Screen — Visual Direction</h4>
+    <div class="reveal-mock">
+      <div class="reveal-mock-label">Reveal Screen — Palette Exception</div>
+      <div class="reveal-avatars">
+        <div class="reveal-avatar">Piotr<br/><span style="font-size:9px; opacity:.5;">photo</span></div>
+        <div class="reveal-and">✦</div>
+        <div class="reveal-avatar">Anna<br/><span style="font-size:9px; opacity:.5;">photo</span></div>
+      </div>
+      <h3>Anna — there they are.</h3>
+      <p>Background: #0F0D0B · Accent: #D4A843 · No navigation chrome</p>
+    </div>
+
+    <h3>Post-Reveal Outcomes</h3>
+    <div class="journey-table-wrap">
+      <table>
+        <thead><tr><th>Outcome</th><th>UX Treatment</th></tr></thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--safety); font-weight:600;">Both continue</td>
+            <td>Conversation resumes — warm, expansive. The app steps back. They will likely move to real life. Blinder's job is done.</td>
+          </tr>
+          <tr>
+            <td>Both move on</td>
+            <td><em>"Ready for a new conversation?"</em> — fresh chapter framing, not rejection.</td>
+          </tr>
+          <tr>
+            <td>Asymmetric</td>
+            <td>Result not shown to either party. <em>"This chapter is complete. Ready to begin another?"</em> Dignity preserved.</td>
+          </tr>
+          <tr>
+            <td>No response</td>
+            <td>Graceful timeout with a single gentle nudge, then neutral close.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- MOTION -->
+    <h3>Motion System</h3>
+    <p>Animation in Blinder is for emotional pacing, not decoration. The reveal animation is the <strong>only interaction that receives bespoke motion treatment</strong>.</p>
+    <div class="journey-table-wrap">
+      <table class="motion-table">
+        <thead><tr><th>Token</th><th>Duration</th><th>Easing</th><th>Usage</th></tr></thead>
+        <tbody>
+          <tr><td>motion.duration.fast</td><td>150–200ms</td><td>ease-in-out</td><td>Micro-interactions: button press, input focus</td></tr>
+          <tr><td>motion.duration.standard</td><td>250–300ms</td><td>ease-in-out</td><td>Screen transitions, modal entry</td></tr>
+          <tr class="reveal-row"><td>motion.duration.reveal</td><td><strong>600–800ms</strong></td><td>custom — slow start, confident arrival</td><td><strong>★ The mutual reveal moment only</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Accessibility Foundation</h3>
+    <ul>
+      <li><strong>Minimum tap target:</strong> 44×44px for all interactive elements.</li>
+      <li><strong>Contrast compliance:</strong> All text/background pairs meet WCAG AA; primary content pairs meet AAA.</li>
+      <li><strong>Dynamic type:</strong> Typography scale responds to system text size settings. Minimum sizes never drop below 11px at default scale.</li>
+      <li><strong>Colour-independent signalling:</strong> Safety indicators paired with iconography or text labels — never colour alone.</li>
+      <li><strong>Reduced motion:</strong> Reveal animation respects "reduce motion" — falls back to a cross-fade rather than ceremonial motion.</li>
+      <li><strong>Screen reader:</strong> Reveal arc screens have carefully considered VoiceOver/TalkBack copy — the emotional moment communicated through accessible text, not only visual design.</li>
+    </ul>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="doc-footer">
+    <div class="footer-brand">Blind<span>er</span></div>
+    <div class="footer-meta">
+      UX Design Specification · 2026-03-11<br/>
+      Author: Piotr.palej · Poland MVP · React Native
+    </div>
+  </footer>
+
+</div><!-- /page-wrapper -->
+</body>
+</html>

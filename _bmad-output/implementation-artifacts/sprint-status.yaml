@@ -1,0 +1,130 @@
+# generated: 2026-03-16
+# last_updated: 2026-03-16
+# project: Blinder
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-03-16
+last_updated: 2026-03-16
+project: Blinder
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # Epic 1: Project Foundation & Developer Environment
+  epic-1: in-progress
+  1-1-scaffold-backend-project: done
+  1-2-docker-compose-stack-with-nginx-and-websocket-support: ready-for-dev
+  1-3-scaffold-mobile-project-with-strict-typescript-and-nativewind: backlog
+  1-4-database-setup-with-postgis-and-ef-core-migrations-pipeline: backlog
+  1-5-mobile-design-system-foundation-and-accessibility-context: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: User Registration & Authentication
+  epic-2: backlog
+  2-1-email-password-user-registration: backlog
+  2-2-user-login-jwt-tokens-and-logout: backlog
+  2-3-apple-sign-in: backlog
+  2-4-google-and-facebook-social-login: backlog
+  2-5-female-invite-only-registration-and-invite-landing-screen: backlog
+  2-6-account-deletion-with-full-data-purge-cascade: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Onboarding & Profile Setup
+  epic-3: backlog
+  3-1-values-and-personality-quiz: backlog
+  3-2-private-profile-photo-upload: backlog
+  3-3-explicit-content-scanning-gate-at-photo-upload: backlog
+  3-4-csam-hash-scanning-integration-slot: backlog
+  3-5-preferences-setup-age-range-and-search-radius: backlog
+  3-6-7-day-premium-trial-activation-on-registration: backlog
+  3-7-first-match-conversation-on-onboarding-completion: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Matching Engine
+  epic-4: backlog
+  4-1-values-weighted-compatibility-matching-algorithm: backlog
+  4-2-demographic-fallback-matching: backlog
+  4-3-match-generation-background-job-with-idempotent-startup-check: backlog
+  4-4-geographic-radius-matching-with-postgis: backlog
+  4-5-curated-match-display-no-browse-interface: backlog
+  4-6-invite-link-generation-and-tracking: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Real-Time Chat
+  epic-5: backlog
+  5-1-signalr-chat-hub-and-real-time-messaging: backlog
+  5-2-conversation-list-with-message-counts: backlog
+  5-3-active-conversation-limit-enforcement-free-tier: backlog
+  5-4-push-notifications-for-chat-events: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Mutual Photo Reveal
+  epic-6: backlog
+  6-1-reveal-readiness-flag-and-message-threshold-gate: backlog
+  6-2-mutual-reveal-confirmation-and-signed-photo-url-delivery: backlog
+  6-3-real-time-simultaneous-reveal-broadcast-via-signalr: backlog
+  6-4-reveal-moment-full-ux-experience: backlog
+  6-5-premium-reveal-threshold-customization: backlog
+  6-6-posthog-reveal-funnel-event-tracking: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: Subscriptions & Premium
+  epic-7: backlog
+  7-1-iap-webhook-jwt-verification-spike: backlog
+  7-2-apple-in-app-purchase-subscription-integration: backlog
+  7-3-google-play-billing-subscription-integration: backlog
+  7-4-premium-feature-gating-and-increased-limits: backlog
+  7-5-trial-expiry-notifications: backlog
+  7-6-free-tier-limit-upgrade-prompts: backlog
+  epic-7-retrospective: optional
+
+  # Epic 8: Safety & Content Moderation
+  epic-8: backlog
+  8-1-automated-text-message-flagging: backlog
+  8-2-one-tap-reporting-with-immediate-acknowledgement: backlog
+  8-3-reveal-suspension-on-report-submission: backlog
+  8-4-moderator-reports-queue-and-admin-review-interface: backlog
+  8-5-moderator-actions-warn-reveal-suspend-and-ban: backlog
+  8-6-follow-up-notification-to-reporting-user: backlog
+  epic-8-retrospective: optional
+
+  # Epic 9: Analytics, Compliance & GDPR
+  epic-9: backlog
+  9-1-posthog-self-hosted-setup-and-core-analytics-instrumentation: backlog
+  9-2-gender-ratio-dashboard: backlog
+  9-3-tamper-evident-moderation-audit-log: backlog
+  9-4-gdpr-personal-data-export: backlog
+  9-5-gdpr-right-to-erasure: backlog
+  epic-9-retrospective: optional

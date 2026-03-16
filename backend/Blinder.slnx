@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Blinder.Api/Blinder.Api.csproj" />
+  <Project Path="Blinder.Tests/Blinder.Tests.csproj" />
+</Solution>
