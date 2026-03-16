@@ -34,7 +34,7 @@ Organized across 8 domains:
 - **Reveal System (FR22–27):** Async flag-per-user opt-in reveal; minimum message threshold gate; photo unlocks when both flags are set (user sees photo on next app open); no unilateral reveal path; premium lowers personal threshold only (other party consent always required)
 - **Subscription & Premium (FR28–31):** In-app purchase via Apple/Google billing; increased limits for premium; trial expiry and limit-reached prompts
 - **Safety & Content Moderation (FR32–40):** Image scanning at upload (SafeSearch/Azure Content Moderator); CSAM hash-matching (PhotoDNA/NCMEC) before storage; automated text flagging; one-tap reporting; reveal suspension on report; moderator admin interface with ban/warn/restore
-- **Analytics & Compliance (FR41–45):** PostHog analytics (self-hosted, EU); reveal event tracking; near-real-time gender ratio dashboard; GDPR data export and erasure; tamper-evident moderation audit log
+- **Analytics & Compliance (FR41–45):** DB-backed analytics (reveal event tracking stored in PostgreSQL); near-real-time gender ratio dashboard; GDPR data export and erasure; tamper-evident moderation audit log
 
 **Non-Functional Requirements (30 total):**
 
@@ -43,7 +43,7 @@ Organized across 8 domains:
 - **Scalability:** 10K concurrent users (launch); 100K registered users without architectural change; horizontal chat scaling; 1K concurrent image upload throughput
 - **Accessibility:** WCAG 2.1 AA for core flows; VoiceOver/TalkBack; Dynamic Type/font scaling; AA contrast ratios
 - **Reliability:** 99.5% monthly uptime; message queue resilience with no-loss guarantee; content scan hard-fail on API outage (images not accepted if scanning cannot be confirmed); CSAM pipeline failure = immediate ops alert
-- **Integration:** Apple IAP + Google Play Billing (60s state sync); FCM/APNs >95% delivery in 60s; PostHog <1% event loss; PhotoDNA tested with known hashes pre-launch
+- **Integration:** Apple IAP + Google Play Billing (60s state sync); FCM/APNs >95% delivery in 60s; reveal events are DB-transactional (no event loss); PhotoDNA tested with known hashes pre-launch
 
 **Scale & Complexity:**
 
@@ -55,12 +55,12 @@ Organized across 8 domains:
 
 - **React Native** — single codebase for iOS 16+ and Android 10+ (API 29+); native modules only where required (push, camera)
 - **Microsoft SignalR** — specified for real-time chat; handles transport fallback automatically (WebSockets → Server-Sent Events → Long Polling) with built-in reconnect — no custom lifecycle management needed for MVP
-- **EU data residency** — all personal data (chat, photos, profile) must reside in EU-region infrastructure; no transit through non-EU cloud regions; each third-party integration (PhotoDNA, PostHog, FCM/APNs, Apple/Google Sign In) must be individually audited for data flow compliance
+- **EU data residency** — all personal data (chat, photos, profile) must reside in EU-region infrastructure; no transit through non-EU cloud regions; each third-party integration (PhotoDNA, FCM/APNs, Apple/Google Sign In) must be individually audited for data flow compliance; analytics data stays in the main PostgreSQL DB on the EU-region VPS
 - **PhotoDNA/NCMEC** — legal agreements must be initiated at project start (external lead time: weeks to months); integration must be tested with known hashes before launch; this is a launch blocker. **Action item: initiate NCMEC legal process as a parallel workstream immediately — this is not a code concern and cannot be unblocked by development.**
 - **GDPR compliance** — special category data obligations (consent flows, retention limits, right to erasure, DPO) are deferred from MVP feature scope but GDPR posture documentation must be in place before first real user onboards per PRD launch blocker definition
 - **In-app billing** — Apple StoreKit and Google Play Billing mandatory for digital subscriptions on their respective platforms; Apple anti-steering rules restrict web subscription promotion from within the iOS app
 - **Firebase Cloud Messaging (FCM) + APNs** — push infrastructure abstraction required (OneSignal or direct integration)
-- **PostHog** — self-hosted, EU data residency, required from day one
+- **Analytics** — None — custom DB-backed analytics; reveal events and gender ratio data stored in PostgreSQL
 - **Content scanning** — Google Vision SafeSearch or Azure Content Moderator; pipeline must hard-fail (not pass-through) if scan API is unavailable
 - **Private photo storage** — no public object storage URLs permitted; photo delivery via authenticated signed URLs only, and only after both `reveal_ready` flags on a conversation are confirmed
 
@@ -134,7 +134,7 @@ npx create-expo-app@latest --template default@sdk-55
 Key packages to add:
 
 ```bash
-npx expo install expo-router expo-notifications expo-image-picker expo-secure-store @microsoft/signalr nativewind posthog-react-native
+npx expo install expo-router expo-notifications expo-image-picker expo-secure-store @microsoft/signalr nativewind
 ```
 
 ### Architectural Decisions Established by Starters
@@ -190,7 +190,7 @@ npx expo install expo-router expo-notifications expo-image-picker expo-secure-st
 - Note: EAS Build is for *mobile store delivery only* — backend deployment is a separate concern (see Hosting below)
 
 **Hosting (Backend) — Docker-first from day one:**
-- All backend services run in Docker containers via Docker Compose — API, PostgreSQL + PostGIS, Nginx, and PostHog are each a separate named service in `docker-compose.yml`; nothing runs directly on the host OS at runtime
+- All backend services run in Docker containers via Docker Compose — API, PostgreSQL + PostGIS, and Nginx are each a separate named service in `docker-compose.yml`; nothing runs directly on the host OS at runtime
 - **VPS required** (e.g., Hetzner, DigitalOcean) — SignalR relies on persistent HTTP connections (WebSocket upgrades); true shared hosting providers commonly block or aggressively timeout long-lived connections; verify WebSocket support before committing to any host
 - ASP.NET Core API container built from a multi-stage `Dockerfile` (SDK image for build → ASP.NET runtime image for production); SDK layer excluded from the final image to minimise size
 - Nginx container: TLS termination, reverse proxy to the API container, and `/admin` IP allowlisting; Nginx config mounted as a bind-mounted volume from `nginx/nginx.conf` in the repository
@@ -202,7 +202,6 @@ npx expo install expo-router expo-notifications expo-image-picker expo-secure-st
   proxy_read_timeout 3600s;
   ```
 - PostgreSQL + PostGIS: official `postgis/postgis` Docker image; data persisted via a named Docker volume (`db-data`) — never an anonymous volume, which would be silently destroyed on `docker compose down`
-- PostHog: self-hosted in its own container(s) via Docker Compose on the EU-region VPS — data residency maintained
 - **Environment configuration:** all secrets injected via a `.env` file on the VPS (never committed to source control); `.env.example` committed with placeholder values documenting every required variable — kept in sync with `.env` requirements in the same commit as any new variable
 - **EF Core migrations:** `dotnet-ef` CLI tools exist only in the SDK build stage; the production runtime image does not include them. Migration approach: generate `migrations/latest.sql` via `dotnet ef migrations script --idempotent` in dev or CI, commit to the repository, and apply via `docker compose exec -T db psql` during deployment — never auto-applied inside a running container on startup
 - `restart: unless-stopped` set on all production services — containers recover automatically on VPS reboot without `systemd` unit files
@@ -717,7 +716,7 @@ blinder/
 │   ├── Blinder.Tests/
 │   └── Dockerfile                     # Multi-stage build: SDK image (build) → ASP.NET runtime image (production)
 ├── mobile/
-├── docker-compose.yml                 # Production service definitions: api, db, nginx, posthog
+├── docker-compose.yml                 # Production service definitions: api, db, nginx
 ├── docker-compose.override.yml        # Dev overrides: bind mounts, exposed ports, dev appsettings
 ├── nginx/
 │   └── nginx.conf                     # Nginx reverse proxy + TLS + /admin IP allowlist + WebSocket upgrade headers for /hubs/ (SignalR)
@@ -740,7 +739,7 @@ Blinder.Api/
 │   ├── RevealController.cs            # FR22–27: reveal flag set/get, threshold check
 │   ├── SubscriptionController.cs      # FR28–31: IAP webhook, premium state, trial — SPIKE required before first implementation story
 │   ├── ModerationController.cs        # FR32–40: reports, bans, audit log (admin-only)
-│   └── AnalyticsController.cs         # FR41–45: PostHog proxy config, gender ratio dashboard
+│   └── AnalyticsController.cs         # FR41–45: Gender ratio dashboard, reveal event tracking
 │
 ├── Hubs/
 │   └── ChatHub.cs                     # SignalR hub at /hubs/chat (FR17)
@@ -911,7 +910,7 @@ mobile/
 | Reveal System | FR22–27 | `RevealController`, `RevealService`, `Infrastructure/Storage/` | `app/(tabs)/reveal/`, `useRevealState`, `components/reveal/` |
 | Subscriptions | FR28–31 | `SubscriptionController`, `SubscriptionService`, `BackgroundJobs/TrialExpiryNotificationJob` | `app/(tabs)/settings/`, `useSubscription` |
 | Safety & Moderation | FR32–40 | `ModerationController`, `ModerationService`, `Infrastructure/Scanning/`, `Pages/Admin/` | `components/moderation/` (ReportButton, BlockConfirmation) |
-| Analytics & Compliance | FR41–45 | `AnalyticsController`, `Pages/Admin/Dashboard` | PostHog SDK calls in key user journey hooks |
+| Analytics & Compliance | FR41–45 | `AnalyticsController`, `Pages/Admin/Dashboard` | DB-backed event tracking in key user journey hooks |
 
 ---
 
@@ -926,7 +925,7 @@ mobile/
 | SignalR real-time | `Hubs/ChatHub.cs` ↔ `services/signalrService.ts` | Hub methods: `ReceiveMessage`, `RevealStateUpdated`, `MatchAssigned` |
 | FCM / APNs push | `BackgroundJobs/SendPushNotificationJob.cs` | Coravel fire-and-forget; acceptable to drop on restart at MVP |
 | Apple IAP + Google Play Billing | `SubscriptionController` + `SubscriptionService` | **Spike story required** before any subscription implementation |
-| PostHog self-hosted | `AnalyticsController` + Docker Compose service on VPS | EU-region; `<1% event loss` (NFR); defined in `docker-compose.yml` alongside API |
+| DB-backed analytics | `AnalyticsController` + PostgreSQL | Reveal events and gender ratio data stored in the main PostgreSQL DB; no external analytics service |
 | SMTP via hosting | `Infrastructure/Email/SmtpSettings.cs` + Coravel mailing | Credentials from env vars via `IOptions<SmtpSettings>` |
 | Apple / Google / Facebook login | `Infrastructure/Auth/SocialLoginHandler.cs` | `ExternalLoginAsync` — not scaffold-covered; explicit implementation stories required |
 
@@ -942,7 +941,7 @@ mobile/
 - **`ReportButton.tsx` and `BlockConfirmation.tsx` are defined once in `components/moderation/`.** They must not be reimplemented inline in Conversation, Match, or Profile screens.
 - **`DeviceToken` table is the sole persistence layer for push tokens.** Tokens are registered via `POST /api/account/device-token`; stale tokens are deleted by `SendPushNotificationJob` on FCM/APNs error — never accumulate dead tokens.
 - **IAP webhook verification cannot be disabled in production.** `SkipWebhookVerification` flag is valid only in `appsettings.Testing.json`; a startup assertion must enforce this.
-- **`docker-compose.yml` is the single source of truth for service topology.** All services (API, database, Nginx, PostHog) are defined there. Nothing runs directly on the host OS at runtime — no `systemd` units for application services.
+- **`docker-compose.yml` is the single source of truth for service topology.** All services (API, database, Nginx) are defined there. Nothing runs directly on the host OS at runtime — no `systemd` units for application services.
 - **`nginx/nginx.conf` must include WebSocket upgrade headers on the `/hubs/` location block.** Missing `proxy_http_version 1.1`, `Upgrade`, `Connection "upgrade"`, and `proxy_read_timeout 3600s` causes SignalR to silently fall back to long polling, breaking the `<500ms` chat delivery NFR.
 - **`.env.example` must always be kept in sync with actual `.env` requirements.** When a new environment variable is added anywhere in the codebase or infrastructure config, `.env.example` must be updated in the same commit.
 - **Named volume `db-data` must never be removed without a verified database backup.** `docker compose down -v` is explicitly prohibited in production — it destroys all named volumes including the database.
@@ -961,10 +960,10 @@ All technology choices are mutually compatible. Key verifications:
 - FluentValidation + `AddProblemDetails()` + RFC 7807: FluentValidation ASP.NET Core integration auto-produces Problem Details 400 responses
 - Mapperly + EF Core: compile-time generation; no proxy/lazy-loading conflicts
 - Coravel + SignalR: separate concerns; jobs use `IHubContext<ChatHub>` to push events to connected clients
-- Expo SDK 55 + `@microsoft/signalr` + `expo-secure-store` + NativeWind + `posthog-react-native`: all compatible with React Native 0.83
+- Expo SDK 55 + `@microsoft/signalr` + `expo-secure-store` + NativeWind: all compatible with React Native 0.83
 - FirebaseAdmin + dotAPNS: both run in-process inside the API container; no external routing service dependency
 - AWSSDK.S3 + Hetzner Object Storage (`ForcePathStyle = true`): standard S3 client, documented
-- Docker Compose multi-service setup: all services (API, `postgis/postgis`, Nginx, PostHog) are standard images with no known compatibility conflicts on a Linux VPS host
+- Docker Compose multi-service setup: all services (API, `postgis/postgis`, Nginx) are standard images with no known compatibility conflicts on a Linux VPS host
 
 No conflicts identified.
 
@@ -998,7 +997,7 @@ No conflicts identified.
 | Reveal System | FR22–27 | ✅ Full coverage — Dual async flags, threshold gate, signed URL gated via `RevealService` |
 | Subscription & Premium | FR28–31 | ✅ Full coverage — `SubscriptionController` with IAP webhook JWT verification, `TrialExpiryNotificationJob` |
 | Safety & Moderation | FR32–40 | ✅ Full coverage — `ContentScanningClient` (synchronous, hard-fail), NCMEC slot, `Report`/`ModerationAction`, 2yr audit retention |
-| Analytics & Compliance | FR41–45 | ✅ Full coverage — PostHog self-hosted, gender ratio dashboard, audit log, GDPR deferred with posture documentation required |
+| Analytics & Compliance | FR41–45 | ✅ Full coverage — DB-backed analytics, gender ratio dashboard, reveal event tracking, audit log, GDPR deferred with posture documentation required |
 
 **Non-Functional Requirements (30 NFRs):**
 
@@ -1038,7 +1037,7 @@ All eight identified conflict points are addressed: naming conventions (DB, API,
 | 🔴 Critical | Push notification mechanism undefined — blocked 4+ stories | ✅ Resolved — Direct FCM (FirebaseAdmin) + APNs (dotAPNS) from .NET; `DeviceToken` table; stale token cleanup; `IPushNotificationService` interface |
 | 🟡 Important | Encryption at rest not documented as deployment requirement | ✅ Resolved — LUKS disk encryption documented as VPS provisioning checklist item |
 | 🟡 Important | Admin cookie CSRF protection unconfirmed | ✅ Non-issue — ASP.NET Core Razor Pages enables anti-forgery tokens by default for all POST handlers; confirmation comment sufficient |
-| 🟢 Minor | PostHog React Native SDK unnamed | ✅ Resolved — `posthog-react-native` added to mobile starter packages; `optOut` flag required in test setup |
+| 🟢 Minor | Analytics approach undefined | ✅ Resolved — DB-backed analytics; reveal events and gender ratio data stored in PostgreSQL via `AnalyticsController` |
 
 All gaps resolved. No outstanding critical or important gaps remain.
 
@@ -1055,7 +1054,7 @@ All gaps resolved. No outstanding critical or important gaps remain.
 **✅ Architectural Decisions**
 - [x] Critical decisions documented with specific versions (.NET 10, Expo SDK 55, PostgreSQL, all NuGet/npm packages named)
 - [x] Technology stack fully specified (backend + mobile + database + storage + background jobs + push + email + admin)
-- [x] Integration patterns defined (S3, FCM, APNs, SignalR, SMTP, PostHog, IAP webhooks)
+- [x] Integration patterns defined (S3, FCM, APNs, SignalR, SMTP, IAP webhooks, DB-backed analytics)
 - [x] Security requirements addressed (IAP webhook JWT verification, signed URLs, TLS, token storage, no PII in logs, LUKS at rest)
 
 **✅ Implementation Patterns**
@@ -1081,7 +1080,7 @@ All gaps resolved. No outstanding critical or important gaps remain.
 Basis: All 45 FRs and 30 NFRs are architecturally supported, all critical security decisions are documented, all technology choices are version-pinned and mutually compatible, and all known implementation conflict points have explicit resolution rules.
 
 **Key Strengths:**
-- Self-sovereign, fully containerized infrastructure: Docker Compose on VPS + direct FCM/APNs + Hetzner Object Storage + PostHog self-hosted — minimal third-party SaaS dependencies; environment is reproducible from day one
+- Self-sovereign, fully containerized infrastructure: Docker Compose on VPS + direct FCM/APNs + Hetzner Object Storage — minimal third-party SaaS dependencies; environment is reproducible from day one
 - Docker-first approach means dev/prod parity from the first commit; no "works on my machine" class of deployment failures
 - Security gaps (IAP webhook verification, signed URL gating, LUKS at rest) all resolved before implementation begins
 - Coravel + startup idempotent match check prevents the worst UX failure mode (empty match screen after restart); `restart: unless-stopped` ensures containers recover on VPS reboot

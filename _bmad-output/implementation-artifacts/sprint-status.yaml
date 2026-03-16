@@ -46,7 +46,7 @@ development_status:
   epic-1: in-progress
   1-1-scaffold-backend-project: done
   1-2-docker-compose-stack-with-nginx-and-websocket-support: done
-  1-3-scaffold-mobile-project-with-strict-typescript-and-nativewind: review
+  1-3-scaffold-mobile-project-with-strict-typescript-and-nativewind: done
   1-4-database-setup-with-postgis-and-ef-core-migrations-pipeline: backlog
   1-5-mobile-design-system-foundation-and-accessibility-context: backlog
   epic-1-retrospective: optional
@@ -97,8 +97,7 @@ development_status:
   6-3-real-time-simultaneous-reveal-broadcast-via-signalr: backlog
   6-4-reveal-moment-full-ux-experience: backlog
   6-5-premium-reveal-threshold-customization: backlog
-  6-6-posthog-reveal-funnel-event-tracking: backlog
-  epic-6-retrospective: optional
+epic-6-retrospective: optional
 
   # Epic 7: Subscriptions & Premium
   epic-7: backlog
@@ -122,9 +121,8 @@ development_status:
 
   # Epic 9: Analytics, Compliance & GDPR
   epic-9: backlog
-  9-1-posthog-self-hosted-setup-and-core-analytics-instrumentation: backlog
-  9-2-gender-ratio-dashboard: backlog
-  9-3-tamper-evident-moderation-audit-log: backlog
-  9-4-gdpr-personal-data-export: backlog
-  9-5-gdpr-right-to-erasure: backlog
+  9-1-gender-ratio-dashboard: backlog
+  9-2-tamper-evident-moderation-audit-log: backlog
+  9-3-gdpr-personal-data-export: backlog
+  9-4-gdpr-right-to-erasure: backlog
   epic-9-retrospective: optional

@@ -234,7 +234,7 @@ MAU decline for two consecutive months, or new user acquisition dropping below r
 **GDPR — Launch Blocker, Not Backlog Item**
 Dating app data falls under GDPR special category data (relationship preferences, appearance data, potential inference of sexual orientation). A documented GDPR compliance posture — including consent flows, data retention limits, right to erasure, and a Data Protection Officer or equivalent — is required before the first real user is onboarded.
 
-Recommended analytics stack: **PostHog** (self-hosted, EU data residency) for privacy-compliant event tracking aligned with Poland-first launch and EU regulatory requirements.
+Analytics data stays within the main EU-region PostgreSQL database — no third-party analytics services, fully GDPR-compliant by default.
 
 ---
 
@@ -290,8 +290,7 @@ Recommended analytics stack: **PostHog** (self-hosted, EU data residency) for pr
 - No boosts, no super likes, no pay-to-win placement advantages
 
 **Analytics & Compliance**
-- PostHog (self-hosted, EU data residency) for event tracking from day one
-- Reveal initiation, confirmation, and abandonment tracked as distinct events
+- Reveal initiation, confirmation, and abandonment tracked as distinct DB-stored events
 - Gender ratio dashboard with near-real-time visibility
 - GDPR compliance posture fully documented before first user onboarded
 

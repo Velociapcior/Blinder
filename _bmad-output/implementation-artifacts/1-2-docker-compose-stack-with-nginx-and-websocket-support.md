@@ -10,7 +10,7 @@ so that development and production environments are identical from the first com
 
 ## Acceptance Criteria
 
-1. **Given** the repository is cloned fresh and `.env` is populated from `.env.example` **When** the developer runs `docker compose up` **Then** four containers start successfully: `api` (ASP.NET Core), `db` (postgis/postgis), `nginx` (reverse proxy), `posthog` (analytics).
+1. **Given** the repository is cloned fresh and `.env` is populated from `.env.example` **When** the developer runs `docker compose up` **Then** three containers start successfully: `api` (ASP.NET Core), `db` (postgis/postgis), `nginx` (reverse proxy).
 
 2. **Given** the Nginx container is running **When** a WebSocket upgrade request is sent to `/hubs/chat` **Then** Nginx forwards it with `proxy_http_version 1.1`, `Upgrade $http_upgrade`, `Connection "upgrade"`, and `proxy_read_timeout 3600s` headers — SignalR does NOT fall back to long polling.
 
@@ -36,7 +36,6 @@ so that development and production environments are identical from the first com
   - [x] Define `api` service: build from `backend/Dockerfile`, target `final` stage; expose port 8080 internally; `restart: unless-stopped`
   - [x] Define `db` service: use `postgis/postgis:16-3.4`; named volume `db-data`; `restart: unless-stopped`; environment from `.env`
   - [x] Define `nginx` service: use `nginx:1.27-alpine`; bind-mount `./nginx/nginx.conf`; expose ports 80 and 443; `restart: unless-stopped`; depends on `api`
-  - [x] Define `posthog` service: see PostHog self-hosted Docker docs; `restart: unless-stopped`; do not expose externally — internal network only
   - [x] Add a `networks` section with a single internal bridge network `blinder-net`; attach all services
   - [x] Add `volumes` section declaring `db-data` as a named volume — never anonymous
 
@@ -177,17 +176,10 @@ services:
     depends_on:
       - api
 
-  posthog:
-    # PostHog self-hosted — use official PostHog Docker Compose snippet
-    # See: https://posthog.com/docs/self-host (EU-region VPS)
-    # Keep PostHog on internal network only — do not expose a public port
-    restart: unless-stopped
-    networks:
-      - blinder-net
 ```
 
 **Critical constraints:**
-- All four services use `restart: unless-stopped` — containers recover on VPS reboot without systemd.
+- All three services use `restart: unless-stopped` — containers recover on VPS reboot without systemd.
 - `db-data` is declared as a named volume under the top-level `volumes:` key — it will NOT be deleted by `docker compose down` (only by `docker compose down -v`).
 - No service binds ports directly from the host except Nginx (80/443) — the API is only reachable through Nginx.
 
@@ -306,8 +298,6 @@ APNS_KEY_ID=your-key-id
 APNS_TEAM_ID=your-team-id
 APNS_BUNDLE_ID=com.yourcompany.blinder
 
-# ── PostHog (self-hosted) ─────────────────────────────────────────────────────
-POSTHOG_API_KEY=phc_your_key_here
 ```
 
 **Rules:**
@@ -343,15 +333,6 @@ When running inside Docker Compose, the API container must use `db` as the Postg
 ```
 
 **Note:** Credentials in `appsettings.Development.json` are placeholders only — actual values are injected from `.env` at runtime. `appsettings.Development.json` must not contain production credentials and is safe to commit.
-
-### PostHog Self-Hosted — Important Note
-
-PostHog self-hosted requires multiple containers (PostHog app, Redis, ClickHouse, Kafka, worker, etc.). For MVP, use the official PostHog Docker Compose snippet from their documentation rather than defining it from scratch. Reference: https://posthog.com/docs/self-host
-
-Key constraints:
-- PostHog must run on the **same EU-region VPS** as the API (GDPR / data residency).
-- PostHog services must be on `blinder-net` internal network — do not expose PostHog's own ports publicly.
-- Only the `api` container communicates with PostHog internally; PostHog is never directly client-accessible.
 
 ### Previous Story (1.1) Learnings Applied
 
@@ -440,7 +421,7 @@ claude-sonnet-4-5
 ### Completion Notes List
 
 - Created multi-stage `backend/Dockerfile`: stage 1 (sdk:10.0 AS build) handles restore and publish; stage 2 (aspnet:10.0 AS final) is the production runtime image. `dotnet-ef` tools are NOT in the final stage (AC 5, 6).
-- Created `docker-compose.yml` at repo root: all four services (`api`, `db`, `nginx`, `posthog`) use `restart: unless-stopped`; named volume `db-data`; single internal bridge network `blinder-net`; Nginx exposes 80/443; no other service binds host ports (AC 1, 3).
+- Created `docker-compose.yml` at repo root: all three services (`api`, `db`, `nginx`) use `restart: unless-stopped`; named volume `db-data`; single internal bridge network `blinder-net`; Nginx exposes 80/443; no other service binds host ports (AC 1, 3).
 - Created `docker-compose.override.yml` at repo root: overrides `api` build target to `build` stage (SDK); mounts `./backend:/src`; sets `dotnet watch run` entrypoint for hot-reload. Production ignores this file when launched with `-f docker-compose.yml` (AC 6).
 - Created `nginx/nginx.conf`: upstream `api:8080`; `/` standard proxy; `/hubs/` with all four mandatory WebSocket headers (`proxy_http_version 1.1`, `Upgrade`, `Connection "upgrade"`, `proxy_read_timeout 3600s`) per ARCH-3; `/admin` with IP allowlist (`allow 127.0.0.1; deny all;`) per ARCH-14 (AC 2, 7).
 - Created `.env.example` at repo root: all environment variables documented with placeholder values; includes production warning about `docker compose down -v`; `.env` was already in `.gitignore` (AC 4).

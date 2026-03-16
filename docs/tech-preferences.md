@@ -84,7 +84,7 @@ blinder/
 | Error format | RFC 7807 Problem Details (AddProblemDetails()) | built-in |
 | Admin UI | Razor Pages + cookie auth | built-in |
 | Database | PostgreSQL + PostGIS | 16+ / postgis/postgis Docker image |
-| Analytics | PostHog (self-hosted, EU VPS) | Docker Compose service |
+| Analytics | Custom DB-backed dashboards | PostgreSQL queries |
 | Containerisation | Docker Compose | latest stable |
 
 ### Mobile
@@ -99,7 +99,6 @@ blinder/
 | Token storage | expo-secure-store | SDK 55 bundled |
 | Push tokens | expo-notifications | SDK 55 bundled |
 | Photo picker | expo-image-picker | SDK 55 bundled |
-| Analytics | posthog-react-native | latest stable |
 | Build/deploy | EAS Build | free tier |
 
 ---
@@ -682,7 +681,6 @@ All core flows (onboarding, chat, reveal) must meet WCAG 2.1 AA. This is a launc
 - Jest + React Native Testing Library for unit/component tests
 - Detox for critical user flow integration tests (onboarding, chat, reveal arc)
 - Snapshot tests for core UI components — update snapshots intentionally, not automatically
-- `optOut: true` for PostHog in test setup
 
 ---
 

@@ -1,56 +1,114 @@
-# Welcome to your Expo app 👋
+# Blinder Mobile (Expo SDK 55)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Mobile app for Blinder, built with Expo Router, strict TypeScript, NativeWind, and SignalR.
 
-## Get started
+## Stack
 
-1. Install dependencies
+- Expo SDK 55
+- React Native 0.83
+- Expo Router (file-based navigation)
+- TypeScript strict mode
+- NativeWind v4 + Tailwind CSS
+- `expo-secure-store` for auth token storage
+- `@microsoft/signalr` for realtime chat/reveal events
 
-   ```bash
-   npm install
-   ```
+## Prerequisites
 
-2. Start the app
+- Node.js 20+
+- npm 10+
+- Android Studio emulator and/or Xcode simulator
 
-   ```bash
-   npx expo start
-   ```
+## Environment
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Set API URL via environment variable:
 
 ```bash
-npm run reset-project
+EXPO_PUBLIC_API_URL=http://localhost/api
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+See root `.env.example` for current defaults.
 
-### Other setup steps
+## Install and Run
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+From `mobile/`:
 
-## Learn more
+```bash
+npm install
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Shortcuts:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- `a` open Android emulator
+- `i` open iOS simulator
+- `w` open web
 
-## Join the community
+## Scripts
 
-Join our community of developers creating universal apps.
+```bash
+npm run start
+npm run android
+npm run ios
+npm run web
+npm run lint
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Type-check:
+
+```bash
+npx tsc --noEmit
+```
+
+## Project Structure
+
+```text
+mobile/
+   app/
+      _layout.tsx
+      (auth)/
+         _layout.tsx
+      (tabs)/
+         _layout.tsx
+   components/
+      chat/
+      match/
+      moderation/
+      onboarding/
+      shared/
+      svg/
+   constants/
+      errors.ts
+      theme.ts
+   hooks/
+   services/
+      apiClient.ts
+      signalrService.ts
+      storageService.ts
+   types/
+      api/
+      signalr/
+      index.ts
+   utils/
+      dateFormat.ts
+```
+
+## Conventions
+
+- Do not use `AsyncStorage` for auth tokens. Use `expo-secure-store` only.
+- Do not call `fetch` directly from components. Use `services/apiClient.ts`.
+- Keep SignalR connection lifecycle in `services/signalrService.ts` (singleton).
+- Keep user-facing errors in `constants/errors.ts`.
+- Keep API and SignalR types under `types/api` and `types/signalr` (separate namespaces).
+
+## Build Profiles (EAS)
+
+`eas.json` is committed and includes:
+
+- `development`
+- `preview`
+- `production`
+
+## Notes
+
+- App is configured for dark mode (`app.json` -> `userInterfaceStyle: "dark"`).
+- Deep-link scheme is `blinder`.

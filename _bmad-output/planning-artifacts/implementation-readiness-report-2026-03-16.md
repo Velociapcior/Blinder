@@ -97,7 +97,7 @@ NFR25: Content scanning pipeline must have fallback on third-party API failure â
 NFR26: CSAM detection pipeline failure must trigger immediate alert to operations team
 NFR27: Apple IAP and Google Play Billing must process subscription state changes within 60 seconds
 NFR28: Push notification delivery must achieve >95% delivery rate within 60 seconds for time-sensitive events
-NFR29: PostHog event tracking must capture all defined analytics events with <1% event loss rate
+NFR29: Reveal event tracking (initiation, confirmation, abandonment) must be recorded with no data loss â€” events are DB writes within the same transaction as the reveal state change
 NFR30: NCMEC/PhotoDNA integration must be tested with known hash sets prior to launch
 
 **Total NFRs: 30**

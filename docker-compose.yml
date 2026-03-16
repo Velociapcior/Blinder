@@ -60,27 +60,3 @@ services:
     depends_on:
       - api
 
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    networks:
-      - blinder-net
-
-  posthog:
-    # PostHog in this stack is a lightweight dev deployment.
-    # For production self-hosting use the official PostHog hobby deployment bundle.
-    image: posthog/posthog:latest
-    restart: unless-stopped
-    environment:
-      - SECRET_KEY=${POSTHOG_SECRET:?POSTHOG_SECRET is required}
-      - DATABASE_URL=postgres://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db/${POSTGRES_DB:?POSTGRES_DB is required}_posthog
-      - REDIS_URL=redis://redis:6379/
-      - IS_BEHIND_PROXY=true
-      - SITE_URL=http://posthog:8000
-    networks:
-      - blinder-net
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started

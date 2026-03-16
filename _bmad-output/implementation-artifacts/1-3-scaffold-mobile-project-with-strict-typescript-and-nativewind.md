@@ -1,6 +1,6 @@
 # Story 1.3: Scaffold Mobile Project with Strict TypeScript and NativeWind
 
-Status: review
+Status: done
 
 ## Story
 
@@ -16,7 +16,7 @@ so that every mobile story has a convention-compliant base with no retrofitting 
 
 3. **Given** the mobile project is scaffolded **When** the `mobile/` directory structure is inspected **Then** the following directories and files exist: `app/(auth)/`, `app/(tabs)/`, `components/`, `hooks/`, `services/apiClient.ts`, `services/signalrService.ts`, `services/storageService.ts`, `constants/errors.ts`, `constants/theme.ts`, `types/api/index.ts`, `types/signalr/index.ts`, `utils/dateFormat.ts`
 
-4. **Given** the mobile project is scaffolded **When** the installed packages are reviewed **Then** `expo-router`, `expo-notifications`, `expo-image-picker`, `expo-secure-store`, `@microsoft/signalr`, `nativewind`, `posthog-react-native` are all installed
+4. **Given** the mobile project is scaffolded **When** the installed packages are reviewed **Then** `expo-router`, `expo-notifications`, `expo-image-picker`, `expo-secure-store`, `@microsoft/signalr`, `nativewind` are all installed
 
 5. **Given** `services/storageService.ts` is implemented **When** a JWT token is stored and retrieved **Then** `expo-secure-store` is used exclusively — `AsyncStorage` is not imported anywhere in `storageService.ts`
 
@@ -38,7 +38,7 @@ so that every mobile story has a convention-compliant base with no retrofitting 
   - [x] Confirm no TypeScript errors after configuration update: `npx tsc --noEmit` from `mobile/`
 
 - [x] Task 3: Install all required packages (AC: 4)
-  - [x] Run from `mobile/`: `npx expo install expo-router expo-notifications expo-image-picker expo-secure-store @microsoft/signalr nativewind posthog-react-native`
+  - [x] Run from `mobile/`: `npx expo install expo-router expo-notifications expo-image-picker expo-secure-store @microsoft/signalr nativewind`
   - [x] Run: `npx expo install tailwindcss react-native-reanimated react-native-safe-area-context` (NativeWind dependencies)
   - [x] Verify all packages appear in `mobile/package.json`
 
@@ -957,7 +957,6 @@ These features belong to later stories — do NOT add them here:
 | AccessibilityContext (`{ reduceMotion, fontScale, isScreenReaderEnabled }`) | Story 1.5 |
 | DM Sans font loading (`expo-font`) | Story 1.5 |
 | Auth screens (`login.tsx`, `register.tsx`) | Story 2.1 |
-| PostHog `PostHogProvider` setup at root | Story 9.1 |
 | JWT Bearer auth token refresh logic | Story 2.1 |
 | Push notification registration | Story 5.4 |
 | Tab bar icons and actual tab screens | Story 4.5+ |
@@ -1042,7 +1041,7 @@ claude-sonnet-4-6
 - TypeScript: `strict`, `noImplicitAny`, `strictNullChecks`, `noUnusedLocals`, `noUnusedParameters`, `exactOptionalPropertyTypes` all active. `npx tsc --noEmit` → 0 errors.
 - NativeWind v4 configured: `tailwind.config.ts`, `babel.config.js`, `metro.config.js`, `global.css`, `nativewind-env.d.ts`.
 - EAS Build: `eas.json` committed with `development`, `preview`, `production` profiles (ARCH-24).
-- All 7 required packages installed: `expo-router`, `expo-notifications`, `expo-image-picker`, `expo-secure-store`, `@microsoft/signalr`, `nativewind`, `posthog-react-native`.
+- All 6 required packages installed: `expo-router`, `expo-notifications`, `expo-image-picker`, `expo-secure-store`, `@microsoft/signalr`, `nativewind`.
 - `storageService.ts`: uses `expo-secure-store` exclusively — no `AsyncStorage` import (ARCH-7).
 - `apiClient.ts`: RFC 7807 Problem Details error handling, `EXPO_PUBLIC_API_URL` env var, auth header injection.
 - `signalrService.ts`: module-level singleton, `withAutomaticReconnect()`, connects to `/hubs/chat` (matches ARCH-3 Nginx config from Story 1.2).

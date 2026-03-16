@@ -151,8 +151,7 @@ The MVP is validated when **all** of the following are present after 90 days of 
 - No boosts, no super likes, no pay-to-win placement
 
 **Analytics & Compliance**
-- PostHog (self-hosted, EU data residency) from day one
-- Reveal initiation, confirmation, and abandonment tracked as distinct events
+- Reveal initiation, confirmation, and abandonment tracked as distinct events (stored in DB)
 - Gender ratio dashboard with near-real-time visibility
 - GDPR compliance posture documented before first onboard
 
@@ -299,7 +298,7 @@ The reporting user feels heard. The violating user faces consequences. The moder
   - Data retention limits and automated deletion policy
   - Right to erasure (account deletion must purge all personal data including photos and chat history)
   - Data Protection Officer designation or equivalent (legal review required)
-  - Privacy-compliant analytics stack — PostHog self-hosted, EU data residency
+  - Privacy-compliant analytics — all data stays in EU-region PostgreSQL, no third-party analytics services
 - **CSAM compliance (mandatory, launch blocker)** — Integration with PhotoDNA / NCMEC hash-matching. Legal agreements with NCMEC must be initiated at project start, not deferred. Any detected CSAM must be reported to the relevant authority per legal obligation.
 - **Child protection / age verification** — Platform must enforce minimum age (18+). Age declaration at registration required at launch; further verification methods considered for post-MVP.
 
@@ -494,8 +493,7 @@ At MVP: **No offline mode.** The core experience (matching, chat, reveal) is inh
 - CSAM hash-matching (PhotoDNA/NCMEC — launch blocker)
 - Text moderation (automated flagging)
 - One-tap in-app reporting + basic admin moderation interface
-- PostHog analytics (self-hosted, EU data residency)
-- Gender ratio dashboard
+- Gender ratio dashboard (DB-backed admin query)
 - GDPR compliance posture documented before first onboard
 - Polish (pl-PL) localisation + English fallback
 - WCAG 2.1 AA accessibility for core flows
@@ -648,5 +646,5 @@ At MVP: **No offline mode.** The core experience (matching, chat, reveal) is inh
 
 - **NFR27:** Apple In-App Purchase and Google Play Billing integrations must process subscription state changes (purchase, renewal, cancellation) within 60 seconds of the platform event
 - **NFR28:** Push notification delivery (FCM/APNs) must achieve >95% delivery rate for time-sensitive events (new message, reveal confirmation) within 60 seconds
-- **NFR29:** PostHog event tracking must capture all defined analytics events with <1% event loss rate
+- **NFR29:** Reveal event tracking (initiation, confirmation, abandonment) must be recorded with no data loss — events are DB writes within the same transaction as the reveal state change
 - **NFR30:** NCMEC/PhotoDNA integration must be tested with known hash sets prior to launch — detection accuracy cannot be validated in production for the first time
