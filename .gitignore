@@ -105,8 +105,7 @@ expo-env.d.ts
 # ------------------------------------------------------------
 # Docker
 # ------------------------------------------------------------
-# Never commit docker-compose overrides with real secrets
-docker-compose.override.yml
+# Keep docker-compose.override.yml versioned for reproducible local dev workflow
 docker-compose.prod.yml
 
 # ------------------------------------------------------------

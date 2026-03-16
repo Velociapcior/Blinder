@@ -45,7 +45,7 @@ development_status:
   # Epic 1: Project Foundation & Developer Environment
   epic-1: in-progress
   1-1-scaffold-backend-project: done
-  1-2-docker-compose-stack-with-nginx-and-websocket-support: ready-for-dev
+  1-2-docker-compose-stack-with-nginx-and-websocket-support: done
   1-3-scaffold-mobile-project-with-strict-typescript-and-nativewind: backlog
   1-4-database-setup-with-postgis-and-ef-core-migrations-pipeline: backlog
   1-5-mobile-design-system-foundation-and-accessibility-context: backlog

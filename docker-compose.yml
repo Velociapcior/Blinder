@@ -1,0 +1,86 @@
+# docker-compose.yml  (repo root)
+# Production compose stack — all services run inside Docker, nothing on host OS (ARCH-2).
+# WARNING: docker compose down -v DESTROYS db-data volume. Use docker compose down (no -v) in production.
+
+networks:
+  blinder-net:
+    driver: bridge
+
+volumes:
+  db-data:   # Named volume — never destroyed by docker compose down (only by docker compose down -v)
+
+services:
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: final          # Production runtime image
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB:?POSTGRES_DB is required};Username=${POSTGRES_USER:?POSTGRES_USER is required};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      - JwtSettings__Secret=${JWT_SECRET:?JWT_SECRET is required}
+      - JwtSettings__Issuer=${JWT_ISSUER:?JWT_ISSUER is required}
+      - JwtSettings__Audience=${JWT_AUDIENCE:?JWT_AUDIENCE is required}
+    networks:
+      - blinder-net
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - blinder-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/admin-allowlist.conf:/etc/nginx/conf.d/admin-allowlist.conf:ro
+    networks:
+      - blinder-net
+    depends_on:
+      - api
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - blinder-net
+
+  posthog:
+    # PostHog in this stack is a lightweight dev deployment.
+    # For production self-hosting use the official PostHog hobby deployment bundle.
+    image: posthog/posthog:latest
+    restart: unless-stopped
+    environment:
+      - SECRET_KEY=${POSTHOG_SECRET:?POSTHOG_SECRET is required}
+      - DATABASE_URL=postgres://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db/${POSTGRES_DB:?POSTGRES_DB is required}_posthog
+      - REDIS_URL=redis://redis:6379/
+      - IS_BEHIND_PROXY=true
+      - SITE_URL=http://posthog:8000
+    networks:
+      - blinder-net
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
