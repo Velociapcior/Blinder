@@ -533,6 +533,14 @@ const handleRevealPress = useCallback(() => {
 - `Pressable` preferred over `TouchableOpacity` — better accessibility event handling
 - All interactive elements: `minHeight: 44`, `minWidth: 44` tap area
 - `hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}` on icon-only controls
+- **`Pressable` style prop — Android flattening rule:** On Android, passing a function to `Pressable`'s `style` prop goes through a different rendering path that can silently drop `backgroundColor`, `borderColor`, and `borderWidth` from nested/merged style arrays. Always use `StyleSheet.flatten()` to produce a single plain object before passing to `Pressable`. When the consumer's style is not a function, pass the flattened object directly (not wrapped in a callback). When it is a function, wrap it but still flatten the result:
+  ```tsx
+  style={
+    typeof style === "function"
+      ? (pressState) => StyleSheet.flatten([baseStyle, style(pressState)])
+      : StyleSheet.flatten([baseStyle, style])
+  }
+  ```
 
 ### 10.3 Hooks Rules
 
