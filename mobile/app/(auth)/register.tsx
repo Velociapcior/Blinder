@@ -6,6 +6,8 @@ import {
   StyleSheet,
   ScrollView,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { authService } from "../../services/authService";
@@ -183,8 +185,11 @@ export default function RegisterScreen() {
   }
 
   return (
-    <ScrollView
+    <KeyboardAvoidingView
       style={styles.scroll}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+    <ScrollView
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
@@ -281,6 +286,8 @@ export default function RegisterScreen() {
         </ThemedText>
       </View>
 
+    </ScrollView>
+    <View style={styles.footer}>
       <AccessiblePressable
         accessibilityLabel="Register"
         accessibilityRole="button"
@@ -296,7 +303,8 @@ export default function RegisterScreen() {
           </ThemedText>
         )}
       </AccessiblePressable>
-    </ScrollView>
+    </View>
+  </KeyboardAvoidingView>
   );
 }
 
@@ -307,7 +315,7 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingHorizontal: spacing[5],
-    paddingVertical: spacing[4],
+    paddingVertical: spacing[16],
     paddingBottom: spacing[8],
   },
   heading: {
@@ -378,5 +386,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[3],
     borderRadius: 8,
     marginBottom: spacing[4],
+  },
+  footer: {
+    paddingHorizontal: spacing[5],
+    paddingTop: spacing[3],
+    paddingBottom: spacing[16],
+    backgroundColor: colors.background.primary,
   },
 });
