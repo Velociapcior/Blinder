@@ -52,8 +52,8 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: User Registration & Authentication
-  epic-2: backlog
-  2-1-email-password-user-registration: backlog
+  epic-2: in-progress
+  2-1-email-password-user-registration: done
   2-2-user-login-jwt-tokens-and-logout: backlog
   2-3-apple-sign-in: backlog
   2-4-google-and-facebook-social-login: backlog
@@ -97,7 +97,7 @@ development_status:
   6-3-real-time-simultaneous-reveal-broadcast-via-signalr: backlog
   6-4-reveal-moment-full-ux-experience: backlog
   6-5-premium-reveal-threshold-customization: backlog
-epic-6-retrospective: optional
+  epic-6-retrospective: optional
 
   # Epic 7: Subscriptions & Premium
   epic-7: backlog

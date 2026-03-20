@@ -57,6 +57,7 @@ blinder/
 - `Infrastructure/` = all external integrations. Named `*Client`, not `*Service`.
 - `BackgroundJobs/` = Coravel `IInvocable` only.
 - `Errors/AppErrors.cs` = single source of truth for RFC 7807 problem type URIs. Never define error strings inline.
+- Auth logic is shared: scaffolded Identity Razor PageModels and mobile auth API endpoints must call the same Identity-backed registration/login rules; mobile app must not render scaffolded Razor pages.
 - `types/api/` and `types/signalr/` are separate namespaces — drift between them causes silent bugs.
 - `invite-landing.tsx` is mandatory — never deep-link directly to `register.tsx` (breaks invite lineage tracking).
 - `ReportButton.tsx` and `BlockConfirmation.tsx` defined once in `components/moderation/` — never reimplemented inline.

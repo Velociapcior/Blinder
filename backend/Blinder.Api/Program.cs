@@ -1,8 +1,10 @@
 using Blinder.Api.Infrastructure.Data;
 using Blinder.Api.Models;
+using Blinder.Api.Services.Registration;
 using Coravel;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -63,6 +65,13 @@ try
         .AddEntityFrameworkStores<AppDbContext>()
         .AddDefaultTokenProviders();
 
+    // IEmailSender is required by the scaffolded Identity Razor Pages.
+    // Full email delivery is wired in a later story; no-op keeps the DI graph valid now.
+    builder.Services.AddTransient<IEmailSender, NoOpEmailSender>();
+
+    // Shared registration service — single source of Identity-backed user creation (rule #17).
+    builder.Services.AddScoped<IRegistrationService, RegistrationService>();
+
     // --------------------------------------------------------------------
     // Coravel background jobs — scheduler and queue registered here.
     // Actual IInvocable jobs are wired in later stories.
@@ -73,7 +82,7 @@ try
     // --------------------------------------------------------------------
     // Packages registered as references only in this story;
     // full configuration deferred to later stories:
-    //   JWT Bearer auth   → Story 2.1
+    //   JWT Bearer auth   → Story 2.2
     //   S3 client factory → Story 3.2
     //   Firebase / APNs   → Story 5.4
     // --------------------------------------------------------------------
@@ -118,4 +127,27 @@ catch (Exception ex) when (ex is not HostAbortedException)
 finally
 {
     Log.CloseAndFlush();
+}
+
+/// <summary>
+/// Placeholder email sender satisfying the IEmailSender contract required by Identity scaffolding.
+/// In development: silently discards all outbound emails.
+/// In non-development environments: logs a warning per discarded email so
+/// the misconfiguration is visible in monitoring before it reaches production.
+/// Replace with a real implementation (e.g. MailKit/SendGrid) in a later story.
+/// </summary>
+internal sealed class NoOpEmailSender(
+    IWebHostEnvironment env,
+    ILogger<NoOpEmailSender> logger) : IEmailSender
+{
+    public Task SendEmailAsync(string email, string subject, string htmlMessage)
+    {
+        if (!env.IsDevelopment())
+            logger.LogWarning(
+                "NoOpEmailSender discarded email to {Email} (subject: {Subject}). " +
+                "Configure a real IEmailSender before deploying to production.",
+                email, subject);
+
+        return Task.CompletedTask;
+    }
 }

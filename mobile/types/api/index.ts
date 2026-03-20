@@ -14,8 +14,19 @@ export interface ProblemDetails {
   instance?: string;
 }
 
+// --- Story 2.1 ---
+
+/** Payload sent to POST /api/auth/register */
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  /** Must not be 0 (Unspecified). Backend enum: Male=1, Female=2, NonBinary=3 */
+  gender: 1 | 2 | 3;
+  /** Must be true; backend returns 400 if false. Pass the actual form value — never hardcode. */
+  over18Declaration: boolean;
+}
+
 // Future types added per story:
-// Story 2.1: AuthTokenDto, RegisterRequest, LoginRequest
 // Story 3.1: QuizResponse, QuizSubmissionRequest
 // Story 4.x: MatchDto, ConversationSummaryDto
 // Story 5.x: MessageDto, SendMessageRequest

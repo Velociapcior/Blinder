@@ -24,5 +24,6 @@ Every developer and every AI agent **must** follow these without exception:
 14. `SkipWebhookVerification` must never be `true` in production — startup assertion enforces this
 15. WCAG 2.1 AA on all core flows — not optional, not post-launch
 16. Every story that changes public API surface, architecture, setup steps, environment variables, or operational behaviour **must** include a documentation update in the same commit: update `README.md` for general project-level information (how to run, configure, or operate the project), or create/update a dedicated `docs/*.md` file for focused topics (e.g. `docs/database.md`, `docs/api.md`, `docs/architecture.md`). `README.md` stays high-level; detailed domain-specific content belongs in its own file
+17. Identity auth logic is single-source: scaffolded Razor PageModels and mobile API auth endpoints must share one Identity-backed ruleset; mobile UI must remain native and must not consume scaffolded Razor pages directly
 
 ---

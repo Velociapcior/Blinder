@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleProp, Text, TextProps, TextStyle } from "react-native";
+import { StyleProp, Text, TextProps, TextStyle, StyleSheet } from "react-native";
 import { colors, typography } from "../../constants/theme";
 
 // ---------------------------------------------------------------------------
@@ -52,14 +52,14 @@ export function ThemedText({
   return (
     <Text
       allowFontScaling={true}
-      style={[
+      style={StyleSheet.flatten([
         {
           color,
           fontFamily: typography.family.primary,
           fontSize: typography.size[variant],
         },
         style,
-      ]}
+      ])}
       {...rest}
     >
       {children}

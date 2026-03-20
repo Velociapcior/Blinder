@@ -441,6 +441,10 @@ So that I can create a Blinder account and begin the onboarding process.
 **When** the request is processed
 **Then** a new `ApplicationUser` is created (extending `IdentityUser` with gender, quiz refs, invite FK fields), a 201 response is returned with the user's ID, and a JWT token is issued
 
+**Given** Identity scaffolded registration exists in Razor Pages for web/admin
+**When** mobile registration is implemented
+**Then** mobile uses native UI and API only; the API path delegates to the same Identity-backed registration rules (single source of truth), not a second divergent ruleset
+
 **Given** `ApplicationUser` is created in `Models/ApplicationUser.cs`
 **When** the class definition is reviewed
 **Then** it inherits from `IdentityUser`, includes `Gender` (enum: Male/Female/NonBinary), `QuizCompletedAt` (DateTimeOffset?), `InviteLinkId` (FK, nullable), `IsOnboardingComplete` (bool), and uses `DateTimeOffset` for all date fields — `DateTime` is never used
@@ -475,6 +479,10 @@ So that I can access Blinder without re-entering my credentials and know my toke
 **When** credentials are verified
 **Then** a JWT access token is returned; the mobile client stores it exclusively via `expo-secure-store` (mapped to iOS Keychain / Android Keystore)
 
+**Given** login is supported by both web/admin and mobile channels
+**When** authentication logic is reviewed
+**Then** scaffolded Identity login flow and API login endpoint share one Identity-backed validation/sign-in ruleset; mobile does not consume scaffolded Razor pages directly
+
 **Given** the mobile client receives a JWT
 **When** `storageService.ts` persists the token
 **Then** `SecureStore.setItemAsync` is called — `AsyncStorage` is never used for token storage
@@ -504,6 +512,10 @@ So that I can use Blinder without creating a separate password.
 **Given** a `POST /api/auth/social-login` request with `provider: "Apple"` and a valid Apple identity token
 **When** `SocialLoginHandler.cs` validates the token server-side
 **Then** the Apple identity token is verified against `https://appleid.apple.com/auth/keys` (JWKS), the `iss` claim equals `"https://appleid.apple.com"`, and the `bundle_id` claim matches the app
+
+**Given** scaffolded Identity external login support exists for web/admin
+**When** Apple Sign In is used from the mobile app
+**Then** mobile uses native Apple credential UI and backend API integration, while account linking/sign-in semantics remain aligned with Identity `ExternalLoginAsync` behavior
 
 **Given** Apple token validation succeeds for a new user
 **When** the account is created via `ExternalLoginAsync`

@@ -11,6 +11,7 @@ Blinder is a container-first backend stack for a privacy-focused matching app. T
 - [Run the Project](#run-the-project)
 - [Run the Mobile App](mobile/README.md)
 - [Database and Migrations](docs/database.md)
+- [API Specification](docs/api.md)
 - [Run Tests](#run-tests)
 - [Configuration](#configuration)
 - [API Endpoints](#api-endpoints)
@@ -189,16 +190,11 @@ Base URL (through Nginx in dev): `http://localhost`
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/health` | Liveness check — returns `{ status, utc }` |
+| `POST` | `/api/auth/register` | Register a new user with email/password |
 
-```bash
-curl -i http://localhost/health
-# HTTP/1.1 200 OK
-# {"status":"ok","utc":"2026-..."}
-```
+For full endpoint documentation, request/response formats, and error handling patterns, see [docs/api.md](docs/api.md).
 
-`backend/Blinder.Api/Blinder.Api.http` contains request templates for VS Code REST Client.
-
-Endpoint surface will expand as feature stories are implemented.
+Request templates for VS Code REST Client are available in `backend/Blinder.Api/Blinder.Api.http`.
 
 ## Operational Notes
 

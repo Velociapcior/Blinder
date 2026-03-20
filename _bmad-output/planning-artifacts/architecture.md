@@ -236,6 +236,8 @@ npx expo install expo-router expo-notifications expo-image-picker expo-secure-st
 ASP.NET Core Identity provides scaffolded registration, login, password reset, and account management flows. JwtBearer middleware validates tokens on every API request. All auth runs on the VPS — no external identity provider dependency, no non-EU data flows.
 
 - Use a custom `ApplicationUser : IdentityUser` class from day one — adding custom fields (gender, quiz answers, invite link reference) directly to `IdentityUser` causes painful schema migrations; the custom subclass costs nothing up front
+- Identity UI scaffolding is the canonical web/admin auth flow; mobile remains native UI and must not consume scaffolded Razor pages directly
+- Razor PageModels and mobile API endpoints must delegate to one shared Identity-backed auth logic path (single ruleset, no drift)
 - Social login (Apple, Google, Facebook) uses `ExternalLoginAsync` flows in Identity — **not** covered by default scaffolded templates; this wiring must be explicitly planned in the social login implementation stories
 - Social provider ID tokens validated server-side; backend issues its own JWT — no OAuth redirect dance
 - `expo-secure-store` on mobile maps to iOS Keychain / Android Keystore for token storage — `AsyncStorage` is explicitly prohibited for tokens

@@ -32,6 +32,12 @@ public class ApplicationUser : IdentityUser<Guid>
     /// (quiz + photo upload + preferences). Defaults to <c>false</c>.
     /// </summary>
     public bool IsOnboardingComplete { get; set; } = false;
+
+    /// <summary>
+    /// Timestamp when the user accepted the over-18 age declaration during registration.
+    /// Null if not yet set. Mapped to <c>age_declaration_accepted_at timestamptz</c> in PostgreSQL.
+    /// </summary>
+    public DateTimeOffset? AgeDeclarationAcceptedAt { get; set; }
 }
 
 /// <summary>
