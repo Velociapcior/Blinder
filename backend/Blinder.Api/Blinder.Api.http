@@ -1,6 +1,6 @@
 @Blinder.Api_HostAddress = http://localhost:5225
 
-GET {{Blinder.Api_HostAddress}}/weatherforecast/
+GET {{Blinder.Api_HostAddress}}/health
 Accept: application/json
 
 ###

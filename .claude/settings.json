@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker info:*)",
+      "Bash(docker compose:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Sitecore\\Blinder"
+    ]
+  }
+}

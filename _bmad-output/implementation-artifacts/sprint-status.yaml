@@ -1,5 +1,5 @@
 # generated: 2026-03-16
-# last_updated: 2026-03-16
+# last_updated: 2026-03-20
 # project: Blinder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-16
-last_updated: 2026-03-16
+last_updated: 2026-03-20
 project: Blinder
 project_key: NOKEY
 tracking_system: file-system
@@ -47,7 +47,7 @@ development_status:
   1-1-scaffold-backend-project: done
   1-2-docker-compose-stack-with-nginx-and-websocket-support: done
   1-3-scaffold-mobile-project-with-strict-typescript-and-nativewind: done
-  1-4-database-setup-with-postgis-and-ef-core-migrations-pipeline: backlog
+  1-4-database-setup-with-postgis-and-ef-core-migrations-pipeline: review
   1-5-mobile-design-system-foundation-and-accessibility-context: backlog
   epic-1-retrospective: optional
 

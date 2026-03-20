@@ -108,6 +108,8 @@ expo-env.d.ts
 # Keep docker-compose.override.yml versioned for reproducible local dev workflow
 docker-compose.prod.yml
 
+# PostgreSQL data directory — ignored via postgres/data/.gitignore
+
 # ------------------------------------------------------------
 # Logs
 # ------------------------------------------------------------

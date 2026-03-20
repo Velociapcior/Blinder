@@ -697,7 +697,7 @@ type AsyncState<T> = {
 5. Use FluentValidation for all input validation — no inline validation in controllers
 6. Use `expo-secure-store` for all token storage in mobile — `AsyncStorage` is prohibited for auth tokens
 7. Never log PII in structured log properties
-8. Never auto-apply EF Core migrations on startup — generate an idempotent SQL script via `dotnet ef migrations script --idempotent` (SDK stage only) and apply via `docker compose exec -T db psql` during deployment; `dotnet-ef` tools do not exist in the production runtime image
+8. Never auto-apply EF Core migrations on startup outside local development — `Development` may create and migrate the database automatically for local workflows, but all shared environments must use an idempotent SQL script via `dotnet ef migrations script --idempotent` and apply it with `docker compose exec -T db psql` during deployment
 9. Return `AsyncState<T>` shaped state from all async hooks in mobile
 10. Never expose raw exception messages or stack traces in API responses or mobile UI
 11. Never run the API (or any backend service) directly on the host OS — all execution, in development and production, goes through Docker Compose

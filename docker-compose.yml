@@ -1,13 +1,12 @@
 # docker-compose.yml  (repo root)
 # Production compose stack — all services run inside Docker, nothing on host OS (ARCH-2).
-# WARNING: docker compose down -v DESTROYS db-data volume. Use docker compose down (no -v) in production.
+# Database data is bind-mounted to ./postgres/data — safe to use docker compose down without -v.
 
 networks:
   blinder-net:
     driver: bridge
 
-volumes:
-  db-data:   # Named volume — never destroyed by docker compose down (only by docker compose down -v)
+volumes: {}
 
 services:
 
@@ -37,7 +36,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - ./postgres/data/pgdata:/var/lib/postgresql/data
+      - ./postgres/initdb:/docker-entrypoint-initdb.d:ro
     networks:
       - blinder-net
     healthcheck:

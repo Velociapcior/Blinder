@@ -15,7 +15,7 @@ Every developer and every AI agent **must** follow these without exception:
 5. FluentValidation for all input validation — no inline validation in controllers
 6. `expo-secure-store` for all token storage on mobile — `AsyncStorage` prohibited for auth tokens
 7. Never log PII in structured log properties
-8. Never auto-apply EF Core migrations on startup — generate idempotent SQL script, apply via `docker compose exec -T db psql`
+8. Never auto-apply EF Core migrations on startup outside local development — `Development` may create/migrate the DB automatically, but all shared environments must use the checked-in idempotent SQL script via `docker compose exec -T db psql`
 9. `AsyncState<T>` from all async hooks in mobile — never raw `try/catch` in components
 10. Never expose raw exception messages or stack traces in API responses or mobile UI
 11. Never run any backend service directly on the host OS — Docker Compose always

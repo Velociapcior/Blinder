@@ -47,7 +47,8 @@ try
     // EF Core / Identity
     // Connection string wiring and migration pipeline come in Story 1.4.
     // Registered here so DI graph is complete for compilation.
-    // ARCH-4: Never call MigrateAsync() on startup.
+    // Production deployments apply idempotent SQL manually.
+    // Development uses a guarded startup migration helper for local convenience.
     // --------------------------------------------------------------------
     builder.Services.AddDbContextPool<AppDbContext>(options =>
         options
@@ -79,6 +80,11 @@ try
 
     var app = builder.Build();
 
+    if (app.Environment.IsDevelopment())
+    {
+        await app.MigrateDatabaseAsync();
+    }
+
     // --------------------------------------------------------------------
     // Middleware pipeline — order matters.
     // UseExceptionHandler MUST come before routing to catch all errors.
@@ -90,6 +96,13 @@ try
 
     app.UseAuthentication();
     app.UseAuthorization();
+
+    // Lightweight readiness endpoint for local smoke testing.
+    app.MapGet("/health", () => Results.Ok(new
+    {
+        status = "ok",
+        utc = DateTimeOffset.UtcNow,
+    }));
 
     app.MapControllers();
     app.MapRazorPages();
