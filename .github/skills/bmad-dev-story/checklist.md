@@ -52,6 +52,7 @@ validation-rules:
 - [ ] **File List Complete:** File List includes EVERY new, modified, or deleted file (paths relative to repo root)
 - [ ] **Dev Agent Record Updated:** Contains relevant Implementation Notes and/or Debug Log for this work
 - [ ] **Change Log Updated:** Change Log includes clear summary of what changed and why
+- [ ] **Documentation Updated:** Any change to public API surface, architecture, setup steps, environment variables, or operational behaviour is documented in the same commit — either in `README.md` (general project-level info: how to run, configure, operate) or in a dedicated `docs/*.md` file for focused topics (e.g. `docs/database.md`, `docs/api.md`). `README.md` stays high-level; detail belongs in its own file (enforcement rule #16)
 - [ ] **Review Follow-ups:** All review follow-up tasks (marked [AI-Review]) completed and corresponding review items marked resolved (if applicable)
 - [ ] **Story Structure Compliance:** Only permitted sections of story file were modified
 

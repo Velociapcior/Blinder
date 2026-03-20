@@ -378,6 +378,7 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
       - File List includes every new/modified/deleted file (relative paths)
       - Dev Agent Record contains implementation notes
       - Change Log includes summary of changes
+      - Documentation updated if the story touched public API surface, architecture, setup steps, environment variables, or operational behaviour: README.md for general project-level info, or a dedicated docs/*.md file for focused topics — README stays high-level (project rule #16)
       - Only permitted story sections were modified
     </action>
 
