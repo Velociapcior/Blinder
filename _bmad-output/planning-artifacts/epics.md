@@ -150,7 +150,7 @@ UX-specification-derived requirements for implementation:
 - **UX-DR14 (Touch targets 44×44px):** All interactive elements have minimum `minHeight: 44, minWidth: 44` touch target. `hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}` on icon-only controls (back button, report icon).
 - **UX-DR15 (Accessibility attributes):** Every interactive element declares `accessibilityRole`, `accessibilityLabel`, `accessibilityHint` (where non-obvious), and `accessibilityState`. Per-component requirements documented in UX spec.
 - **UX-DR16 (Dynamic text sizing):** All text uses `allowFontScaling={true}`. Layouts tested at system text ×1.0, ×1.3, ×2.0. No fixed-height text containers. No truncation at ×2.0.
-- **UX-DR17 (Responsive layout hook):** `useWindowDimensions()` hook stores `compact` (<375px), `regular` (375–414px), `expanded` (≥428px) in context. Applied to onboarding and reveal modal.
+- **UX-DR17 (Responsive layout hook):** `useWindowDimensions()` hook stores `compact` (<375px), `regular` (375–427px), `expanded` (≥428px) in context. Applied to onboarding and reveal modal.
 - **UX-DR18 (WhatsApp-conventional chat UI):** Chat interface must feel completely familiar — no novel interaction patterns in the message layer. The conversation is the novel experience; the interface must disappear.
 - **UX-DR19 (Photo upload positioning):** Photo upload step AFTER quiz in onboarding flow. Low-pressure copy: "No one sees this until you both choose." Positioned when user is already invested from quiz completion.
 - **UX-DR20 (SignalR connection lifecycle in service):** `signalrService.ts` manages connection as singleton. Components NEVER directly manage connection state. Mobile components subscribe via hooks only (`useConversation`, `useRevealState`).

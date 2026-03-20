@@ -1381,7 +1381,7 @@ Microcopy is brand delivery. Every piece of copy must pass the brand voice test:
 | Category | Width range | Examples |
 |---|---|---|
 | Small phone | 320–374px logical | iPhone SE (3rd gen), older Android budget devices |
-| Standard phone | 375–414px logical | iPhone 14, Pixel 7 |
+| Standard phone | 375–427px logical | iPhone 14, Pixel 7 |
 | Large phone | 428–430px logical | iPhone 14 Pro Max, Samsung S24+ |
 
 All layouts are single-column, full-width. No grid switching logic is needed at MVP.
@@ -1405,7 +1405,7 @@ No CSS breakpoints are defined at MVP — React Native layout is inherently dime
 | Name | Threshold | Applied adjustment |
 |---|---|---|
 | `compact` | < 375px | Reduce `spacing.lg` margins to `spacing.md`; reduce `title.lg` to `title.md` on onboarding |
-| `regular` | 375–414px | Default layout — design token baseline |
+| `regular` | 375–427px | Default layout — design token baseline |
 | `expanded` | ≥ 428px | Increase `RevealModal` illustration area by 10%; widen bottom sheet max-width |
 
 These thresholds are read once via `useWindowDimensions` on mount. No runtime resize listeners are needed — phones do not reflow mid-session.

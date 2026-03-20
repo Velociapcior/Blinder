@@ -9,6 +9,7 @@ Blinder is a container-first backend stack for a privacy-focused matching app. T
 - [Prerequisites](#prerequisites)
 - [Initial Setup](#initial-setup)
 - [Run the Project](#run-the-project)
+- [Run the Mobile App](mobile/README.md)
 - [Database and Migrations](docs/database.md)
 - [Run Tests](#run-tests)
 - [Configuration](#configuration)
@@ -23,6 +24,13 @@ Blinder is a container-first backend stack for a privacy-focused matching app. T
 ├── backend/
 │   ├── Blinder.Api/          # ASP.NET Core 10 Web API
 │   └── Blinder.Tests/        # xUnit test project
+├── mobile/                   # Expo SDK 55 React Native app
+│   ├── app/                  # Expo Router screens
+│   ├── components/           # Shared UI components
+│   ├── contexts/             # React contexts (AccessibilityContext)
+│   ├── hooks/                # Custom hooks (useAccessibility, useResponsiveLayout)
+│   ├── services/             # apiClient, signalrService, storageService
+│   └── constants/            # Design tokens (theme.ts, errors.ts)
 ├── docs/                     # Project context and tech preferences
 ├── migrations/
 │   └── latest.sql            # Idempotent SQL for production deploys
@@ -129,6 +137,12 @@ docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" < migration
 - **All other environments:** apply `migrations/latest.sql` manually before deploying a new API version.
 
 For full details — adding migrations, regenerating the SQL artifact, connecting directly to the DB — see [docs/database.md](docs/database.md).
+
+## Run the Mobile App
+
+See [mobile/README.md](mobile/README.md) for full setup instructions, project structure, scripts, and accessibility conventions.
+
+---
 
 ## Run Tests
 

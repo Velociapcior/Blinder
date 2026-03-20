@@ -47,8 +47,8 @@ development_status:
   1-1-scaffold-backend-project: done
   1-2-docker-compose-stack-with-nginx-and-websocket-support: done
   1-3-scaffold-mobile-project-with-strict-typescript-and-nativewind: done
-  1-4-database-setup-with-postgis-and-ef-core-migrations-pipeline: review
-  1-5-mobile-design-system-foundation-and-accessibility-context: backlog
+  1-4-database-setup-with-postgis-and-ef-core-migrations-pipeline: done
+  1-5-mobile-design-system-foundation-and-accessibility-context: done
   epic-1-retrospective: optional
 
   # Epic 2: User Registration & Authentication

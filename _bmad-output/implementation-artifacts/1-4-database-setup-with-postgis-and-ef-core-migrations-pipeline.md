@@ -1,6 +1,6 @@
 # Story 1.4: Database Setup with PostGIS and EF Core Migrations Pipeline
 
-Status: review
+Status: done
 
 ## Story
 

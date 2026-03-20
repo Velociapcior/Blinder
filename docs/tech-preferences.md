@@ -40,8 +40,10 @@ blinder/
     │   ├── (auth)/             # Unauthenticated screens
     │   └── (tabs)/             # Authenticated shell
     ├── components/             # Shared UI (PascalCase files)
+    │   ├── shared/             # AccessiblePressable.tsx, ThemedText.tsx (base a11y components)
     │   └── moderation/         # ReportButton.tsx, BlockConfirmation.tsx
-    ├── hooks/                  # Custom hooks (camelCase, use prefix)
+    ├── contexts/               # React contexts — AccessibilityContext (app root)
+    ├── hooks/                  # Custom hooks (camelCase, use prefix); useAccessibility re-exports context
     ├── services/               # apiClient, signalrService, storageService
     ├── constants/              # UPPER_SNAKE_CASE values, theme tokens
     ├── types/

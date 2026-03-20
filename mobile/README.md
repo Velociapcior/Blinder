@@ -64,22 +64,28 @@ npx tsc --noEmit
 ```text
 mobile/
    app/
-      _layout.tsx
+      _layout.tsx          # Root layout — SafeAreaProvider > AccessibilityProvider > Stack
       (auth)/
          _layout.tsx
       (tabs)/
          _layout.tsx
    components/
+      shared/
+         AccessiblePressable.tsx  # Enforces 44×44 touch target + hitSlop; required a11y props
+         ThemedText.tsx           # Enforces allowFontScaling={true}; variant system
       chat/
       match/
       moderation/
       onboarding/
-      shared/
       svg/
+   contexts/
+      AccessibilityContext.tsx    # Provides { reduceMotion, fontScale, isScreenReaderEnabled }
    constants/
       errors.ts
       theme.ts
    hooks/
+      useAccessibility.ts         # Re-exports useAccessibility from contexts/
+      useResponsiveLayout.ts      # compact <375 / regular 375-427 / expanded >=428
    services/
       apiClient.ts
       signalrService.ts
@@ -99,6 +105,27 @@ mobile/
 - Keep SignalR connection lifecycle in `services/signalrService.ts` (singleton).
 - Keep user-facing errors in `constants/errors.ts`.
 - Keep API and SignalR types under `types/api` and `types/signalr` (separate namespaces).
+
+## Accessibility
+
+All components must follow these patterns (WCAG 2.1 AA — non-negotiable):
+
+- **Never** call `AccessibilityInfo` directly in components. Use `useAccessibility()` from `hooks/useAccessibility` instead.
+- Use `<ThemedText>` instead of raw `<Text>` — `allowFontScaling={true}` is always on.
+- Use `<AccessiblePressable>` for icon-only controls — enforces 44×44 touch target and `hitSlop`.
+- For animated components, collapse duration when reduce motion is enabled:
+  ```tsx
+  const { reduceMotion } = useAccessibility();
+  const duration = reduceMotion ? 0 : motion.standard;
+  ```
+- `accessibilityRole` and `accessibilityLabel` are required on every interactive element.
+
+## Responsive Layout
+
+- `useResponsiveLayout()` exposes three width buckets for future screens and modals:
+- `compact`: width < 375
+- `regular`: 375 <= width < 428
+- `expanded`: width >= 428
 
 ## Build Profiles (EAS)
 
