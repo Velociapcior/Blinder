@@ -214,8 +214,9 @@ Developers can run the full Blinder stack locally via Docker Compose from a sing
 **FRs covered:** None directly (ARCH-1 through ARCH-4, ARCH-22, ARCH-24, ARCH-25 — greenfield scaffolding)
 
 ### Epic 2: User Registration & Authentication
-A user can create an account (email/password or social login via Apple, Google, or Facebook), log in, log out, and permanently delete their account with full data purge. Female users can only register via a valid invite link from an existing female member.
+A user can create an account (email/password or social login via Apple, Google, or Facebook), log in, log out, and permanently delete their account with full data purge. Female users can only register via a valid invite link from an existing female member. All authentication flows (email/password, social login) are built on a centralized OAuth2/OIDC token endpoint.
 **FRs covered:** FR1, FR2, FR3, FR4, FR5, FR7
+**Architecture:** ARCH-16 requires OAuth2 foundation story (2-0) before social login stories (2-3, 2-4)
 
 ### Epic 3: Onboarding & Profile Setup
 A new user can complete the values and personality quiz, upload a private profile photo (scanned for explicit content and CSAM before storage), set age range and radius preferences, and receive their 7-day premium trial — landing immediately in their first match conversation upon completion.
@@ -429,17 +430,44 @@ So that every subsequent screen is consistent, accessible, and never requires de
 
 A user can create an account (email/password or social login), log in, log out, and permanently delete their account with full data purge. Female users can only register via a valid invite link.
 
+### Story 2.0: OAuth2/OIDC Authentication Foundation
+
+As a developer,
+I want a complete OAuth2/OIDC token endpoint and grant handler infrastructure,
+So that all authentication flows (email/password, social login, future integrations) are built on a single, secure, standards-compliant foundation.
+
+**Acceptance Criteria:**
+
+1. OAuth2 token endpoint operational: `POST /api/auth/oauth/token` returns `{ access_token, refresh_token, expires_in, token_type: "Bearer" }` (RFC 6749 compliant)
+2. Resource Owner Password Credentials (ROPC) grant implemented for email/password auth with 30-day access token, 90-day refresh token
+3. Authorization Code grant framework implemented (extensible for Stories 2-3/2-4 social login providers)
+4. Refresh token lifecycle: one-time use, hashed storage in database, new token pair issued on valid refresh
+5. Token revocation endpoint: `POST /api/auth/oauth/revoke` marks tokens invalid, prevents replay
+6. Mobile token storage contract: both access + refresh tokens stored via `expo-secure-store`
+7. JWT structure standardized: claims include `sub`, `iss`, `aud`, `exp`, `iat`, `auth_time`
+8. Rate limiting on token endpoint: 5 failed attempts per IP per minute → 429 Too Many Requests
+9. JwtBearer middleware checks revocation status before accepting token
+10. All acceptance criteria thoroughly tested (unit, integration, security, mobile)
+
+**Dev Notes:** This story establishes zero user-facing features. It is pure infrastructure enabling Stories 2-1 (registration), 2-2 (login/logout), 2-3 (Apple), 2-4 (Google/Facebook). All token issuance routes through this single OAuth2 endpoint.
+
+**Estimated Effort:** 5-6 days (medium, foundational)
+
+---
+
 ### Story 2.1: Email/Password User Registration
+
+**Updated (March 25, 2026):** This story was redesigned after Story 2-0 (OAuth2 Foundation) was approved. The key change: registration no longer issues JWT tokens. Token issuance is delegated to the OAuth2 token endpoint, centralizing authentication logic and enabling email verification before token issuance (future enhancement).
 
 As a new user,
 I want to register with my email address and password,
-So that I can create a Blinder account and begin the onboarding process.
+So that I can create a Blinder account and then authenticate via the OAuth2 token endpoint.
 
 **Acceptance Criteria:**
 
 **Given** a `POST /api/auth/register` request with valid email, password, and `over18Declaration: true`
 **When** the request is processed
-**Then** a new `ApplicationUser` is created (extending `IdentityUser` with gender, quiz refs, invite FK fields), a 201 response is returned with the user's ID, and a JWT token is issued
+**Then** a new `ApplicationUser` is created (extending `IdentityUser` with gender, quiz refs, invite FK fields), a 201 response is returned with the user's ID and email — no JWT token is issued at registration; token issuance delegated to OAuth2 token endpoint (Story 2-0)
 
 **Given** Identity scaffolded registration exists in Razor Pages for web/admin
 **When** mobile registration is implemented
@@ -527,33 +555,35 @@ So that every future screen uses consistent, accessible, theme-compliant compone
 
 ### Story 2.2: User Login, JWT Tokens, and Logout
 
+**Updated (March 25, 2026):** This story was redesigned after Story 2-0 (OAuth2 Foundation) was approved. Major changes: (1) Login delegates token issuance to OAuth2TokenService (ROPC grant), (2) Adds refresh token lifecycle management, (3) Logout revokes tokens at token endpoint (not just client-side), (4) Mobile implements automatic token refresh with 5-minute buffer.
+
 As a registered user,
-I want to log in with my credentials and have my session managed securely,
-So that I can access Blinder without re-entering my credentials and know my tokens are stored safely.
+I want to log in with my credentials, receive secure access and refresh tokens, automatically refresh my tokens when needed, and log out with server-side revocation,
+So that I can access Blinder securely with persistent sessions and know my tokens are invalidated on logout.
 
 **Acceptance Criteria:**
 
 **Given** a `POST /api/auth/login` request with valid email and password
 **When** credentials are verified
-**Then** a JWT access token is returned; the mobile client stores it exclusively via `expo-secure-store` (mapped to iOS Keychain / Android Keystore)
+**Then** OAuth2TokenService (ROPC grant) issues both access token (30-day) and refresh token (90-day); response returns `{ access_token, refresh_token, expires_in, token_type: "Bearer" }`; mobile stores both via `expo-secure-store` (mapped to iOS Keychain / Android Keystore)
 
 **Given** login is supported by both web/admin and mobile channels
 **When** authentication logic is reviewed
-**Then** scaffolded Identity login flow and API login endpoint share one Identity-backed validation/sign-in ruleset; mobile does not consume scaffolded Razor pages directly
+**Then** scaffolded Identity login flow and API login endpoint delegate to OAuth2TokenService; mobile does not consume scaffolded Razor pages directly
 
-**Given** the mobile client receives a JWT
-**When** `storageService.ts` persists the token
-**Then** `SecureStore.setItemAsync` is called — `AsyncStorage` is never used for token storage
+**Given** the mobile client receives tokens
+**When** `storageService.ts` persists both access + refresh tokens
+**Then** `SecureStore.setItemAsync` is called twice — `AsyncStorage` is never used for token storage; token expiry timestamps extracted for 5-minute pre-refresh logic
 
-**Given** a JWT token is issued
-**When** the token's expiry is inspected
-**Then** the token expires after 30 days of inactivity (NFR10); the `exp` claim reflects this
+**Given** a mobile app detects access token expires within 5 minutes
+**When** `authService.refreshAccessToken()` is called automatically
+**Then** `POST /api/auth/oauth/token` with `grant_type=refresh_token` is invoked; new access + refresh token pair issued; old tokens invalidated (one-time use)
 
-**Given** a `POST /api/auth/logout` request is made
+**Given** a `POST /api/auth/logout` request is made with `Authorization: Bearer <access_token>`
 **When** the logout succeeds
-**Then** the device token for this session is removed from the `DeviceTokens` table and the client clears the stored JWT from `expo-secure-store`
+**Then** both access token and refresh token are revoked at server via `POST /api/auth/oauth/revoke`; subsequent API requests with either token return 401; client clears tokens from `expo-secure-store`
 
-**Given** an API request is made with an expired or invalid token
+**Given** an API request is made with an expired, invalid, or revoked token
 **When** the JwtBearer middleware processes the request
 **Then** a 401 Unauthorized Problem Details response is returned — no stack trace is exposed
 
@@ -561,39 +591,39 @@ So that I can access Blinder without re-entering my credentials and know my toke
 
 ### Story 2.3: Apple Sign In
 
+**Updated (March 25, 2026):** This story is simplified by Story 2-0 (OAuth2 Foundation). Social login now uses the shared OAuth2 token endpoint with provider-specific validators plugging in.
+
 As a new or returning iOS user,
 I want to register or log in using Apple Sign In,
 So that I can use Blinder without creating a separate password.
 
 **Acceptance Criteria:**
 
-**Given** a `POST /api/auth/social-login` request with `provider: "Apple"` and a valid Apple identity token
-**When** `SocialLoginHandler.cs` validates the token server-side
-**Then** the Apple identity token is verified against `https://appleid.apple.com/auth/keys` (JWKS), the `iss` claim equals `"https://appleid.apple.com"`, and the `bundle_id` claim matches the app
+**Given** a `POST /api/auth/oauth/token` request with `grant_type=authorization_code`, `provider: "Apple"`, and a valid Apple identity token
+**When** the authorization code grant handler validates the token
+**Then** the Apple identity token is verified against `https://appleid.apple.com/auth/keys` (JWKS), the `iss` claim equals `"https://appleid.apple.com"`, and the `bundle_id` claim matches the app; authorization code valid for 10 minutes, one-time use
 
-**Given** scaffolded Identity external login support exists for web/admin
-**When** Apple Sign In is used from the mobile app
-**Then** mobile uses native Apple credential UI and backend API integration, while account linking/sign-in semantics remain aligned with Identity `ExternalLoginAsync` behavior
+**Given** authorization code is valid
+**When** client exchanges code via `POST /api/auth/oauth/token` (same endpoint as Story 2-2 refresh)
+**Then** OAuth2TokenService issues access token (30-day) + refresh token (90-day); response format identical to email/password login (RFC 6749 compliant)
 
 **Given** Apple token validation succeeds for a new user
-**When** the account is created via `ExternalLoginAsync`
-**Then** a new `ApplicationUser` is created; the onboarding quiz is NOT skipped — the user is directed to the quiz flow
+**When** account is created via `ExternalLoginAsync`
+**Then** a new `ApplicationUser` is created; user directed to onboarding quiz (onboarding not skipped)
 
 **Given** Apple token validation succeeds for an existing user
-**When** the login completes
-**Then** a JWT is issued and returned; no new `ApplicationUser` is created
-
-**Given** the mobile app requests Apple Sign In
-**When** the Apple credential is obtained
-**Then** Apple Sign In is available on all iOS flows where social login is offered (App Store requirement)
+**When** the authorization code exchange completes
+**Then** tokens are issued; no new `ApplicationUser` created
 
 **Given** a social login completes
 **When** the user profile is inspected
-**Then** no profile photo is imported from Apple — social login is for authentication only, never profile data import
+**Then** no profile photo is imported from Apple — social login is for authentication only
 
 ---
 
 ### Story 2.4: Google and Facebook Social Login
+
+**Updated (March 25, 2026):** This story is simplified by Story 2-0 (OAuth2 Foundation). Social login now uses the shared OAuth2 token endpoint with provider-specific validators plugging in.
 
 As a new or returning user,
 I want to register or log in using Google or Facebook,
@@ -601,21 +631,21 @@ So that I can use Blinder without creating a separate password.
 
 **Acceptance Criteria:**
 
-**Given** a `POST /api/auth/social-login` request with `provider: "Google"` and a valid Google ID token
-**When** `SocialLoginHandler.cs` validates the token
-**Then** the token is verified against Google's JWKS endpoint; `iss` and `aud` claims are validated; the account is created or matched via `ExternalLoginAsync`
+**Given** a `POST /api/auth/oauth/token` request with `grant_type=authorization_code`, `provider: "Google"` or `"Facebook"`, and a valid provider identity token
+**When** the authorization code grant handler validates the token
+**Then** the provider token is verified via provider JWKS endpoint (Google) or token validation endpoint (Facebook); authorization code valid for 10 minutes, one-time use
 
-**Given** a `POST /api/auth/social-login` request with `provider: "Facebook"` and a valid Facebook access token
-**When** `SocialLoginHandler.cs` validates the token
-**Then** the token is verified via the Facebook token validation endpoint; the account is created or matched
+**Given** authorization code is valid
+**When** client exchanges code via `POST /api/auth/oauth/token` (shared endpoint with Story 2-3)
+**Then** OAuth2TokenService issues access token (30-day) + refresh token (90-day); response format identical to email/password + Apple
 
 **Given** any social login provider is used
 **When** account creation occurs
-**Then** the user is directed to the onboarding quiz — social login does not bypass onboarding; no social graph data, no follower counts, no profile photos are imported
+**Then** user is directed to onboarding quiz — social login does not bypass onboarding; no social graph data, no profile photos are imported
 
 **Given** a social login provider returns an email already registered via a different provider
 **When** the account lookup runs
-**Then** the accounts are linked via Identity's external login system — not duplicated
+**Then** accounts are linked via Identity's external login system — not duplicated
 
 ---
 

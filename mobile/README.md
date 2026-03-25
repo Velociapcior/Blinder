@@ -16,17 +16,24 @@ Mobile app for Blinder, built with Expo Router, strict TypeScript, NativeWind, a
 
 - Node.js 20+
 - npm 10+
-- Android Studio emulator and/or Xcode simulator
+- Android Studio (includes emulator + bundled JDK 17)
+- JDK 17 (use Android Studio's bundled JDK at `C:\Program Files\Android\Android Studio\jbr`)
 
 ## Environment
 
-Set API URL via environment variable:
+Create `mobile/.env` (git-ignored, never the root `.env`):
 
 ```bash
-EXPO_PUBLIC_API_URL=http://localhost/api
+# Android emulator — 10.0.2.2 resolves to host machine
+EXPO_PUBLIC_API_URL=http://10.0.2.2/api
+
+# iOS simulator — localhost works fine
+# EXPO_PUBLIC_API_URL=http://localhost/api
 ```
 
-See root `.env.example` for current defaults.
+> Expo loads `.env` from the same directory as `package.json` (`mobile/`), not from the project root.
+> `EXPO_PUBLIC_` prefix is required for Expo to include the variable in the client bundle.
+> Changes to `.env` require a full native rebuild (`npx expo run:android`), not just a Metro reload.
 
 ## Install and Run
 
@@ -34,10 +41,23 @@ From `mobile/`:
 
 ```bash
 npm install
+```
+
+**First run or after `app.json` / native config changes** (required to rebuild the native app):
+
+```bash
+# Set JAVA_HOME to Android Studio's bundled JDK first (Windows):
+$env:JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"
+npx expo run:android
+```
+
+**Daily development** (JS-only changes, app already installed):
+
+```bash
 npx expo start
 ```
 
-Shortcuts:
+Shortcuts in Metro:
 
 - `a` open Android emulator
 - `i` open iOS simulator

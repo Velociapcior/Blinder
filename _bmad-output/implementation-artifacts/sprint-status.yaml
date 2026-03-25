@@ -53,9 +53,10 @@ development_status:
 
   # Epic 2: User Registration & Authentication
   epic-2: in-progress
+  2-0-oauth2-oidc-foundation: ready-for-dev
   2-1-email-password-user-registration: done
   2-1-a-shared-mobile-component-library: done
-  2-2-user-login-jwt-tokens-and-logout: backlog
+  2-2-user-login-jwt-tokens-and-logout: ready-for-dev
   2-3-apple-sign-in: backlog
   2-4-google-and-facebook-social-login: backlog
   2-5-female-invite-only-registration-and-invite-landing-screen: backlog

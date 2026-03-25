@@ -14,5 +14,5 @@ export const authService = {
    * Throws Error with ProblemDetails title on non-duplicate failures (e.g. password policy).
    */
   register: (payload: RegisterRequest): Promise<void> =>
-    apiClient.post("/api/auth/register", payload),
+    apiClient.post("/auth/register", payload),
 };

@@ -967,20 +967,27 @@ Create `.gitkeep` files in component subdirectories to establish the structure w
 
 ### EXPO_PUBLIC_API_URL Environment Variable
 
-Add to `.env.local` (git-ignored) for development:
+Create `mobile/.env` (git-ignored). Expo loads `.env` from the same directory as `package.json` — the root `.env` is not read by Expo.
 
 ```
-EXPO_PUBLIC_API_URL=http://localhost/api
+# Android emulator — 10.0.2.2 resolves to host machine
+EXPO_PUBLIC_API_URL=http://10.0.2.2/api
+
+# iOS simulator — use localhost instead
+# EXPO_PUBLIC_API_URL=http://localhost/api
 ```
 
-Add to `.env.example` (if not present — project-context rule 12):
+Add to root `.env.example` (project-context rule 12):
 
 ```
-# Mobile
-EXPO_PUBLIC_API_URL=http://localhost/api
+# Mobile (Android emulator: 10.0.2.2 = host machine; iOS simulator: localhost)
+EXPO_PUBLIC_API_URL=http://10.0.2.2/api
 ```
 
-Note: `EXPO_PUBLIC_` prefix is required for Expo to include the variable in the client bundle.
+Notes:
+- `EXPO_PUBLIC_` prefix is required for Expo to include the variable in the client bundle.
+- Changes to `.env` require a full native rebuild (`npx expo run:android`), not just a Metro reload.
+- Android 9+ blocks cleartext HTTP by default — `android.usesCleartextTraffic: true` must be set in `app.json` for local dev.
 
 ### Previous Story Learnings Applied (Stories 1.1 and 1.2)
 

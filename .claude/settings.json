@@ -4,10 +4,31 @@
       "Bash(docker info:*)",
       "Bash(docker compose:*)",
       "Bash(dotnet ef:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(find c:/Sitecore/Blinder -maxdepth 2 -name README* -type f)",
+      "WebFetch(domain:documentation.openiddict.com)",
+      "WebFetch(domain:devblogs.microsoft.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:legimenes.medium.com)",
+      "WebSearch",
+      "WebFetch(domain:www.nuget.org)",
+      "WebFetch(domain:moldstud.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:auth0.com)",
+      "WebFetch(domain:www.infoq.com)",
+      "WebFetch(domain:duendesoftware.com)",
+      "WebFetch(domain:iamjeremie.me)",
+      "WebFetch(domain:kevinchalet.com)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:iifx.dev)",
+      "WebFetch(domain:www.oauth.com)",
+      "WebFetch(domain:fusionauth.io)",
+      "WebFetch(domain:curity.io)",
+      "WebFetch(domain:developer.okta.com)"
     ],
     "additionalDirectories": [
-      "c:\\Sitecore\\Blinder"
+      "c:\\Sitecore\\Blinder",
+      "c:\\Sitecore\\Blinder\\_bmad-output\\planning-artifacts"
     ]
   }
 }

@@ -28,3 +28,23 @@ Every developer and every AI agent **must** follow these without exception:
 18. Never define UI components inline in screen files. Before building any UI element, check `mobile/components/` first — if a matching component exists, use it. If it does not exist, create it in the correct subdirectory (`shared/`, `chat/`, `match/`, `moderation/`, or `onboarding/`) with a typed props interface, theme tokens, and accessibility attributes, then register it in `docs/component-library.md`. Inline `TextInput`, `Pressable`-as-button, local loading animations, or ad-hoc error displays inside screen files are prohibited after Story 2-1-A.
 
 ---
+
+## 18. OAuth2/OIDC Authentication Enforcement Rules (Story 2-0+)
+
+Established in Story 2-0 (OAuth2/OIDC Foundation — OpenIddict); **enforced across all authentication flows**:
+
+19. **OpenIddict in `Blinder.IdentityServer` is the single source of all token issuance.** No ad-hoc JWT generation in controllers, services, or any other code path. All token endpoint requests (ROPC, social login authorization code, refresh, revocation) go through OpenIddict's `OAuth2Controller` passthrough. No custom `OAuth2TokenService` class exists.
+
+20. **Token lifetimes:** Access tokens are **15 minutes**. Refresh tokens are **30 days rolling** (OpenIddict rotates on every use: old token marked `redeemed`, new pair issued). A compromised 15-minute access token cannot be revoked mid-window — the short lifetime is the protection. Do not increase access token lifetime without understanding the remote validation architecture.
+
+21. **Refresh tokens are stored encrypted by OpenIddict** (ASP.NET Core Data Protection) in the `OpenIddictTokens` table. There is no manual SHA-256 hashing or custom `RefreshTokens` table. Replay protection is automatic: OpenIddict rejects any `redeemed` or `revoked` token.
+
+22. **Logout = revocation at `Blinder.IdentityServer`:** All logout flows call `POST /api/auth/oauth/revoke` (OpenIddict's built-in endpoint). The mobile client additionally calls `storageService.clearTokens()` — always, regardless of revocation result. `Blinder.Api` does NOT have a `/api/auth/logout` endpoint until device push token cleanup is implemented (Story 5.4).
+
+23. **Social login (Stories 2-3, 2-4) plugs into the same token endpoint via `ISocialLoginTokenValidator`:** Provider-specific validators implement `ISocialLoginTokenValidator` and are injected into `OAuth2Controller`. Authorization codes issued server-side are 10-minute expiry, one-time use. Token response format is identical to ROPC (access + refresh).
+
+24. **`Blinder.Api` validates tokens remotely via OpenIddict OIDC discovery** — NOT JwtBearer middleware. `Blinder.Api` never issues tokens. Signing keys are fetched and cached via `UseSystemNetHttp()` from `Blinder.IdentityServer`'s `.well-known/openid-configuration`. Any addition of JwtBearer to `Blinder.Api` is a violation.
+
+25. **Two DbContexts, same database:** `AppDbContext` (in `Blinder.Api`) manages Identity and domain tables. `OpenIddictDbContext` (in `Blinder.IdentityServer`) manages only the 4 OpenIddict tables. Both contexts share the same PostgreSQL connection string. EF migrations for OpenIddict tables run from `Blinder.IdentityServer/` only.
+
+---
