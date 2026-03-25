@@ -467,6 +467,64 @@ So that I can create a Blinder account and begin the onboarding process.
 
 ---
 
+### Story 2-1-A: Shared Mobile Component Library
+
+As a developer,
+I want a complete shared component library with all MVP components implemented or placeholder-scaffolded,
+So that every future screen uses consistent, accessible, theme-compliant components rather than inline primitives.
+
+**Acceptance Criteria:**
+
+**Given** `mobile/components/shared/` is reviewed
+**When** the component inventory is checked
+**Then** `Button.tsx`, `TextField.tsx`, `RadioChipGroup.tsx`, `Toggle.tsx`, `LoadingIndicator.tsx`, `ErrorBanner.tsx`, `Card.tsx`, `Modal.tsx`, `EmptyState.tsx`, `SkeletonLoader.tsx`, `StatusBadge.tsx`, `ConsentBadge.tsx` all exist alongside the existing `AccessiblePressable.tsx` and `ThemedText.tsx`
+
+**Given** `Button.tsx` is implemented
+**When** rendered with `variant` prop
+**Then** it supports `primary`, `secondary`, `ghost`, `danger` variants; accepts `isLoading` prop that renders `LoadingIndicator`; uses theme tokens exclusively; enforces `minHeight: 44`; requires `accessibilityLabel`
+
+**Given** `TextField.tsx` is implemented
+**When** rendered
+**Then** it wraps React Native `TextInput` with a `label` prop, `error` prop, `secureTextEntry` support, themed border/background, and `accessibilityLabel` derived from label; always sets `allowFontScaling={true}` (WCAG 2.1 AA)
+
+**Given** `RadioChipGroup.tsx` is implemented
+**When** rendered
+**Then** it renders a horizontal row of selectable chips; selected chip uses `colors.accent.primary` border and `colors.background.surface` fill; `accessibilityRole="radiogroup"` on container, `accessibilityRole="radio"` on each chip
+
+**Given** `Toggle.tsx` is implemented
+**When** rendered
+**Then** it wraps React Native `Switch` with a `label` prop; uses `colors.safety` as active track color; `accessibilityLabel` is required
+
+**Given** `LoadingIndicator.tsx` is implemented
+**When** rendered
+**Then** it produces three animated pulsing dots using theme colors; respects `reduceMotion` from `AccessibilityContext` — static dots when `reduceMotion === true`
+
+**Given** `ErrorBanner.tsx` is implemented
+**When** rendered with an `error` string prop
+**Then** it displays a themed error block using `colors.danger` text and `colors.background.surface` background with `accessibilityLiveRegion="polite"`
+
+**Given** placeholder components are implemented in their subdirectories (`Card`, `Modal`, `EmptyState`, `SkeletonLoader`, `StatusBadge`, `ConsentBadge` in `shared/`; `ChatBubble`, `ChatInput`, `ConversationRow` in `chat/`; `RevealMoment`, `RevealPrompt`, `RevealCountdown`, `EmptyMatchState`, `RevealProgress` in `match/`; `ReportButton` in `moderation/`; `QuizCard`, `ProgressStepper` in `onboarding/`)
+**When** each placeholder is reviewed
+**Then** each exports a typed props interface, renders a minimal visible stub using `ThemedText` with the component name, uses only theme tokens, and includes a `// TODO: implement in Story X.X` comment citing the target story
+
+**Given** `register.tsx` is refactored
+**When** the file is reviewed
+**Then** raw `TextInput` is replaced by `TextField`; submit and back buttons are replaced by `Button`; gender selector is replaced by `RadioChipGroup`; over-18 switch is replaced by `Toggle`; the local `LoadingDots` function is removed (replaced by `LoadingIndicator`); error display is replaced by `ErrorBanner`; no inline component definitions remain
+
+**Given** `docs/component-library.md` is created
+**When** reviewed
+**Then** it lists every component from this story with file path, props summary, implementation status (`ready` or `placeholder — Story X.X`), and a usage example
+
+**Given** `docs/project-context.md` is updated with Rule 18
+**When** reviewed
+**Then** it states that developers must check `mobile/components/` before building any UI element; inline component definitions in screen files are prohibited; new components must be added to `docs/component-library.md`
+
+**Given** `tsc --noEmit` is run from `mobile/`
+**When** compilation completes
+**Then** zero TypeScript errors
+
+---
+
 ### Story 2.2: User Login, JWT Tokens, and Logout
 
 As a registered user,

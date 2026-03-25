@@ -1,53 +1,23 @@
-import React, { useEffect, useReducer, useRef, useState } from "react";
+import React, { useReducer, useRef, useState } from "react";
 import {
   View,
-  TextInput,
-  Switch,
   StyleSheet,
   ScrollView,
-  Animated,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { authService } from "../../services/authService";
 import { ThemedText } from "../../components/shared/ThemedText";
-import { AccessiblePressable } from "../../components/shared/AccessiblePressable";
-import { colors, typography, spacing } from "../../constants/theme";
+import { Button } from "../../components/shared/Button";
+import { TextField } from "../../components/shared/TextField";
+import { RadioChipGroup } from "../../components/shared/RadioChipGroup";
+import { Toggle } from "../../components/shared/Toggle";
+import { ErrorBanner } from "../../components/shared/ErrorBanner";
+import { colors, spacing } from "../../constants/theme";
 import { ERRORS } from "../../constants/errors";
 import type { AsyncState } from "../../types";
 import type { RegisterRequest } from "../../types/api";
-
-function LoadingDots() {
-  const dot1 = useRef(new Animated.Value(0.3)).current;
-  const dot2 = useRef(new Animated.Value(0.3)).current;
-  const dot3 = useRef(new Animated.Value(0.3)).current;
-
-  useEffect(() => {
-    const pulse = (dot: Animated.Value, delay: number) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(dot, { toValue: 1, duration: 300, useNativeDriver: true }),
-          Animated.timing(dot, { toValue: 0.3, duration: 300, useNativeDriver: true }),
-          Animated.delay(600 - delay),
-        ])
-      );
-    const a1 = pulse(dot1, 0);
-    const a2 = pulse(dot2, 200);
-    const a3 = pulse(dot3, 400);
-    a1.start(); a2.start(); a3.start();
-    return () => { a1.stop(); a2.stop(); a3.stop(); };
-  }, []);
-
-  return (
-    <View style={{ flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" }}>
-      {[dot1, dot2, dot3].map((opacity, i) => (
-        <Animated.View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.text.primary, opacity }} />
-      ))}
-    </View>
-  );
-}
 
 // Gender values must match the backend UserGender enum (UserGender.cs).
 // 0 (Unspecified) is intentionally excluded — the backend rejects it.
@@ -98,6 +68,8 @@ const initialForm: FormState = {
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const isMounted = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const isSubmitting = useRef(false);
   const [submitted, setSubmitted] = useState(false);
   const [form, dispatch] = useReducer(formReducer, initialForm);
@@ -105,6 +77,16 @@ export default function RegisterScreen() {
     (_prev: AsyncState<void>, next: AsyncState<void>) => next,
     { data: null, error: null, isLoading: false }
   );
+
+  // Cleanup: cancel pending requests and mark unmounted on component cleanup
+  React.useEffect(() => {
+    return () => {
+      isMounted.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   function validate(): string | null {
     if (!form.email.trim() || !form.email.includes("@"))
@@ -135,6 +117,10 @@ export default function RegisterScreen() {
     isSubmitting.current = true;
     setState({ data: null, error: null, isLoading: true });
 
+    // Cancel any pending request (e.g., user navigated away)
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
+
     try {
       // Routes through the backend Identity-backed RegistrationService —
       // same ruleset as the web/admin Razor Page (project rule #17).
@@ -145,9 +131,22 @@ export default function RegisterScreen() {
         gender: form.gender!,
         over18Declaration: form.over18Declaration,
       });
+
+      // Only update state if component is still mounted
+      if (!isMounted.current) return;
+
       setState({ data: undefined, error: null, isLoading: false });
       setSubmitted(true);
     } catch (err: unknown) {
+      // Catch AbortError (user navigated away) separately to avoid showing generic error
+      if (err instanceof Error && err.name === 'AbortError') {
+        isSubmitting.current = false;
+        return;
+      }
+
+      // Only update state if component is still mounted
+      if (!isMounted.current) return;
+
       const message =
         err instanceof Error ? err.message : ERRORS.UNEXPECTED_ERROR;
       setState({ data: null, error: message, isLoading: false });
@@ -166,20 +165,17 @@ export default function RegisterScreen() {
         <ThemedText variant="titleMd" style={styles.heading}>
           Registration submitted
         </ThemedText>
-        <ThemedText variant="bodySm" style={styles.checkLabel}>
+        <ThemedText variant="bodySm" color={colors.text.secondary} style={styles.confirmBody}>
           If this email is not already registered, your account has been
           created. You will be able to log in once login is available.
         </ThemedText>
-        <AccessiblePressable
-          accessibilityLabel="Go back"
-          accessibilityRole="button"
+        <Button
+          variant="ghost"
           onPress={() => router.back()}
-          style={styles.submitButton}
+          accessibilityLabel="Go back"
         >
-          <ThemedText variant="labelMd" style={styles.submitText}>
-            Back
-          </ThemedText>
-        </AccessiblePressable>
+          Back
+        </Button>
       </View>
     );
   }
@@ -189,122 +185,79 @@ export default function RegisterScreen() {
       style={styles.scroll}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-    <ScrollView
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
-      <ThemedText variant="titleMd" style={styles.heading}>
-        Create account
-      </ThemedText>
-
-      {state.error ? (
-        <ThemedText variant="bodySm" style={styles.errorBanner}>
-          {state.error}
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <ThemedText variant="titleMd" style={styles.heading}>
+          Create account
         </ThemedText>
-      ) : null}
 
-      <ThemedText variant="labelMd" style={styles.label}>
-        Email
-      </ThemedText>
-      <TextInput
-        style={styles.input}
-        value={form.email}
-        onChangeText={(v) => dispatch({ type: "SET_EMAIL", value: v })}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoComplete="email"
-        placeholder="you@example.com"
-        placeholderTextColor={colors.text.muted}
-        accessibilityLabel="Email address"
-      />
+        <ErrorBanner error={state.error} />
 
-      <ThemedText variant="labelMd" style={styles.label}>
-        Password
-      </ThemedText>
-      <TextInput
-        style={styles.input}
-        value={form.password}
-        onChangeText={(v) => dispatch({ type: "SET_PASSWORD", value: v })}
-        secureTextEntry
-        autoComplete="new-password"
-        placeholder="At least 6 characters"
-        placeholderTextColor={colors.text.muted}
-        accessibilityLabel="Password"
-      />
+        <TextField
+          label="Email"
+          value={form.email}
+          onChangeText={(v) => dispatch({ type: "SET_EMAIL", value: v })}
+          keyboardType="email-address"
+          autoComplete="email"
+          placeholder="you@example.com"
+          style={styles.fieldSpacing}
+        />
 
-      <ThemedText variant="labelMd" style={styles.label}>
-        Confirm password
-      </ThemedText>
-      <TextInput
-        style={styles.input}
-        value={form.confirmPassword}
-        onChangeText={(v) =>
-          dispatch({ type: "SET_CONFIRM_PASSWORD", value: v })
-        }
-        secureTextEntry
-        autoComplete="new-password"
-        placeholder="Repeat password"
-        placeholderTextColor={colors.text.muted}
-        accessibilityLabel="Confirm password"
-      />
+        <TextField
+          label="Password"
+          value={form.password}
+          onChangeText={(v) => dispatch({ type: "SET_PASSWORD", value: v })}
+          secureTextEntry
+          autoComplete="new-password"
+          placeholder="At least 6 characters"
+          style={styles.fieldSpacing}
+        />
 
-      <ThemedText variant="labelMd" style={styles.label}>
-        Gender
-      </ThemedText>
-      <View style={styles.genderRow} accessibilityRole="radiogroup">
-        {GENDER_OPTIONS.map((opt) => (
-          <AccessiblePressable
-            key={opt.value}
-            accessibilityLabel={opt.label}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: form.gender === opt.value }}
-            onPress={() => dispatch({ type: "SET_GENDER", value: opt.value })}
-            style={[
-              styles.genderChip,
-              form.gender === opt.value && styles.genderChipSelected,
-            ]}
-          >
-            <ThemedText
-              variant="labelMd"
-            >
-              {opt.label}
-            </ThemedText>
-          </AccessiblePressable>
-        ))}
-      </View>
+        <TextField
+          label="Confirm password"
+          value={form.confirmPassword}
+          onChangeText={(v) =>
+            dispatch({ type: "SET_CONFIRM_PASSWORD", value: v })
+          }
+          secureTextEntry
+          autoComplete="new-password"
+          placeholder="Repeat password"
+          style={styles.fieldSpacing}
+        />
 
-      <View style={styles.checkRow}>
-        <Switch
+        <ThemedText variant="labelMd" color={colors.text.secondary} style={styles.genderLabel}>
+          Gender
+        </ThemedText>
+        <RadioChipGroup
+          options={GENDER_OPTIONS}
+          value={form.gender}
+          onChange={(v) =>
+            dispatch({ type: "SET_GENDER", value: v as RegisterRequest["gender"] })
+          }
+        />
+
+        <Toggle
+          label="I confirm I am 18 years of age or older"
           value={form.over18Declaration}
           onValueChange={() => dispatch({ type: "TOGGLE_OVER18" })}
-          trackColor={{ false: colors.background.input, true: colors.safety }}
-          thumbColor={colors.text.primary}
           accessibilityLabel="I confirm I am 18 years of age or older"
+          style={styles.toggleSpacing}
         />
-        <ThemedText variant="bodySm" style={styles.checkLabel}>
-          I confirm I am 18 years of age or older
-        </ThemedText>
+      </ScrollView>
+      <View style={styles.footer}>
+        <Button
+          variant="primary"
+          onPress={handleRegister}
+          accessibilityLabel="Register"
+          isLoading={state.isLoading}
+          disabled={state.isLoading}
+        >
+          Register
+        </Button>
       </View>
-
-    </ScrollView>
-    <View style={styles.footer}>
-      <AccessiblePressable
-        accessibilityLabel="Register"
-        accessibilityRole="button"
-        onPress={handleRegister}
-        disabled={state.isLoading}
-        style={[styles.submitButton, state.isLoading && styles.submitDisabled]}
-      >
-        {state.isLoading ? (
-          <LoadingDots />
-        ) : (
-          <ThemedText variant="labelMd" style={styles.submitText}>
-            Register
-          </ThemedText>
-        )}
-      </AccessiblePressable>
-    </View>
-  </KeyboardAvoidingView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -321,70 +274,16 @@ const styles = StyleSheet.create({
   heading: {
     marginBottom: spacing[6],
   },
-  label: {
+  fieldSpacing: {
+    // TextField already adds marginBottom via its internal input style
+  },
+  genderLabel: {
     marginBottom: spacing[2],
-    color: colors.text.secondary,
   },
-  input: {
-    backgroundColor: colors.background.input,
-    color: colors.text.primary,
-    borderRadius: 8,
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
-    fontSize: typography.size.bodyLg,
-    marginBottom: spacing[4],
-    minHeight: 44, // WCAG 2.1 AA touch target
-  },
-  genderRow: {
-    flexDirection: "row",
-    gap: spacing[3],
-    marginBottom: spacing[4],
-  },
-  genderChip: {
-    borderRadius: 8,
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
-    backgroundColor: colors.background.input,
-    minHeight: 44,
-    justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: colors.text.muted,
-  },
-  genderChipSelected: {
-    borderColor: colors.accent.primary,
-    backgroundColor: colors.background.surface,
-  },
-  submitText: {
-    color: colors.text.primary,
-  },
-  submitDisabled: {
-    opacity: 0.4,
-  },
-  checkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[3],
+  toggleSpacing: {
     marginBottom: spacing[6],
   },
-  checkLabel: {
-    flex: 1,
-    color: colors.text.secondary,
-    marginBottom: spacing[4],
-  },
-  submitButton: {
-    backgroundColor: colors.accent.primary,
-    borderRadius: 8,
-    paddingVertical: spacing[4],
-    alignItems: "center",
-    minHeight: 44,
-    justifyContent: "center",
-  },
-  errorBanner: {
-    color: colors.danger,
-    backgroundColor: colors.background.surface,
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
-    borderRadius: 8,
+  confirmBody: {
     marginBottom: spacing[4],
   },
   footer: {

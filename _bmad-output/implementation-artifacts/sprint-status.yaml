@@ -1,5 +1,5 @@
 # generated: 2026-03-16
-# last_updated: 2026-03-20
+# last_updated: 2026-03-25
 # project: Blinder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-16
-last_updated: 2026-03-20
+last_updated: 2026-03-25
 project: Blinder
 project_key: NOKEY
 tracking_system: file-system
@@ -54,6 +54,7 @@ development_status:
   # Epic 2: User Registration & Authentication
   epic-2: in-progress
   2-1-email-password-user-registration: done
+  2-1-a-shared-mobile-component-library: done
   2-2-user-login-jwt-tokens-and-logout: backlog
   2-3-apple-sign-in: backlog
   2-4-google-and-facebook-social-login: backlog

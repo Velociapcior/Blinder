@@ -3,7 +3,8 @@
     "allow": [
       "Bash(docker info:*)",
       "Bash(docker compose:*)",
-      "Bash(dotnet ef:*)"
+      "Bash(dotnet ef:*)",
+      "Bash(npx tsc:*)"
     ],
     "additionalDirectories": [
       "c:\\Sitecore\\Blinder"
