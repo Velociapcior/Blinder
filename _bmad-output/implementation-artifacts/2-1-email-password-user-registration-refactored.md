@@ -2,7 +2,9 @@
 
 Status: ready-for-dev
 
-**Updated:** This story was redesigned after Story 2-0 (OAuth2 Foundation) was approved. The key change: registration no longer issues JWT tokens. Token issuance is delegated to the OAuth2 token endpoint (Story 2-0), centralizing authentication logic.
+**Updated:** This story was redesigned after Story 2-0 (OAuth2 Foundation) was approved. The key change: registration no longer issues JWT tokens. Token issuance is delegated to `Blinder.IdentityServer`'s OAuth2 token endpoint (Story 2-0).
+
+**Project ownership:** `POST /api/auth/register` lives in **`Blinder.Api`** — user creation is a resource operation, not a token operation. Nginx routes `/api/auth/register` to `Blinder.Api` (it does not match the `/api/auth/oauth/` prefix that routes to IdentityServer). `Blinder.IdentityServer` is **not touched** by this story.
 
 ## Story
 
@@ -118,13 +120,23 @@ So that I can create an account and then authenticate to the platform.
     - Password confirmation match
   - [ ] Unit tests for all validation rules
 
-- [ ] Task 2: Create Registration Endpoint (AC: 1, 5, 6, 7, 8)
-  - [ ] Create `Controllers/Auth/RegisterController.cs`:
+- [ ] Task 2: Create Registration Endpoint in `Blinder.Api` (AC: 1, 5, 6, 7, 8)
+  - [ ] Create `Blinder.Api/Controllers/Auth/RegisterController.cs`:
     - `POST /api/auth/register(RegisterRequest request)`
     - Call `UserManager<ApplicationUser>.CreateAsync(user, password)`
     - On success: return RegisterResponse + 201 Created
     - On Identity errors (duplicate, validation): return 400/409 Problem Details
-  - [ ] Apply rate limiting policy to endpoint: "registration-endpoint" → 10 per IP per hour
+  - [ ] Add rate limiter policy to **`Blinder.Api/Program.cs`** (separate from IdentityServer's token-endpoint policy):
+    ```csharp
+    builder.Services.AddRateLimiter(options =>
+        options.AddFixedWindowLimiter("registration-endpoint", o =>
+        {
+            o.PermitLimit = 10;
+            o.Window = TimeSpan.FromHours(1);
+            o.QueueLimit = 0;
+        }));
+    ```
+  - [ ] Apply `[EnableRateLimiting("registration-endpoint")]` on `RegisterController`
   - [ ] Log audit event on success
   - [ ] Return 201 Created, not 200 OK
 
@@ -150,13 +162,13 @@ So that I can create an account and then authenticate to the platform.
 ### Key Architectural Change from Original Story
 
 **Previous Approach:** Registration endpoint created user AND generated JWT token directly
-**New Approach:** Registration creates user only; token issuance delegated to OAuth2 token endpoint (Story 2-0)
+**New Approach:** Registration creates user only (in `Blinder.Api`); token issuance delegated to `Blinder.IdentityServer`'s OAuth2 token endpoint (Story 2-0)
 
 **Rationale:**
-- Separation of concerns: registration (user creation) separate from authentication (token issuance)
+- Separation of concerns: registration (user creation, resource operation) lives in `Blinder.Api`; authentication (token issuance) lives exclusively in `Blinder.IdentityServer`
 - Enables email verification step before token issuance (future enhancement)
-- Centralizes all token logic via OAuth2TokenService
-- Aligns with standard OAuth2 practices
+- OpenIddict in `Blinder.IdentityServer` is the single source of all token logic — no JWT generation anywhere in `Blinder.Api`
+- Aligns with standard OAuth2 practices and the two-project topology established in Story 2-0
 
 ### Rate Limiting Notes
 

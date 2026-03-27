@@ -41,7 +41,9 @@ So that I can access Blinder without re-entering credentials and know my session
   client_id=blinder-mobile
   username=<email>
   password=<password>
+  scope=email api
   ```
+- `scope=email api` is required — the `api` scope causes IdentityServer to put `"blinder-api"` in the token's `aud` claim, which `Blinder.Api` validates; omitting it produces tokens that `Blinder.Api` rejects
 - Response contains `access_token`, `refresh_token`, `expires_in`, `token_type: "Bearer"`
 - Both tokens stored via `storageService.setTokens(access, refresh, expiresIn)` (SecureStore)
 - User navigated to home screen on success
@@ -89,7 +91,7 @@ So that I can access Blinder without re-entering credentials and know my session
 **Given** a user taps "Log out"
 **When** `authService.logout()` executes
 **Then**
-- `POST /api/auth/oauth/revoke` called on `Blinder.IdentityServer` with the access token
+- `POST /api/auth/oauth/revoke` called on `Blinder.IdentityServer` with the **refresh token** (not the access token — revoking the refresh token triggers OpenIddict's cascade revocation of all related access tokens; revoking only the access token has minimal effect since it expires in 15 minutes and no cascade occurs)
 - `storageService.clearTokens()` called regardless of revocation result (client always clears)
 - User navigated to login screen
 - Revocation is best-effort: if network is unavailable, local tokens are still cleared
@@ -173,6 +175,7 @@ So that I can access Blinder without re-entering credentials and know my session
             client_id: 'blinder-mobile',
             username: email,
             password,
+            scope: 'email api',  // "api" scope puts "blinder-api" in aud; required for Blinder.Api to accept tokens
           }).toString(),
         });
 
@@ -189,16 +192,18 @@ So that I can access Blinder without re-entering credentials and know my session
     },
 
     async logout(): Promise<void> {
-      const accessToken = await storageService.getAccessToken();
-      if (accessToken) {
-        // Best-effort revocation — don't await or throw
+      const refreshToken = await storageService.getRefreshToken();
+      if (refreshToken) {
+        // Best-effort revocation of the REFRESH TOKEN (not access token).
+        // Revoking the refresh token triggers OpenIddict cascade revocation of all
+        // related access tokens. Revoking only the access token has minimal effect
+        // since it expires in 15 minutes and causes no cascade.
         fetch(`${API_BASE_URL}/api/auth/oauth/revoke`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': `Bearer ${accessToken}`,
           },
-          body: new URLSearchParams({ token: accessToken }).toString(),
+          body: new URLSearchParams({ token: refreshToken }).toString(),
         }).catch(() => {}); // Ignore network errors — local clear is authoritative
       }
       await storageService.clearTokens();
@@ -216,6 +221,7 @@ So that I can access Blinder without re-entering credentials and know my session
             grant_type: 'refresh_token',
             client_id: 'blinder-mobile',
             refresh_token: refreshToken,
+            // scope is preserved from the original token by OpenIddict automatically
           }).toString(),
         });
 
@@ -296,10 +302,11 @@ So that I can access Blinder without re-entering credentials and know my session
 
 ```
 Mobile App
-  ├── POST /api/auth/oauth/token (login)     → Nginx → Blinder.IdentityServer
-  ├── POST /api/auth/oauth/token (refresh)   → Nginx → Blinder.IdentityServer
-  ├── POST /api/auth/oauth/revoke (logout)   → Nginx → Blinder.IdentityServer
-  └── GET/POST /api/** (resource calls)      → Nginx → Blinder.Api
+  ├── POST /api/auth/oauth/token (login)          → Nginx → Blinder.IdentityServer
+  ├── POST /api/auth/oauth/token (refresh)        → Nginx → Blinder.IdentityServer
+  ├── POST /api/auth/oauth/revoke (logout)        → Nginx → Blinder.IdentityServer
+  │     body: token=<refresh_token>               ← refresh token, not access token
+  └── GET/POST /api/** (resource calls)           → Nginx → Blinder.Api
 ```
 
 Mobile uses ONE base URL (Nginx). Nginx routes OAuth2 paths to IdentityServer, everything else to Blinder.Api. The mobile app never addresses containers directly.

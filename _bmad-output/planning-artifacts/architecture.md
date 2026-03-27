@@ -216,7 +216,7 @@ npx expo install expo-router expo-notifications expo-image-picker expo-secure-st
 ### Decision Priority Analysis
 
 **Critical Decisions (Block Implementation):**
-- Authentication: ASP.NET Core Identity + JWT Bearer
+- Authentication: OpenIddict (OAuth2/OIDC Authorization Server) + ASP.NET Core Identity (user store) — separate `Blinder.IdentityServer` project; `Blinder.Api` validates tokens remotely via OIDC discovery
 - File Storage: S3-compatible object storage (EU-region bucket)
 - Background Processing: Coravel (in-memory)
 - API pattern: REST with controllers
@@ -231,23 +231,52 @@ npx expo install expo-router expo-notifications expo-image-picker expo-secure-st
 
 ### Authentication & Security
 
-**Decision: ASP.NET Core Identity + JWT Bearer tokens**
+**Decision: OpenIddict (OAuth2/OIDC) + ASP.NET Core Identity — Two-Project Topology**
 
-ASP.NET Core Identity provides scaffolded registration, login, password reset, and account management flows. JwtBearer middleware validates tokens on every API request. All auth runs on the VPS — no external identity provider dependency, no non-EU data flows.
+Authentication is split across two ASP.NET Core projects with distinct responsibilities:
 
-- Use a custom `ApplicationUser : IdentityUser` class from day one — adding custom fields (gender, quiz answers, invite link reference) directly to `IdentityUser` causes painful schema migrations; the custom subclass costs nothing up front
-- Identity UI scaffolding is the canonical web/admin auth flow; mobile remains native UI and must not consume scaffolded Razor pages directly
-- Razor PageModels and mobile API endpoints must delegate to one shared Identity-backed auth logic path (single ruleset, no drift)
-- Social login (Apple, Google, Facebook) uses `ExternalLoginAsync` flows in Identity — **not** covered by default scaffolded templates; this wiring must be explicitly planned in the social login implementation stories
-- Social provider ID tokens validated server-side; backend issues its own JWT — no OAuth redirect dance
-- `expo-secure-store` on mobile maps to iOS Keychain / Android Keystore for token storage — `AsyncStorage` is explicitly prohibited for tokens
-- JWT tokens expire after 30 days of inactivity (NFR10)
-- Admin Razor Pages use cookie authentication (separate scheme from API JWT)
-- `/admin` path additionally protected by Nginx IP allowlist — application-level auth alone is insufficient for a route with access to user PII and moderation actions
+**`Blinder.IdentityServer`** — the sole Authorization Server and Identity Provider:
+- Owns OpenIddict OAuth2/OIDC server (token issuance, grant handling, revocation)
+- Owns ASP.NET Core Identity user store (`ApplicationUser`, `UserManager`, `SignInManager`)
+- Owns EF Core migrations for both Identity tables and OpenIddict tables (4 tables: Applications, Authorizations, Tokens, Scopes)
+- Exposes: `POST /api/auth/oauth/token` (ROPC, Refresh Token, Authorization Code grants), `POST /api/auth/oauth/revoke`, `GET /.well-known/openid-configuration`, `GET /.well-known/jwks`
+- No resource endpoints — token issuance only
+- Rate limiting: 5 requests/min/IP on token endpoint via ASP.NET Core `AddRateLimiter()`
+
+**`Blinder.Api`** — the sole Resource Server:
+- Validates tokens remotely via OpenIddict OIDC discovery (`UseSystemNetHttp()` fetches and caches JWKS from IdentityServer)
+- Never issues tokens — `[Authorize]` uses `OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme`
+- Owns `POST /api/auth/register` (user creation is a resource operation — routed to Blinder.Api by Nginx)
+- References `Blinder.Api.csproj` for `ApplicationUser` model and `AppDbContext` — no user table duplication
+- Admin Razor Pages use cookie authentication (separate scheme from OpenIddict validation)
+
+**Nginx routing (single base URL for mobile):**
+- `/api/auth/oauth/` → `Blinder.IdentityServer`
+- `/.well-known/` → `Blinder.IdentityServer`
+- `/api/` (all other) → `Blinder.Api`
+- `/admin` → `Blinder.Api` + IP allowlist
+
+**Token lifetimes (revised from NFR10):**
+- Access tokens: **15 minutes** (short-lived; JWKS-validated with no per-request DB check)
+- Refresh tokens: **30 days rolling** (OpenIddict automatic rotation — old token marked `redeemed` on each use; replay attempts rejected)
+- NFR10 ("30 days inactivity") is satisfied by the 30-day rolling refresh token window
+
+**Other rules:**
+- Use a custom `ApplicationUser : IdentityUser<Guid>` from day one — adding custom fields directly to `IdentityUser` causes painful schema migrations
+- Social provider ID tokens validated server-side via `ISocialLoginTokenValidator`; IdentityServer issues its own JWT — no external OAuth redirect dance
+- `expo-secure-store` on mobile maps to iOS Keychain / Android Keystore — `AsyncStorage` is explicitly prohibited for auth tokens
+- Admin Razor Pages use cookie authentication (separate scheme from OpenIddict bearer validation)
+- `/admin` additionally protected by Nginx IP allowlist — application-level auth alone is insufficient
 
 ```bash
+# Blinder.IdentityServer
+dotnet add package OpenIddict.AspNetCore --version 7.4.0
+dotnet add package OpenIddict.EntityFrameworkCore --version 7.4.0
 dotnet add package Microsoft.AspNetCore.Identity.EntityFrameworkCore
-dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer
+
+# Blinder.Api
+dotnet add package OpenIddict.Validation.AspNetCore --version 7.4.0
+dotnet add package OpenIddict.Validation.SystemNetHttp --version 7.4.0
 ```
 
 ---
@@ -425,7 +454,9 @@ dotnet add package Serilog.Sinks.File
 
 | Decision | Affects |
 |---|---|
-| ASP.NET Core Identity + custom `ApplicationUser` | Auth flows, social login, admin cookie auth, all API authorization, EF Core schema |
+| OpenIddict (OAuth2/OIDC) + `Blinder.IdentityServer` | All token issuance, grant handling, refresh rotation, revocation — no token logic in Blinder.Api |
+| ASP.NET Core Identity + custom `ApplicationUser` | User/credential store (owned by IdentityServer); social login via `ISocialLoginTokenValidator`; admin cookie auth; EF Core schema |
+| OpenIddict remote validation in `Blinder.Api` | All API authorization via OIDC discovery — `[Authorize]` uses `OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme` |
 | Mapperly | All controller responses, service layer boundaries, EF entity ↔ DTO conversion |
 | S3 + Hetzner Object Storage | Photo upload, content scanning pipeline, reveal signed URL generation, account deletion cascade |
 | PostGIS | Matching service geographic queries, user preference radius storage |
@@ -731,9 +762,21 @@ blinder/
 ### Backend Structure (`backend/`)
 
 ```
-Blinder.Api/
+Blinder.IdentityServer/                # OAuth2/OIDC Authorization Server — sole token issuer
 ├── Controllers/
-│   ├── AuthController.cs              # FR1–3: email+social login, token refresh, logout
+│   └── OAuth2Controller.cs           # Passthrough: ROPC + refresh + authorization code grants
+├── Infrastructure/
+│   ├── Auth/
+│   │   ├── ISocialLoginTokenValidator.cs  # Interface for Apple/Google/Facebook provider validation
+│   │   └── OpenIddictSeeder.cs       # IHostedService: seeds blinder-mobile client on startup
+│   └── Data/
+│       └── OpenIddictDbContext.cs    # Manages OpenIddict tables only (4 tables); separate from AppDbContext
+├── Migrations/                       # EF Core migrations for OpenIddict tables only
+└── Program.cs                        # OpenIddict server + two DbContexts (AppDbContext + OpenIddictDbContext)
+
+Blinder.Api/                          # Resource Server — validates tokens remotely, never issues them
+├── Controllers/
+│   ├── RegisterController.cs         # POST /api/auth/register — user creation only, no token issuance
 │   ├── AccountController.cs           # FR4–7: deletion cascade, age gate, profile management; POST /api/account/device-token
 │   ├── OnboardingController.cs        # FR8–11: quiz, photo upload, first match drop
 │   ├── MatchController.cs             # FR12–16: radius, invite link gen/use, match detail
@@ -769,14 +812,14 @@ Blinder.Api/
 │   └── DeviceToken.cs                 # user_id FK, token, platform (Android/iOS), created_at — indexed on user_id
 │
 ├── DTOs/
-│   ├── Auth/                          # LoginRequest, RegisterRequest, TokenResponse, SocialLoginRequest
+│   ├── Auth/                          # RegisterRequest, RegisterResponse (no token DTOs — tokens come from IdentityServer)
 │   ├── Match/                         # MatchResponse, MatchDetailResponse
 │   ├── Conversation/                  # MessageRequest, MessageResponse, ConversationSummaryResponse
 │   ├── Reveal/                        # RevealStateResponse, RevealReadyRequest
 │   └── Subscription/                  # SubscriptionStatusResponse, IAPWebhookPayload
 │
 ├── Services/                          # Domain orchestration — *Service naming only
-│   ├── AuthService.cs
+│   ├── RegistrationService.cs         # User creation via UserManager — no token issuance
 │   ├── MatchService.cs                # Compatibility algorithm, admin threshold lookup, fallback logic
 │   ├── ConversationService.cs         # Active limit enforcement, message count tracking
 │   ├── RevealService.cs               # Flag logic, threshold gate, signed URL orchestration
@@ -808,7 +851,7 @@ Blinder.Api/
 │   ├── Data/
 │   │   └── AppDbContext.cs            # EF Core DbContext + PostGIS + UseSnakeCaseNamingConvention
 │   ├── Auth/
-│   │   └── SocialLoginHandler.cs      # ExternalLoginAsync wiring (Apple, Google, Facebook)
+│   │   └── (none — all auth infrastructure lives in Blinder.IdentityServer)
 │   ├── Storage/
 │   │   └── S3ClientFactory.cs         # Hetzner Object Storage; ForcePathStyle = true required
 │   ├── Scanning/
@@ -929,7 +972,7 @@ mobile/
 | Apple IAP + Google Play Billing | `SubscriptionController` + `SubscriptionService` | **Spike story required** before any subscription implementation |
 | DB-backed analytics | `AnalyticsController` + PostgreSQL | Reveal events and gender ratio data stored in the main PostgreSQL DB; no external analytics service |
 | SMTP via hosting | `Infrastructure/Email/SmtpSettings.cs` + Coravel mailing | Credentials from env vars via `IOptions<SmtpSettings>` |
-| Apple / Google / Facebook login | `Infrastructure/Auth/SocialLoginHandler.cs` | `ExternalLoginAsync` — not scaffold-covered; explicit implementation stories required |
+| Apple / Google / Facebook login | `Blinder.IdentityServer/Infrastructure/Auth/ISocialLoginTokenValidator.cs` | Provider validation plugs into OAuth2Controller via interface — not scaffold-covered; explicit implementation stories required |
 
 ---
 

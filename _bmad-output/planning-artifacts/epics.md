@@ -430,26 +430,29 @@ So that every subsequent screen is consistent, accessible, and never requires de
 
 A user can create an account (email/password or social login), log in, log out, and permanently delete their account with full data purge. Female users can only register via a valid invite link.
 
-### Story 2.0: OAuth2/OIDC Authentication Foundation
+**Identity Architecture:** All token issuance, grant handling, and revocation is owned exclusively by `Blinder.IdentityServer` (OpenIddict OAuth2/OIDC Authorization Server). `Blinder.Api` is a pure resource server — it validates tokens remotely via OIDC discovery and never issues tokens. `POST /api/auth/register` lives in `Blinder.Api` (user creation is a resource operation, not a token operation). All OAuth2 endpoints (`/api/auth/oauth/token`, `/api/auth/oauth/revoke`, `/.well-known/`) are routed by Nginx to `Blinder.IdentityServer`.
 
-As a developer,
-I want a complete OAuth2/OIDC token endpoint and grant handler infrastructure,
-So that all authentication flows (email/password, social login, future integrations) are built on a single, secure, standards-compliant foundation.
+### Story 2.0: OAuth2/OIDC Authentication Foundation (OpenIddict)
+
+As a developer and operator,
+I want a complete OAuth2/OIDC token endpoint and grant handler infrastructure powered by OpenIddict in a dedicated `Blinder.IdentityServer` project,
+So that all authentication flows (email/password, social login, future integrations) are built on a single, secure, standards-compliant foundation without reinventing what OpenIddict already provides.
 
 **Acceptance Criteria:**
 
-1. OAuth2 token endpoint operational: `POST /api/auth/oauth/token` returns `{ access_token, refresh_token, expires_in, token_type: "Bearer" }` (RFC 6749 compliant)
-2. Resource Owner Password Credentials (ROPC) grant implemented for email/password auth with 30-day access token, 90-day refresh token
-3. Authorization Code grant framework implemented (extensible for Stories 2-3/2-4 social login providers)
-4. Refresh token lifecycle: one-time use, hashed storage in database, new token pair issued on valid refresh
-5. Token revocation endpoint: `POST /api/auth/oauth/revoke` marks tokens invalid, prevents replay
-6. Mobile token storage contract: both access + refresh tokens stored via `expo-secure-store`
-7. JWT structure standardized: claims include `sub`, `iss`, `aud`, `exp`, `iat`, `auth_time`
-8. Rate limiting on token endpoint: 5 failed attempts per IP per minute → 429 Too Many Requests
-9. JwtBearer middleware checks revocation status before accepting token
-10. All acceptance criteria thoroughly tested (unit, integration, security, mobile)
+1. `POST /api/auth/oauth/token` hosted in `Blinder.IdentityServer` returns RFC 6749 compliant `{ access_token, refresh_token, expires_in, token_type: "Bearer" }`
+2. ROPC grant (email/password): access token **15-minute** expiry, refresh token **30-day rolling** expiry; invalid credentials → 401 `invalid_grant`; token request includes `scope=email api`
+3. Authorization Code grant framework ready with **PKCE enforced** (`RequireProofKeyForCodeExchange()`) — extensible for Stories 2-3/2-4 via `ISocialLoginTokenValidator` interface; `code_verifier` is mandatory, requests without it return `invalid_grant`
+4. Refresh token rotation: OpenIddict marks old token `redeemed` on each use; replay attempts rejected automatically — no custom `RefreshTokens` table
+5. Token revocation endpoint: `POST /api/auth/oauth/revoke` marks token revoked in `OpenIddictTokens` table; idempotent 200 OK
+6. Refresh tokens stored encrypted via ASP.NET Core Data Protection (OpenIddict automatic) — never plaintext
+7. Mobile token storage contract: `access_token` and `refresh_token` stored via `expo-secure-store`; `isTokenExpiringSoon()` uses 5-minute buffer
+8. JWT claims standardized: `sub`, `iss`, `aud` (`"blinder-api"` — the resource server identifier, **not** the client ID), `scope`, `exp`, `iat`; signed with RSA-256 certificate
+9. `OpenIddictSeeder` seeds on startup: (a) `api` scope registered with resource audience `"blinder-api"`, (b) `blinder-mobile` client registered as public client with scope permissions for `email` and `api` — without (a), `Blinder.Api` rejects all tokens; without (b), every token request returns `invalid_client`
+10. `Blinder.Api` validates tokens remotely via OpenIddict OIDC discovery with `AddAudiences("blinder-api")` — `JwtBearer` middleware is **not** used; tokens without `aud=blinder-api` are rejected
+11. Rate limiting on token endpoint: 5 requests/min/IP → 429 Too Many Requests
 
-**Dev Notes:** This story establishes zero user-facing features. It is pure infrastructure enabling Stories 2-1 (registration), 2-2 (login/logout), 2-3 (Apple), 2-4 (Google/Facebook). All token issuance routes through this single OAuth2 endpoint.
+**Dev Notes:** This story establishes zero user-facing features. It is pure infrastructure enabling Stories 2-1 (registration), 2-2 (login/logout), 2-3 (Apple), 2-4 (Google/Facebook). OpenIddict replaces all custom `OAuth2TokenService`, `RefreshTokenRepository`, and `TokenRevocationHandler` — these classes must not be created.
 
 **Estimated Effort:** 5-6 days (medium, foundational)
 
@@ -457,41 +460,43 @@ So that all authentication flows (email/password, social login, future integrati
 
 ### Story 2.1: Email/Password User Registration
 
-**Updated (March 25, 2026):** This story was redesigned after Story 2-0 (OAuth2 Foundation) was approved. The key change: registration no longer issues JWT tokens. Token issuance is delegated to the OAuth2 token endpoint, centralizing authentication logic and enabling email verification before token issuance (future enhancement).
+**Updated (March 25, 2026):** This story was redesigned after Story 2-0 (OAuth2 Foundation) was approved. The key change: registration no longer issues JWT tokens. Token issuance is delegated to `Blinder.IdentityServer`'s OAuth2 token endpoint.
+
+**Project ownership:** `POST /api/auth/register` lives in **`Blinder.Api`** — user creation is a resource operation, not a token operation. Nginx routes `/api/auth/register` to `Blinder.Api`. `Blinder.IdentityServer` is not touched by this story.
 
 As a new user,
 I want to register with my email address and password,
-So that I can create a Blinder account and then authenticate via the OAuth2 token endpoint.
+So that I can create a Blinder account and then authenticate via `Blinder.IdentityServer`'s OAuth2 token endpoint.
 
 **Acceptance Criteria:**
 
 **Given** a `POST /api/auth/register` request with valid email, password, and `over18Declaration: true`
-**When** the request is processed
-**Then** a new `ApplicationUser` is created (extending `IdentityUser` with gender, quiz refs, invite FK fields), a 201 response is returned with the user's ID and email — no JWT token is issued at registration; token issuance delegated to OAuth2 token endpoint (Story 2-0)
+**When** the request is processed by `RegisterController` in **`Blinder.Api`**
+**Then** a new `ApplicationUser` is created via `UserManager.CreateAsync()`, a 201 response is returned with `{ user_id, email, created_at }` — no token is issued; client must separately call `POST /api/auth/oauth/token` (routed to `Blinder.IdentityServer`) to obtain credentials
 
-**Given** Identity scaffolded registration exists in Razor Pages for web/admin
-**When** mobile registration is implemented
-**Then** mobile uses native UI and API only; the API path delegates to the same Identity-backed registration rules (single source of truth), not a second divergent ruleset
-
-**Given** `ApplicationUser` is created in `Models/ApplicationUser.cs`
+**Given** `ApplicationUser` is created in `Blinder.Api/Models/ApplicationUser.cs`
 **When** the class definition is reviewed
-**Then** it inherits from `IdentityUser`, includes `Gender` (enum: Male/Female/NonBinary), `QuizCompletedAt` (DateTimeOffset?), `InviteLinkId` (FK, nullable), `IsOnboardingComplete` (bool), and uses `DateTimeOffset` for all date fields — `DateTime` is never used
+**Then** it inherits from `IdentityUser<Guid>`, includes `Gender` (enum: Male/Female/NonBinary), `QuizCompletedAt` (DateTimeOffset?), `InviteLinkId` (FK, nullable), `IsOnboardingComplete` (bool), and uses `DateTimeOffset` for all date fields — `DateTime` is never used
 
 **Given** a registration request is received
 **When** FluentValidation runs `RegisterRequestValidator`
-**Then** email format is validated, password minimum requirements are enforced, `over18Declaration` must be `true` — missing any field returns Problem Details 400
+**Then** email format is validated, password minimum requirements enforced (≥10 chars, uppercase + lowercase + digit + symbol), `over18Declaration` must be `true` — missing or invalid fields return Problem Details 400
 
 **Given** a duplicate email is submitted
 **When** Identity attempts to create the user
 **Then** a 409 Conflict Problem Details response is returned — the error type URI comes from `AppErrors.cs`
 
 **Given** a Mapperly `UserMapper` is implemented
-**When** `ApplicationUser` is mapped to `UserResponse` DTO
-**Then** no manual `new UserResponse { ... }` construction exists — all mapping goes through `[Mapper]` partial class
+**When** `ApplicationUser` is mapped to `RegisterResponse` DTO
+**Then** no manual `new RegisterResponse { ... }` construction exists — all mapping goes through `[Mapper]` partial class
 
 **Given** a new user registers
 **When** their `over18Declaration` field is reviewed
 **Then** it is stored as `age_declaration_accepted` (snake_case) in the `AspNetUsers` table with a `timestamptz` timestamp
+
+**Given** malicious actors attempt bulk account creation
+**When** the registration endpoint receives requests
+**Then** rate limit of 10 requests/IP/hour enforced via `AddRateLimiter()` in **`Blinder.Api/Program.cs`** (separate policy from IdentityServer's token endpoint policy)
 
 ---
 
@@ -553,39 +558,39 @@ So that every future screen uses consistent, accessible, theme-compliant compone
 
 ---
 
-### Story 2.2: User Login, JWT Tokens, and Logout
+### Story 2.2: User Login and Logout
 
-**Updated (March 25, 2026):** This story was redesigned after Story 2-0 (OAuth2 Foundation) was approved. Major changes: (1) Login delegates token issuance to OAuth2TokenService (ROPC grant), (2) Adds refresh token lifecycle management, (3) Logout revokes tokens at token endpoint (not just client-side), (4) Mobile implements automatic token refresh with 5-minute buffer.
+**Updated (March 25, 2026):** Redesigned to use OpenIddict (Story 2-0). This is primarily a **mobile-side story**. No new backend endpoints are created — `Blinder.IdentityServer`'s ROPC token endpoint is the login endpoint; `Blinder.IdentityServer`'s revocation endpoint is the logout endpoint. `Blinder.Api` and `Blinder.IdentityServer` are not modified by this story.
 
 As a registered user,
-I want to log in with my credentials, receive secure access and refresh tokens, automatically refresh my tokens when needed, and log out with server-side revocation,
-So that I can access Blinder securely with persistent sessions and know my tokens are invalidated on logout.
+I want to log in with my email and password, stay logged in automatically, and log out securely,
+So that I can access Blinder without re-entering credentials and know my session is secure.
 
 **Acceptance Criteria:**
 
-**Given** a `POST /api/auth/login` request with valid email and password
-**When** credentials are verified
-**Then** OAuth2TokenService (ROPC grant) issues both access token (30-day) and refresh token (90-day); response returns `{ access_token, refresh_token, expires_in, token_type: "Bearer" }`; mobile stores both via `expo-secure-store` (mapped to iOS Keychain / Android Keystore)
+**Given** a user submits email and password on the login screen
+**When** `authService.login()` executes
+**Then** `POST /api/auth/oauth/token` (routed by Nginx to `Blinder.IdentityServer`) is called with `grant_type=password`, `client_id=blinder-mobile`, `username`, `password`, `scope=email api` (form-encoded — never JSON); `scope=email api` is mandatory — the `api` scope places `"blinder-api"` in the token `aud` claim that `Blinder.Api` validates; response contains `access_token` (15-min), `refresh_token` (30-day rolling), `expires_in`; both tokens stored via `storageService.setTokens()` using `expo-secure-store`
 
-**Given** login is supported by both web/admin and mobile channels
-**When** authentication logic is reviewed
-**Then** scaffolded Identity login flow and API login endpoint delegate to OAuth2TokenService; mobile does not consume scaffolded Razor pages directly
+**Given** invalid credentials are submitted
+**When** IdentityServer returns 401 `invalid_grant`
+**Then** `ErrorBanner` shows "Invalid email or password" — no user enumeration hint; form is not cleared
 
 **Given** the mobile client receives tokens
-**When** `storageService.ts` persists both access + refresh tokens
-**Then** `SecureStore.setItemAsync` is called twice — `AsyncStorage` is never used for token storage; token expiry timestamps extracted for 5-minute pre-refresh logic
+**When** `storageService.ts` persists both tokens
+**Then** `SecureStore.setItemAsync` is used exclusively — `AsyncStorage` is never used for token storage; expiry timestamp stored for 5-minute pre-refresh buffer check
 
 **Given** a mobile app detects access token expires within 5 minutes
-**When** `authService.refreshAccessToken()` is called automatically
-**Then** `POST /api/auth/oauth/token` with `grant_type=refresh_token` is invoked; new access + refresh token pair issued; old tokens invalidated (one-time use)
+**When** `apiClient.ts` intercepts an outgoing request
+**Then** `authService.refreshToken()` is called: `POST /api/auth/oauth/token` with `grant_type=refresh_token`; new token pair stored; concurrent requests during refresh are queued (not each triggering a separate refresh)
 
-**Given** a `POST /api/auth/logout` request is made with `Authorization: Bearer <access_token>`
-**When** the logout succeeds
-**Then** both access token and refresh token are revoked at server via `POST /api/auth/oauth/revoke`; subsequent API requests with either token return 401; client clears tokens from `expo-secure-store`
+**Given** a user taps Log Out
+**When** `authService.logout()` executes
+**Then** `POST /api/auth/oauth/revoke` (routed to `Blinder.IdentityServer`) is called with the **refresh token** (not the access token — revoking the refresh token triggers OpenIddict cascade revocation of all related access tokens); `storageService.clearTokens()` called regardless of revocation network result; user navigated to login screen
 
-**Given** an API request is made with an expired, invalid, or revoked token
-**When** the JwtBearer middleware processes the request
-**Then** a 401 Unauthorized Problem Details response is returned — no stack trace is exposed
+**Given** an API request is made with an expired or revoked token
+**When** OpenIddict remote validation middleware in `Blinder.Api` processes the request
+**Then** a 401 Unauthorized Problem Details response is returned — no stack trace exposed; `JwtBearer` middleware is **not** involved
 
 ---
 

@@ -37,15 +37,18 @@ Story 2-0 is being implemented **after** Story 2-1 (registration). This is inten
 
 ---
 
-### 3. Authorization Code Grant Framework Ready for Social Login
+### 3. Authorization Code Grant Framework Ready for Social Login (with PKCE)
 
-**Given** a `POST /api/auth/oauth/token` request with `grant_type=authorization_code`, `code`, `client_id`
+**Given** a `POST /api/auth/oauth/token` request with `grant_type=authorization_code`, `code`, `client_id`, `code_verifier`
 **When** the grant handler processes the request
 **Then**
 - OpenIddict validates authorization code (one-time use, 10-min expiry) automatically
+- PKCE (RFC 7636) is enforced: `code_verifier` is required — requests without it return `invalid_grant` (`RequireProofKeyForCodeExchange()` is set in server options)
 - `ISocialLoginTokenValidator` interface is defined for provider variance (Apple, Google, Facebook)
 - Access token + refresh token issued on success
 - Framework is extensible: Stories 2-3/2-4 plug in their `ISocialLoginTokenValidator` implementations — no changes to this story's controller required
+
+**Note on social login flow:** Stories 2-3/2-4 use a server-side hybrid pattern — the provider's ID token (Apple/Google) is validated directly on the server via `ISocialLoginTokenValidator`, and IdentityServer issues its own token. This is not a standard OIDC authorization code redirect flow (no `/connect/authorize` endpoint is configured). This is an intentional design decision for a first-party mobile app.
 
 ---
 
@@ -102,10 +105,13 @@ Story 2-0 is being implemented **after** Story 2-1 (registration). This is inten
 **Given** all JWTs issued by the OpenIddict token endpoint
 **When** a JWT is decoded
 **Then**
-- JWT includes claims: `sub` (user ID), `iss` (issuer = IdentityServer URL), `aud` ("blinder-mobile"), `exp`, `iat`
+- JWT includes claims: `sub` (user ID), `iss` (issuer = IdentityServer URL), `aud` (`"blinder-api"` — the resource server identifier, **not** the client ID), `scope` (the granted scopes), `exp`, `iat`
+- `aud` = `"blinder-api"` is the resource audience that `Blinder.Api` validates against — using the client ID here would cause `Blinder.Api` to reject every token
 - All JWTs signed with RSA-256 signing certificate (from configuration — never hardcoded)
 - Development: `options.AddDevelopmentSigningCertificate().AddDevelopmentEncryptionCertificate()`
 - Production: certificate loaded from env variable base64 value (see Dev Notes: RSA Signing)
+
+**Note:** This system is OAuth2 with OIDC discovery infrastructure (discovery endpoint, JWKS). ID tokens are **not** issued — `Blinder.Api` is validated via OIDC discovery, not via OIDC ID token flows. This is intentional for a first-party mobile app.
 
 ---
 
@@ -115,9 +121,11 @@ Story 2-0 is being implemented **after** Story 2-1 (registration). This is inten
 **When** `OpenIddictSeeder` hosted service runs
 **Then**
 - `blinder-mobile` client application is registered if not already present
-- Client has permissions for: Token endpoint, Revocation endpoint, Password grant, Refresh token grant, Authorization code grant
+- Client has permissions for: Token endpoint, Revocation endpoint, Password grant, Refresh token grant, Authorization code grant, scopes `email` and `api`
 - Client is a public client (no secret — mobile ROPC)
+- Scope `api` is registered in the `OpenIddictScopes` table with audience `"blinder-api"` — this is what puts `"blinder-api"` in the access token `aud` claim
 - **Without this seeder, every token request returns `invalid_client` — this is the #1 gotcha**
+- **Without the `api` scope registered with audience `blinder-api`, `Blinder.Api` will reject all tokens as invalid audience — this is the #2 gotcha**
 
 ---
 
@@ -252,12 +260,27 @@ Story 2-0 is being implemented **after** Story 2-1 (registration). This is inten
           var manager = scope.ServiceProvider
               .GetRequiredService<IOpenIddictApplicationManager>();
 
+          // Register the "api" scope with audience "blinder-api" FIRST.
+          // This is what puts "blinder-api" in the aud claim of issued access tokens.
+          // Without this, Blinder.Api's AddAudiences("blinder-api") check will reject every token.
+          var scopeManager = scope.ServiceProvider
+              .GetRequiredService<IOpenIddictScopeManager>();
+
+          if (await scopeManager.FindByNameAsync("api", ct) is null)
+          {
+              await scopeManager.CreateAsync(new OpenIddictScopeDescriptor
+              {
+                  Name = "api",
+                  Resources = { "blinder-api" }  // sets aud = "blinder-api" on issued tokens
+              }, ct);
+          }
+
           if (await manager.FindByClientIdAsync("blinder-mobile", ct) is null)
           {
               await manager.CreateAsync(new OpenIddictApplicationDescriptor
               {
                   ClientId = "blinder-mobile",
-                  // Public client — no secret (mobile ROPC)
+                  ClientType = OpenIddictConstants.ClientTypes.Public, // no secret — mobile ROPC
                   Permissions =
                   {
                       OpenIddictConstants.Permissions.Endpoints.Token,
@@ -266,6 +289,8 @@ Story 2-0 is being implemented **after** Story 2-1 (registration). This is inten
                       OpenIddictConstants.Permissions.GrantTypes.RefreshToken,
                       OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode,
                       OpenIddictConstants.Permissions.ResponseTypes.Code,
+                      OpenIddictConstants.Permissions.Scopes.Email,
+                      OpenIddictConstants.Permissions.Prefixes.Scope + "api",
                   }
               }, ct);
           }
@@ -382,7 +407,8 @@ Story 2-0 is being implemented **after** Story 2-1 (registration). This is inten
       .AddValidation(options =>
       {
           options.SetIssuer(builder.Configuration["Auth:IdentityServerUrl"]!);
-          options.UseSystemNetHttp();   // fetches .well-known/openid-configuration, caches JWKS
+          options.AddAudiences("blinder-api");  // validates aud claim matches this resource identifier
+          options.UseSystemNetHttp();            // fetches .well-known/openid-configuration, caches JWKS
           options.UseAspNetCore();
       });
 
@@ -589,9 +615,13 @@ builder.Services.AddOpenIddict()
         options.SetTokenEndpointUris("/api/auth/oauth/token");
         options.SetRevocationEndpointUris("/api/auth/oauth/revoke");
 
-        options.AllowPasswordFlow()          // ROPC (AC2)
-               .AllowRefreshTokenFlow()      // Refresh (AC4)
-               .AllowAuthorizationCodeFlow();// Social login (AC3)
+        options.AllowPasswordFlow()              // ROPC (AC2)
+               .AllowRefreshTokenFlow()          // Refresh (AC4)
+               .AllowAuthorizationCodeFlow()     // Social login (AC3)
+               .RequireProofKeyForCodeExchange(); // PKCE mandatory for auth code grant (RFC 7636)
+
+        // Register the resource scope — puts "blinder-api" in the aud claim of issued access tokens
+        options.RegisterScopes(Scopes.Email, "api");
 
         // Access token: 15 minutes; refresh token: 30 days
         options.SetAccessTokenLifetime(TimeSpan.FromMinutes(15));
