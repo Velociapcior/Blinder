@@ -65,9 +65,10 @@ try
             options.SetTokenEndpointUris("/api/auth/oauth/token");
             options.SetRevocationEndpointUris("/api/auth/oauth/revoke");
 
-            options.AllowPasswordFlow()           // ROPC (AC2)
-                   .AllowRefreshTokenFlow()        // Refresh (AC4)
-                   .AllowAuthorizationCodeFlow();  // Social login (AC3)
+            options.AllowPasswordFlow()              // ROPC (AC2)
+                   .AllowRefreshTokenFlow()         // Refresh (AC4)
+                   .AllowAuthorizationCodeFlow()    // Social login (AC3)
+                   .RequireProofKeyForCodeExchange(); // PKCE mandatory for auth code grant (RFC 7636, AC3)
 
             // Token lifetimes — do NOT change without reading Dev Notes: Token Expiry Rationale.
             // Access tokens: 15 min (short window = revocation not needed per-request).

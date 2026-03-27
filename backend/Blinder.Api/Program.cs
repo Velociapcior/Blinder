@@ -90,6 +90,7 @@ try
         .AddValidation(options =>
         {
             options.SetIssuer(builder.Configuration["Auth:IdentityServerUrl"]!);
+            options.AddAudiences("blinder-api");  // validates aud claim — must match scope resource in OpenIddictSeeder
             options.UseSystemNetHttp();   // fetches .well-known/openid-configuration, caches JWKS
             options.UseAspNetCore();
         });

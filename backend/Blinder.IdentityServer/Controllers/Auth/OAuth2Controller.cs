@@ -7,6 +7,8 @@ using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using System.Security.Claims;
 using Microsoft.AspNetCore;
+using System;
+using System.Linq;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Blinder.IdentityServer.Controllers.Auth;
@@ -43,12 +45,17 @@ public sealed class OAuth2Controller(UserManager<ApplicationUser> userManager) :
             if (user is null || !await userManager.CheckPasswordAsync(user, request.Password!))
                 return Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
 
+            var requestedScopes = request.GetScopes();
+            var grantedScopes = requestedScopes.Any() ? requestedScopes : [Scopes.Email, "api"];
+
             var identity = new ClaimsIdentity(
                 OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
                 Claims.Name, Claims.Role);
 
             identity.SetClaim(Claims.Subject, user.Id.ToString())
                     .SetClaim(Claims.Email, user.Email!)
+                    .SetScopes(grantedScopes)
+                    .SetResources("blinder-api")
                     .SetDestinations(GetDestinations);
 
             return SignIn(new ClaimsPrincipal(identity),
@@ -67,6 +74,13 @@ public sealed class OAuth2Controller(UserManager<ApplicationUser> userManager) :
             {
                 return Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
             }
+
+            if (!result.Principal.GetScopes().Any())
+            {
+                result.Principal.SetScopes(Scopes.Email, "api");
+            }
+
+            result.Principal.SetResources("blinder-api");
 
             // Re-set destinations so refreshed access token carries the same claims.
             result.Principal.SetDestinations(GetDestinations);
@@ -88,6 +102,13 @@ public sealed class OAuth2Controller(UserManager<ApplicationUser> userManager) :
             {
                 return Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
             }
+
+            if (!result.Principal.GetScopes().Any())
+            {
+                result.Principal.SetScopes(Scopes.Email, "api");
+            }
+
+            result.Principal.SetResources("blinder-api");
 
             result.Principal.SetDestinations(GetDestinations);
 

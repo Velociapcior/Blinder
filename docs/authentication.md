@@ -114,7 +114,7 @@ All JWTs issued by the token endpoint include:
 | `sub` | User ID (GUID string) |
 | `email` | User email address |
 | `iss` | `Blinder.IdentityServer` URL |
-| `aud` | `blinder-mobile` |
+| `aud` | `blinder-api` (resource server identifier — NOT the client ID; `Blinder.Api` validates this claim) |
 | `exp` | Unix epoch expiry (15 min from issuance) |
 | `iat` | Unix epoch issuance time |
 
