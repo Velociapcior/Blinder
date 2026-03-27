@@ -7,9 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="4.0.19" />
-    <PackageReference Include="Coravel" Version="6.0.2" />
-    <PackageReference Include="dotAPNS" Version="4.6.0" />
+    <!-- OpenIddict authorization server -->
+    <PackageReference Include="OpenIddict.AspNetCore" Version="7.4.0" />
+    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.4.0" />
+    <!-- EF Core / Postgres for OpenIddictDbContext migrations -->
     <PackageReference Include="EFCore.NamingConventions" Version="10.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.2">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -19,20 +20,17 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="FirebaseAdmin" Version="3.4.0" />
-    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
-    <PackageReference Include="MailKit" Version="4.15.1" />
-    <PackageReference Include="OpenIddict.Validation.AspNetCore" Version="7.4.0" />
-    <PackageReference Include="OpenIddict.Validation.SystemNetHttp" Version="7.4.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.5" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.5" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
+    <!-- NetTopologySuite required for AppDbContext (shared from Blinder.Api) -->
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite" Version="10.0.1" />
-    <PackageReference Include="Riok.Mapperly" Version="4.3.1" />
+    <!-- Logging (same as Blinder.Api) -->
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shared user store, ApplicationUser, AppDbContext, IdentityRole<Guid> -->
+    <ProjectReference Include="../Blinder.Api/Blinder.Api.csproj" />
   </ItemGroup>
 
 </Project>

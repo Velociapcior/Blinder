@@ -780,6 +780,54 @@ public class OAuth2TokenEndpointTests : IClassFixture<WebApplicationFactory<Prog
 
 ---
 
+## Dev Agent Record
+
+### Implementation Plan
+
+Two-project OAuth2 topology implemented: `Blinder.IdentityServer` (new) issues tokens via OpenIddict; `Blinder.Api` validates them remotely via OIDC discovery.
+
+### Debug Log
+
+- Build errors identified on first compile (2026-03-25): `GetOpenIddictServerRequest` missing using directive; `DisableTransportSecurityRequirement` and `EnableRevocationEndpointPassthrough` have different API signatures in OpenIddict 7.4 vs. the story's code patterns (v5-era samples). `AddFixedWindowLimiter` needs `using Microsoft.AspNetCore.RateLimiting;`. `X509Certificate2(byte[], string?)` is obsolete in .NET 10 — use `X509CertificateLoader`. Developer is resolving these compilation errors manually.
+
+### Completion Notes
+
+All structural files created. Build errors in `OAuth2Controller.cs` and `Program.cs` (IdentityServer) left for developer to resolve per their instruction. EF Core migration for `OpenIddictDbContext` pending build fix.
+
+---
+
+## File List
+
+- `backend/Blinder.IdentityServer/Blinder.IdentityServer.csproj` (new)
+- `backend/Blinder.IdentityServer/Program.cs` (new)
+- `backend/Blinder.IdentityServer/appsettings.json` (new)
+- `backend/Blinder.IdentityServer/appsettings.Development.json` (new)
+- `backend/Blinder.IdentityServer/Dockerfile` (new)
+- `backend/Blinder.IdentityServer/Infrastructure/Data/OpenIddictDbContext.cs` (new)
+- `backend/Blinder.IdentityServer/Infrastructure/Data/HostExtensions.cs` (new)
+- `backend/Blinder.IdentityServer/Infrastructure/Auth/ISocialLoginTokenValidator.cs` (new)
+- `backend/Blinder.IdentityServer/Infrastructure/Auth/OpenIddictSeeder.cs` (new)
+- `backend/Blinder.IdentityServer/Controllers/Auth/OAuth2Controller.cs` (new)
+- `backend/Blinder.slnx` (modified — added IdentityServer project)
+- `backend/Blinder.Api/Blinder.Api.csproj` (modified — replaced JwtBearer with OpenIddict validation packages)
+- `backend/Blinder.Api/Program.cs` (modified — added OpenIddict remote validation)
+- `backend/Blinder.Api/appsettings.json` (modified — added Auth:IdentityServerUrl)
+- `backend/Blinder.Tests/Blinder.Tests.csproj` (modified — added InMemory EF and IdentityServer reference)
+- `backend/Blinder.Tests/IdentityServer/OAuth2TokenEndpointTests.cs` (new)
+- `docker-compose.yml` (modified — added identityserver service, removed obsolete JWT env vars)
+- `nginx/nginx.conf` (modified — added /api/auth/oauth/ and /.well-known/ routing to identityserver)
+- `mobile/services/storageService.ts` (modified — full OAuth2 token contract with expiry tracking)
+- `.env.example` (modified — added identity server cert vars, removed obsolete JWT vars)
+- `docs/authentication.md` (new)
+
+---
+
+## Change Log
+
+- 2026-03-25: Implemented Story 2-0 OAuth2/OIDC Foundation — created `Blinder.IdentityServer` project with OpenIddict 7.4, `OAuth2Controller` (ROPC + refresh + auth code passthrough), `OpenIddictSeeder`, `ISocialLoginTokenValidator` interface, `OpenIddictDbContext`; added OpenIddict remote validation to `Blinder.Api`; updated nginx routing, docker-compose, mobile storageService.ts token contract, .env.example, docs/authentication.md. Build errors in controller/Program.cs pending developer fix.
+
+---
+
 ## Story Completion Status
 
 - Story context generated with cross-artifact analysis, research synthesis, and implementation guardrails.

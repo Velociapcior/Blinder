@@ -19,9 +19,25 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB:?POSTGRES_DB is required};Username=${POSTGRES_USER:?POSTGRES_USER is required};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      - JwtSettings__Secret=${JWT_SECRET:?JWT_SECRET is required}
-      - JwtSettings__Issuer=${JWT_ISSUER:?JWT_ISSUER is required}
-      - JwtSettings__Audience=${JWT_AUDIENCE:?JWT_AUDIENCE is required}
+      - Auth__IdentityServerUrl=http://identityserver:8080
+    networks:
+      - blinder-net
+    depends_on:
+      db:
+        condition: service_healthy
+
+  identityserver:
+    build:
+      context: ./backend
+      dockerfile: Blinder.IdentityServer/Dockerfile
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB:?POSTGRES_DB is required};Username=${POSTGRES_USER:?POSTGRES_USER is required};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      - Auth__SigningCertBase64=${AUTH_SIGNING_CERT_BASE64:?AUTH_SIGNING_CERT_BASE64 is required}
+      - Auth__SigningCertPassword=${AUTH_SIGNING_CERT_PASSWORD:?AUTH_SIGNING_CERT_PASSWORD is required}
+      - Auth__EncryptionCertBase64=${AUTH_ENCRYPTION_CERT_BASE64:?AUTH_ENCRYPTION_CERT_BASE64 is required}
+      - Auth__EncryptionCertPassword=${AUTH_ENCRYPTION_CERT_PASSWORD:?AUTH_ENCRYPTION_CERT_PASSWORD is required}
     networks:
       - blinder-net
     depends_on:
@@ -59,4 +75,4 @@ services:
       - blinder-net
     depends_on:
       - api
-
+      - identityserver

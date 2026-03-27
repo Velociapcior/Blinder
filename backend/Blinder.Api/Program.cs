@@ -6,6 +6,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using OpenIddict.Validation.AspNetCore;
 using Serilog;
 
 // Bootstrap logger — captures startup errors before host logger is configured.
@@ -80,9 +81,25 @@ try
     builder.Services.AddQueue();
 
     // --------------------------------------------------------------------
+    // OpenIddict remote token validation (AC10 — Story 2.0)
+    // Tokens are issued by Blinder.IdentityServer; validated here via OIDC discovery.
+    // JwtBearer is NOT used — OpenIddict validation replaces it entirely.
+    // Signing keys are fetched and cached from .well-known/openid-configuration.
+    // --------------------------------------------------------------------
+    builder.Services.AddOpenIddict()
+        .AddValidation(options =>
+        {
+            options.SetIssuer(builder.Configuration["Auth:IdentityServerUrl"]!);
+            options.UseSystemNetHttp();   // fetches .well-known/openid-configuration, caches JWKS
+            options.UseAspNetCore();
+        });
+
+    builder.Services.AddAuthentication(
+        OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
+
+    // --------------------------------------------------------------------
     // Packages registered as references only in this story;
     // full configuration deferred to later stories:
-    //   JWT Bearer auth   → Story 2.2
     //   S3 client factory → Story 3.2
     //   Firebase / APNs   → Story 5.4
     // --------------------------------------------------------------------
