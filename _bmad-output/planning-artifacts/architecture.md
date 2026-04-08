@@ -1,1169 +1,1010 @@
 ---
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
-workflowType: 'architecture'
-lastStep: 8
-status: 'complete'
-completedAt: '2026-03-12'
 inputDocuments:
-  - '_bmad-output/planning-artifacts/prd.md'
-  - '_bmad-output/planning-artifacts/ux-design-specification.md'
-  - '_bmad-output/planning-artifacts/product-brief-Blinder-2026-03-11.md'
+  - _bmad-output/planning-artifacts/prd.md
+  - _bmad-output/planning-artifacts/ux-design-specification.md
+  - _bmad-output/planning-artifacts/product-brief-Blinder.md
+  - _bmad-output/planning-artifacts/product-brief-Blinder-distillate.md
+workflowType: 'architecture'
 project_name: 'Blinder'
 user_name: 'Piotr.palej'
-date: '2026-03-11'
+date: '2026-04-03'
+lastStep: 8
+status: 'complete'
+completedAt: '2026-04-03'
 ---
 
-# Architecture Decision Document
+# Architecture Decision Document - Blinder
 
 _This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
-
----
 
 ## Project Context Analysis
 
 ### Requirements Overview
 
-**Functional Requirements (45 total):**
+**Functional Requirements:**
+Blinder is centered on a conversation-first dating flow with a tightly defined lifecycle: onboarding, daily match delivery, blind conversation, dual-trigger decision gate, private simultaneous decisioning, reveal or dignified ending, and re-entry into the queue. Architecturally, this means the system is less like a feed-based social app and more like a stateful workflow platform with messaging as its primary interface.
 
-Organized across 8 domains:
+The functional scope clusters into several capability areas:
+- user identity, onboarding, consent, and age gating;
+- match generation and daily delivery;
+- blind-phase messaging with one active conversation focus;
+- decision gate orchestration driven by both time-floor and message-threshold events;
+- outcome handling for reveal, continue, abandon, timeout, and non-mutual endings;
+- moderated photo upload and controlled reveal access;
+- direct push notifications for meaningful events only;
+- internal support, moderation, and quality-ops tooling;
+- first-party telemetry for trust and quality metrics.
 
-- **Account Management (FR1–7):** Registration via email/password and social login (Apple, Google, Facebook); account deletion with full data purge; 18+ age declaration; invite-only female registration via validated invite links
-- **Onboarding & Profile (FR8–11):** Values and personality quiz; private photo storage (never visible until mutual reveal); immediate first-match drop on onboarding completion; automatic 7-day premium trial
-- **Matching (FR12–16):** Rules-based values-weighted compatibility algorithm; demographic fallback when pool insufficient; no browsing or searching — curated matches only; geographic radius control; invite link generation and tracking
-- **Chat & Conversation (FR17–21):** Real-time text messaging (SignalR/WebSockets); max 3 active conversations (free tier); message count tracking per conversation; push notifications for all key events
-- **Reveal System (FR22–27):** Async flag-per-user opt-in reveal; minimum message threshold gate; photo unlocks when both flags are set (user sees photo on next app open); no unilateral reveal path; premium lowers personal threshold only (other party consent always required)
-- **Subscription & Premium (FR28–31):** In-app purchase via Apple/Google billing; increased limits for premium; trial expiry and limit-reached prompts
-- **Safety & Content Moderation (FR32–40):** Image scanning at upload (SafeSearch/Azure Content Moderator); CSAM hash-matching (PhotoDNA/NCMEC) before storage; automated text flagging; one-tap reporting; reveal suspension on report; moderator admin interface with ban/warn/restore
-- **Analytics & Compliance (FR41–45):** DB-backed analytics (reveal event tracking stored in PostgreSQL); near-real-time gender ratio dashboard; GDPR data export and erasure; tamper-evident moderation audit log
+These requirements imply a relatively small number of major domains, but each domain is trust-critical and tightly coupled to state correctness.
 
-**Non-Functional Requirements (30 total):**
+**Non-Functional Requirements:**
+The dominant NFRs are reliability, privacy, emotional safety, and compliance. The PRD explicitly requires a deterministic and auditable decision-gate state machine, resilient recovery from app restarts and network interruptions, strict prevention of pre-reveal photo exposure, high reliability in upload-time moderation, and disciplined notifications that avoid pressure or spam.
 
-- **Performance:** <500ms chat delivery; <3s app launch; <10s image scan pipeline; <300ms API P95 (Poland)
-- **Security:** AES-256 at rest; TLS 1.2+; photos via signed time-limited URLs only — accessible only after both reveal flags are set; GDPR special category data EU-only; no card data stored (PCI delegated); 2-year tamper-evident audit log
-- **Scalability:** 10K concurrent users (launch); 100K registered users without architectural change; horizontal chat scaling; 1K concurrent image upload throughput
-- **Accessibility:** WCAG 2.1 AA for core flows; VoiceOver/TalkBack; Dynamic Type/font scaling; AA contrast ratios
-- **Reliability:** 99.5% monthly uptime; message queue resilience with no-loss guarantee; content scan hard-fail on API outage (images not accepted if scanning cannot be confirmed); CSAM pipeline failure = immediate ops alert
-- **Integration:** Apple IAP + Google Play Billing (60s state sync); FCM/APNs >95% delivery in 60s; reveal events are DB-transactional (no event loss); PhotoDNA tested with known hashes pre-launch
+The UX specification adds further architectural pressure:
+- strong support for clear phase-based states;
+- performant and intentional transitions for gate and reveal moments;
+- privacy-preserving lock-screen notification behavior;
+- accessibility support, including reduced-motion handling and scalable text;
+- consistent mobile behavior across iOS and Android.
+
+Compliance requirements include GDPR-first handling, account deletion, retention/export expectations, policy acceptance, and age-gate enforcement. Operationally, the architecture must also support support-timeline reconstruction and moderation auditability.
 
 **Scale & Complexity:**
+This is a high-complexity product, not because of broad feature count, but because the core loop has several trust-sensitive branching states that must always resolve correctly.
 
-- Primary domain: Full-stack mobile-first (React Native + backend API + real-time infrastructure + cloud storage + third-party compliance integrations)
-- Complexity level: **Medium** (elevated by real-time chat infrastructure, two-sided marketplace mechanics, content scanning pipeline, and CSAM/GDPR compliance requirements)
-- Estimated architectural components: 8–10 distinct backend service domains; 2 mobile clients (iOS/Android as single RN codebase); admin interface
+- Primary domain: cross-platform mobile application with backend workflow orchestration
+- Complexity level: high
+- Estimated architectural components: 9 major components
+
+The likely major components are:
+- mobile client application;
+- authentication and profile/onboarding domain;
+- matching service;
+- messaging service;
+- conversation-state and decision-gate orchestration service;
+- photo storage and moderation pipeline;
+- notification service;
+- admin/support operations tooling;
+- telemetry and analytics pipeline.
 
 ### Technical Constraints & Dependencies
 
-- **React Native** — single codebase for iOS 16+ and Android 10+ (API 29+); native modules only where required (push, camera)
-- **Microsoft SignalR** — specified for real-time chat; handles transport fallback automatically (WebSockets → Server-Sent Events → Long Polling) with built-in reconnect — no custom lifecycle management needed for MVP
-- **EU data residency** — all personal data (chat, photos, profile) must reside in EU-region infrastructure; no transit through non-EU cloud regions; each third-party integration (PhotoDNA, FCM/APNs, Apple/Google Sign In) must be individually audited for data flow compliance; analytics data stays in the main PostgreSQL DB on the EU-region VPS
-- **PhotoDNA/NCMEC** — legal agreements must be initiated at project start (external lead time: weeks to months); integration must be tested with known hashes before launch; this is a launch blocker. **Action item: initiate NCMEC legal process as a parallel workstream immediately — this is not a code concern and cannot be unblocked by development.**
-- **GDPR compliance** — special category data obligations (consent flows, retention limits, right to erasure, DPO) are deferred from MVP feature scope but GDPR posture documentation must be in place before first real user onboards per PRD launch blocker definition
-- **In-app billing** — Apple StoreKit and Google Play Billing mandatory for digital subscriptions on their respective platforms; Apple anti-steering rules restrict web subscription promotion from within the iOS app
-- **Firebase Cloud Messaging (FCM) + APNs** — push infrastructure abstraction required (OneSignal or direct integration)
-- **Analytics** — None — custom DB-backed analytics; reveal events and gender ratio data stored in PostgreSQL
-- **Content scanning** — Google Vision SafeSearch or Azure Content Moderator; pipeline must hard-fail (not pass-through) if scan API is unavailable
-- **Private photo storage** — no public object storage URLs permitted; photo delivery via authenticated signed URLs only, and only after both `reveal_ready` flags on a conversation are confirmed
+Known constraints and dependencies already identified in the source documents include:
+- server-authoritative handling of all trust-critical conversation transitions;
+- no photo visibility before mutual reveal across any client or API path;
+- direct APNS/FCM push only in MVP;
+- self-hosted or first-party leaning storage, moderation, telemetry, and ops tooling;
+- no offline write support for MVP;
+- staged rollout by cohort/city;
+- internal support and moderation capabilities required from MVP rather than deferred to third-party tooling.
 
-### Reveal System: Architectural Decision
-
-The reveal mechanic is implemented as **two independent async state flags** per conversation, not a synchronous simultaneous exchange:
-
-- `user_a_reveal_ready: bool`
-- `user_b_reveal_ready: bool`
-
-A user sees their match's photo on the **next app open** after both flags are true AND `message_count >= threshold`. There is no requirement for both users to be online simultaneously. The "mutual reveal" experience is a UX presentation decision, not a technical coordination constraint. Photo access authorization is a simple server-side check: signed URL generation is gated on both flags being set.
-
-### Matching: Configurable Threshold Decision
-
-The compatibility threshold for the rules-based matching algorithm (the point at which the system falls back to demographic matching) **must be admin-configurable from day one** — not hardcoded. This threshold will require tuning as the user pool grows, and a release cycle to change it is unacceptable in an early-stage product.
+These constraints bias the architecture toward explicit workflow boundaries, auditable event handling, and lean ownership of core infrastructure.
 
 ### Cross-Cutting Concerns Identified
 
-1. **Content scanning pipeline** — Image scan-before-store is a cross-cutting gate affecting photo upload, reveal delivery, and moderation flows. Decision required: synchronous (user waits up to 10s for upload confirmation) vs. asynchronous with quarantine state. This architectural decision must be made explicitly before implementation.
-2. **Reveal authorization** — `reveal_ready` flag state is checked at photo access time (signed URL generation). Spans storage, API, and conversation state services.
-3. **Real-time push routing** — New match, new message, reveal readiness events, trial expiry, moderation follow-up: affects matching, chat, reveal, subscription, and moderation services. SignalR handles active-session delivery; FCM/APNs covers background.
-4. **Account deletion cascade** — FR4 requires full purge of photos, chat history, profile, and analytics user references on account deletion. Requires a deletion orchestrator with service-level deletion contracts. **Exception:** moderation audit logs are retained for 2 years minimum (NFR12) even after account deletion — the deletion orchestrator must know which data categories are exempt.
-5. **Gender ratio monitoring** — Near-real-time dashboard and invite-only female onboarding gating spans user registration, invite link system, and analytics. Invite lineage (which female member referred whom) must be tracked for safety and ratio management.
-6. **i18n / Localisation** — Polish (pl-PL) primary, English fallback; must be embedded in component architecture from day one to support geographic expansion without refactoring.
-7. **In-app billing state management** — Subscription state changes must propagate within 60 seconds; premium feature gates depend on accurate billing state across both platforms.
-8. **Admin-configurable matching threshold** — Compatibility threshold and fallback logic exposed via admin config, not hardcoded.
+Several concerns will affect multiple architectural components:
+- privacy and access control, especially around pre-reveal media protection;
+- deterministic workflow resolution for simultaneous or conflicting events;
+- audit logging for safety, moderation, and support reconstruction;
+- notification governance to preserve the anti-urgency product stance;
+- telemetry for quality and safety without creating rejection-scoring artifacts;
+- moderation fallback paths for uncertain photo-scan outcomes;
+- recovery and synchronization after reconnect or app relaunch;
+- accessibility and calm-performance requirements in trust-critical UI states.
 
----
+These cross-cutting concerns should be treated as architectural drivers rather than implementation details.
 
 ## Starter Template Evaluation
 
 ### Primary Technology Domain
 
-Full-stack mobile-first — Expo (React Native) mobile client + ASP.NET Core .NET 10 backend (REST API + SignalR hub + Razor Pages admin) + PostgreSQL database, hosted on a Linux VPS.
+Mobile application foundation, based on project requirements analysis.
 
-### Repository Structure
+Blinder is primarily a cross-platform mobile product with a trust-sensitive conversation workflow and a highly intentional UI system. The backend is essential, but the starter-template decision that most affects day-one implementation consistency is the mobile app foundation. This is therefore a mobile foundation decision, not a whole-system bootstrap choice.
 
-```
-blinder/
-├── backend/          # ASP.NET Core .NET 10 (API + SignalR + Razor Pages admin)
-└── mobile/           # Expo SDK 55 (iOS + Android)
-```
+### Starter Options Considered
 
-Single monorepo, two top-level projects.
+**1. Expo official default template (`default@sdk-55`)**
+This is the current official Expo starter and includes Expo Router, TypeScript, and the updated SDK 55 project structure.
 
-### Selected Starters
+Pros:
+- Officially maintained by Expo
+- Current SDK 55-compatible initialization path
+- Good default structure and tooling
+- Strong long-term maintenance confidence
 
-#### Backend — ASP.NET Core .NET 10
+Cons:
+- The SDK 55 default template is designed around native tabs out of the box
+- That conflicts with Blinder's explicit UX decision to avoid persistent tab navigation
+
+## Project Structure & Boundaries
+
+- It introduces a navigation metaphor that contradicts the one-conversation, calm-focus product model
+
+- It would require undoing starter assumptions early
+
+**2. Expo blank TypeScript template (`blank-typescript`)**
+This is the most minimal official Expo foundation.
+
+Pros:
+- No conflicting navigation assumptions
+- Maximum architectural control
+- Clean fit for Blinder's single-focus navigation model
+
+Cons:
+- Does not include Tamagui integration
+- Does not establish a design-system-aware structure
+- Pushes more foundational work into the first implementation story
+- Makes it easier for ad hoc styling and token drift to appear before the design system is locked
+
+**3. Tamagui Expo Router starter**
+Tamagui's Expo guide provides a current starter path for an Expo Router app with Tamagui integration.
+
+Pros:
+- Best alignment with the UX specification's explicit Tamagui decision
+- Supports a token-first design system from the start
+- Better fit for custom, animation-aware UI work than a plain Expo starter
+- Compatible with a stack-based, no-tab navigation model
+- Helps enforce the product rule that screen work should begin from tokens and shared primitives rather than hardcoded values
+
+Cons:
+- Less "official Expo default" than the core Expo starter
+- Requires Yarn 4.4.0+ according to Tamagui's current guide
+- Still needs deliberate pruning of any example/demo structure
+
+**4. Ignite**
+Ignite remains a respected React Native starter ecosystem, but it is a weaker fit here.
+
+Pros:
+- Mature community and recipes
+- Good for teams that want a broader prebuilt app foundation
+
+Cons:
+- More opinionated than needed for Blinder
+- Less aligned with the documented Tamagui-first design decision
+- Not the cleanest fit for a custom, calm, trust-sensitive UX foundation
+
+### Selected Starter: Tamagui Expo Router starter
+
+**Rationale for Selection:**
+This starter best matches the documented product and UX decisions already made for Blinder.
+
+The deciding factors are:
+- the design specification explicitly chose Tamagui;
+- the app needs a token-first design system before screen work begins;
+- the app requires custom navigation rather than tab-centric defaults;
+- the UI depends on intentional motion and custom components in trust-critical flows;
+- the starter helps protect the UX system from early implementation drift.
+
+Using the Expo SDK 55 default starter would mean starting from a tabs-oriented template and immediately undoing foundational decisions. Using `blank-typescript` would avoid that problem, but it would push too much setup work into implementation. The Tamagui Expo Router starter gives a better middle ground: current Expo-compatible foundations plus the design-system integration the product already requires.
+
+This starter should be treated as a bootstrap layer only, not as a structure to preserve verbatim. An early implementation story should prune demo structure and reorganize the app into domain-first modules aligned to the Blinder lifecycle: onboarding, waiting, match entry, conversation, gate, reveal, ending, and settings.
+
+**Initialization Command:**
 
 ```bash
-dotnet new sln -n Blinder
-dotnet new webapi -n Blinder.Api --use-controllers --framework net10.0
-dotnet sln add Blinder.Api/Blinder.Api.csproj
+yarn create tamagui@latest --template expo-router
 ```
 
-Key packages to add immediately:
-
-```bash
-dotnet add package Microsoft.AspNetCore.SignalR
-dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL
-dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer
-dotnet add package Microsoft.AspNetCore.RazorPages
-```
-
-#### Mobile — Expo SDK 55
-
-```bash
-npx create-expo-app@latest --template default@sdk-55
-```
-
-Key packages to add:
-
-```bash
-npx expo install expo-router expo-notifications expo-image-picker expo-secure-store @microsoft/signalr nativewind
-```
-
-### Architectural Decisions Established by Starters
+**Architectural Decisions Provided by Starter:**
 
 **Language & Runtime:**
-- Backend: C# 14 on .NET 10 LTS (LTS support through May 2027 — aligns with post-MVP expansion window)
-- Mobile: TypeScript with `strict: true` enabled in `tsconfig.json` from day one — set before writing the first component; retrofitting strict mode is costly
+- TypeScript-based React Native application
+- Expo-based runtime and toolchain
+- Expo Router-compatible application structure
+- Compatible with the current Expo SDK 55 ecosystem
 
-**Project Structure (Backend):**
-- `Controllers/` — REST API endpoints
-- `Hubs/` — SignalR real-time chat hub
-- `Pages/` — Razor Pages admin interface (`/admin/**`)
-- `Models/`, `DTOs/`, `Services/` — standard layered separation
-- `appsettings.json` + `appsettings.Production.json` for environment config
-- `Migrations/` — EF Core migrations committed to source control
+**Styling Solution:**
+- Tamagui-based design system foundation
+- Token-driven theming and component primitives
+- Clear path for enforcing the "no hardcoded values" design rule
+- Good fit for custom reveal, gate, and conversation components
 
-**Project Structure (Mobile):**
-- File-based routing via Expo Router (`app/` directory)
-- `app/(auth)/` — onboarding and login screens
-- `app/(tabs)/` — main app shell (chat list, profile, settings)
-- `components/` — shared UI components
-- `services/` — API client and SignalR connection management
+**Build Tooling:**
+- Expo CLI development workflow
+- Compatible with development builds, which should be the expected dev path for this app given notifications and native integrations
+- Strong fit for EAS-based mobile build and release workflow later
 
-**ORM & Database:**
-- Entity Framework Core 10 with Npgsql provider (PostgreSQL)
-- **PostGIS extension enabled from day one** — required for geographic radius matching (FR15); provides spatial indexing for "users within X km" queries; far more efficient than runtime haversine calculations on unindexed coordinate columns
-- Migration strategy: code-first migrations only; EF CLI tools (`dotnet-ef`) are **only** available in the SDK build stage — they are stripped from the production runtime image by design
-- **Dev workflow:** `docker compose run --rm api dotnet ef migrations add <Name>` — works because `docker-compose.override.yml` targets the SDK build stage
-- **Production deployment:** generate an idempotent SQL script (`dotnet ef migrations script --idempotent --output migrations/latest.sql`) in dev or CI, commit it to the repository, and apply during deployment via `docker compose exec -T db psql -U $POSTGRES_USER -d $POSTGRES_DB < migrations/latest.sql`
-- `--idempotent` flag makes the script check the EF migrations history table — safe to re-run on every deploy without double-applying migrations
-- **Never** auto-applied on startup via `Database.MigrateAsync()` in `Program.cs` (this pattern causes production incidents and is explicitly prohibited)
+**Testing Framework:**
+- No major testing advantage over the official Expo starter by itself
+- Testing choices should still be made deliberately in architecture decisions
+- Suitable foundation for adding Jest and React Native Testing Library in early implementation
 
-**Styling (Mobile):**
-- **NativeWind** (Tailwind CSS utility classes for React Native) — locks in consistent styling conventions from the first screen; prevents ad-hoc per-developer styling patterns; compatible with Phase 2 web app if Tailwind is used there
+**Code Organization:**
+- Router-based application structure
+- Good fit for phase-based screen organization
+- Better starting point than tabs-first starters for Blinder's single-focus navigation model
+- Supports separating app flows from design-system and domain logic cleanly
+- Should be restructured early into domain-first modules rather than left in generic starter form
 
-**Real-time:**
-- SignalR hub in backend; `@microsoft/signalr` npm package in mobile client
-- Transport negotiation handled automatically by SignalR: WebSockets → Server-Sent Events → Long Polling
-- No custom reconnection logic needed — SignalR client handles this natively
+**Development Experience:**
+- Current maintained setup path from Tamagui documentation
+- Faster start on token and component architecture
+- Better alignment with the chosen UX foundation than a generic starter
+- Reduces rework in the first mobile implementation stories
 
-**Authentication Token Storage (Mobile):**
-- **`expo-secure-store` for all JWT token storage** — maps to iOS Keychain and Android Keystore
-- `AsyncStorage` is explicitly prohibited for token storage — it is unencrypted and fails basic security requirements
+**Companion backend note:**
+The mobile starter does not replace the need for a backend foundation. The backend should be initialized separately as an ASP.NET Core 10 Web API in an early implementation story so that the client and server foundations evolve in parallel.
 
-**Admin Interface:**
-- Razor Pages with cookie authentication (separate auth scheme from mobile JWT tokens)
-- Server-rendered — no additional frontend build pipeline
-- `/admin` path additionally protected by Nginx IP allowlisting in production — application-level auth alone is insufficient for a route with access to user PII and moderation actions
-
-**CI/CD (Mobile):**
-- **EAS Build** for App Store and Play Store builds and submissions — free tier is sufficient for MVP velocity; eliminates manual native build pipeline setup
-- `eas.json` committed to the repository from the first commit
-- Note: EAS Build is for *mobile store delivery only* — backend deployment is a separate concern (see Hosting below)
-
-**Hosting (Backend) — Docker-first from day one:**
-- All backend services run in Docker containers via Docker Compose — API, PostgreSQL + PostGIS, and Nginx are each a separate named service in `docker-compose.yml`; nothing runs directly on the host OS at runtime
-- **VPS required** (e.g., Hetzner, DigitalOcean) — SignalR relies on persistent HTTP connections (WebSocket upgrades); true shared hosting providers commonly block or aggressively timeout long-lived connections; verify WebSocket support before committing to any host
-- ASP.NET Core API container built from a multi-stage `Dockerfile` (SDK image for build → ASP.NET runtime image for production); SDK layer excluded from the final image to minimise size
-- Nginx container: TLS termination, reverse proxy to the API container, and `/admin` IP allowlisting; Nginx config mounted as a bind-mounted volume from `nginx/nginx.conf` in the repository
-- **Nginx WebSocket headers are mandatory for SignalR** — without them, SignalR silently falls back to long polling, which breaks the `<500ms chat delivery` NFR. The following directives are required in `nginx/nginx.conf` for the `/hubs/` location block:
-  ```nginx
-  proxy_http_version 1.1;
-  proxy_set_header Upgrade $http_upgrade;
-  proxy_set_header Connection "upgrade";
-  proxy_read_timeout 3600s;
-  ```
-- PostgreSQL + PostGIS: official `postgis/postgis` Docker image; data persisted via a named Docker volume (`db-data`) — never an anonymous volume, which would be silently destroyed on `docker compose down`
-- **Environment configuration:** all secrets injected via a `.env` file on the VPS (never committed to source control); `.env.example` committed with placeholder values documenting every required variable — kept in sync with `.env` requirements in the same commit as any new variable
-- **EF Core migrations:** `dotnet-ef` CLI tools exist only in the SDK build stage; the production runtime image does not include them. Migration approach: generate `migrations/latest.sql` via `dotnet ef migrations script --idempotent` in dev or CI, commit to the repository, and apply via `docker compose exec -T db psql` during deployment — never auto-applied inside a running container on startup
-- `restart: unless-stopped` set on all production services — containers recover automatically on VPS reboot without `systemd` unit files
-- Backend deployment at MVP: `git pull && docker compose build && docker compose up -d db && docker compose exec -T db psql -U $POSTGRES_USER -d $POSTGRES_DB < migrations/latest.sql && docker compose up -d`
-
-**Note:** Project initialization using the commands above constitutes the first two implementation stories — backend scaffolding and mobile scaffolding respectively.
-
----
+**Note:** Project initialization using this command should be the first mobile implementation story.
 
 ## Core Architectural Decisions
 
 ### Decision Priority Analysis
 
 **Critical Decisions (Block Implementation):**
-- Authentication: OpenIddict (OAuth2/OIDC Authorization Server) + ASP.NET Core Identity (user store) — separate `Blinder.IdentityServer` project; `Blinder.Api` validates tokens remotely via OIDC discovery
-- File Storage: S3-compatible object storage (EU-region bucket)
-- Background Processing: Coravel (in-memory)
-- API pattern: REST with controllers
-- Object mapping: Mapperly (source generator)
+- Use ASP.NET Core 10 / .NET 10 for all backend applications.
+- Split the backend into three applications: IdentityServer, Api, and AdminPanel.
+- Use a single PostgreSQL database with logical ownership boundaries instead of separate physical databases.
+- Use OpenIddict 7.4.0 as the self-hosted OAuth2/OIDC server foundation.
+- Use Npgsql.EntityFrameworkCore.PostgreSQL 10.0.1 with EF Core 10 for relational data access.
+- Keep IdentityServer as the sole writer of identity-owned data.
+- Keep Api as the sole writer of business-owned data.
+- Route all AdminPanel operations through Api endpoints rather than direct database access.
 
-**Deferred Decisions (Post-MVP):**
-- Horizontal scaling of SignalR (requires Redis backplane — not needed at Poland-launch scale)
-- Managed database service (PostgreSQL on VPS sufficient until load warrants separation)
-- ML-based matching (no training data at launch)
+**Important Decisions (Shape Architecture):**
+- Use schema-level separation inside one database: `identity.*` and `app.*`.
+- Use Razor Pages for AdminPanel and authenticate it with OIDC against IdentityServer.
+- Use REST/JSON APIs as the primary integration style between clients and Api.
+- Use built-in ASP.NET Core OpenAPI 3.1 generation for API documentation.
+- Use SignalR selectively for trust-critical real-time conversation updates where polling would degrade experience.
+- Use Problem Details-based error responses consistently across the API surface.
 
----
-
-### Authentication & Security
-
-**Decision: OpenIddict (OAuth2/OIDC) + ASP.NET Core Identity — Two-Project Topology**
-
-Authentication is split across two ASP.NET Core projects with distinct responsibilities:
-
-**`Blinder.IdentityServer`** — the sole Authorization Server and Identity Provider:
-- Owns OpenIddict OAuth2/OIDC server (token issuance, grant handling, revocation)
-- Owns ASP.NET Core Identity user store (`ApplicationUser`, `UserManager`, `SignInManager`)
-- Owns EF Core migrations for both Identity tables and OpenIddict tables (4 tables: Applications, Authorizations, Tokens, Scopes)
-- Exposes: `POST /api/auth/oauth/token` (ROPC, Refresh Token, Authorization Code grants), `POST /api/auth/oauth/revoke`, `GET /.well-known/openid-configuration`, `GET /.well-known/jwks`
-- No resource endpoints — token issuance only
-- Rate limiting: 5 requests/min/IP on token endpoint via ASP.NET Core `AddRateLimiter()`
-
-**`Blinder.Api`** — the sole Resource Server:
-- Validates tokens remotely via OpenIddict OIDC discovery (`UseSystemNetHttp()` fetches and caches JWKS from IdentityServer)
-- Never issues tokens — `[Authorize]` uses `OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme`
-- Owns `POST /api/auth/register` (user creation is a resource operation — routed to Blinder.Api by Nginx)
-- References `Blinder.Api.csproj` for `ApplicationUser` model and `AppDbContext` — no user table duplication
-- Admin Razor Pages use cookie authentication (separate scheme from OpenIddict validation)
-
-**Nginx routing (single base URL for mobile):**
-- `/api/auth/oauth/` → `Blinder.IdentityServer`
-- `/.well-known/` → `Blinder.IdentityServer`
-- `/api/` (all other) → `Blinder.Api`
-- `/admin` → `Blinder.Api` + IP allowlist
-
-**Token lifetimes (revised from NFR10):**
-- Access tokens: **15 minutes** (short-lived; JWKS-validated with no per-request DB check)
-- Refresh tokens: **30 days rolling** (OpenIddict automatic rotation — old token marked `redeemed` on each use; replay attempts rejected)
-- NFR10 ("30 days inactivity") is satisfied by the 30-day rolling refresh token window
-
-**Other rules:**
-- Use a custom `ApplicationUser : IdentityUser<Guid>` from day one — adding custom fields directly to `IdentityUser` causes painful schema migrations
-- Social provider ID tokens validated server-side via `ISocialLoginTokenValidator`; IdentityServer issues its own JWT — no external OAuth redirect dance
-- `expo-secure-store` on mobile maps to iOS Keychain / Android Keystore — `AsyncStorage` is explicitly prohibited for auth tokens
-- Admin Razor Pages use cookie authentication (separate scheme from OpenIddict bearer validation)
-- `/admin` additionally protected by Nginx IP allowlist — application-level auth alone is insufficient
-
-```bash
-# Blinder.IdentityServer
-dotnet add package OpenIddict.AspNetCore --version 7.4.0
-dotnet add package OpenIddict.EntityFrameworkCore --version 7.4.0
-dotnet add package Microsoft.AspNetCore.Identity.EntityFrameworkCore
-
-# Blinder.Api
-dotnet add package OpenIddict.Validation.AspNetCore --version 7.4.0
-dotnet add package OpenIddict.Validation.SystemNetHttp --version 7.4.0
-```
-
----
-
-### API & Communication Patterns
-
-**Decision: REST with ASP.NET Core Web API controllers**
-
-Standard HTTP controllers in `Controllers/` directory. Controller-per-domain: `AuthController`, `MatchController`, `ConversationController`, `RevealController`, `ModerationController`, `SubscriptionController`.
-
-- OpenAPI/Swagger documentation via `Microsoft.AspNetCore.OpenApi` (built into .NET 10)
-- SignalR hub at `/hubs/chat` for real-time message delivery — separate from REST API surface
-- API versioning not required at MVP; add `Asp.Versioning` when Phase 2 web app requires it
-- Error responses follow RFC 7807 Problem Details via `AddProblemDetails()` + `UseExceptionHandler()` — consistent error shape across every controller from day one
-
----
+**Deferred Decisions (Post-MVP or later refinement):**
+- Distributed cache introduction (likely Redis) is deferred until measured need appears.
+- Search specialization and advanced PostgreSQL extensions are deferred.
+- Event bus / message broker is deferred unless the single-deployment architecture shows operational pressure.
+- Advanced read models or CQRS splits are deferred.
+- Detailed CI/CD platform selection is deferred, though container-first deployment remains the expected path.
 
 ### Data Architecture
 
-**Decision: EF Core 10 + Npgsql + PostgreSQL + PostGIS**
-
-- Code-first migrations committed to source control
-- Migrations applied via SQL script during deployment: `dotnet ef migrations script --idempotent --output migrations/latest.sql` (generated in dev/CI using SDK stage), then `docker compose exec -T db psql -U $POSTGRES_USER -d $POSTGRES_DB < migrations/latest.sql` — never `Database.MigrateAsync()` on startup (production incident risk; explicitly prohibited)
-- PostGIS enabled from day one for geographic radius matching (FR15) — spatial index on user coordinates; never haversine on raw columns
-- Compatibility threshold for matching algorithm stored as admin-configurable database value — not hardcoded
-- No caching layer at MVP — PostgreSQL at VPS scale is sufficient for Poland-first volume; add Redis if query latency becomes an issue post-launch
-
----
-
-### Object Mapping
-
-**Decision: Mapperly (source generator)**
-
-Mapperly generates mapping code at compile time via C# source generators — zero runtime reflection, zero allocations, full IDE support and compile-time error detection. Used for all Entity ↔ DTO mappings throughout the backend.
-
-- Mapping classes live in a `Mappings/` folder as `partial` mapper classes decorated with `[Mapper]`
-- No manual `new DTO { ... }` mapping in controllers or services — all entity-to-DTO and DTO-to-entity conversions go through a Mapperly mapper
-- Compile-time errors on unmapped properties — prevents silent data leaks in API responses
-
-```bash
-dotnet add package Riok.Mapperly
-```
-
----
-
-### File Storage
-
-**Decision: S3-compatible object storage (EU-region)**
-
-User photos stored in an S3-compatible object store with private ACL. Recommended provider: **Hetzner Object Storage** (native EU, S3-compatible, cost-effective).
-
-- `AWSSDK.S3` NuGet package used with custom endpoint configuration
-- **Hetzner Object Storage requires `ForcePathStyle = true`** in the S3 client config — non-standard endpoint; spike this before writing the upload story
-- Photos stored under a path that does not expose user identity in the key (e.g., `photos/{guid}`)
-- No public bucket ACL — all access via pre-signed URLs generated server-side
-- Signed URL generated only after both `reveal_ready` flags are confirmed for the conversation
-- URL expiry: short-lived (e.g., 1 hour) — client requests a fresh signed URL on each reveal screen open
-- Image scanning pipeline executes synchronously before the upload is confirmed to the client
-
-```bash
-dotnet add package AWSSDK.S3
-```
-
----
-
-### Background Processing
-
-**Decision: Coravel (in-memory task scheduling and queuing)**
-
-Coravel provides fluent task scheduling, fire-and-forget queuing, in-process event broadcasting, and Razor-templated mailing — zero external infrastructure dependencies.
-
-**Acknowledged trade-off:** Coravel is in-memory. Jobs queued at the moment of a process restart are lost. Acceptable at MVP scale on a stable VPS. The image scanning pipeline is unaffected (synchronous, blocks the upload response). Fire-and-forget jobs (push dispatch, moderator email, match triggers) may occasionally drop on restart — tolerable at MVP.
-
-**Critical exception — match generation job:** This job must be **idempotent and re-triggered on startup**. On boot, the application checks for un-matched users and queues matches immediately — not waiting for the next cron tick. Rationale: un-matched users post-restart stare at an empty "finding your match" screen indefinitely, which is the worst possible UX failure for the dropout cohort.
-
-**Coravel usage by feature:**
-- **Push notification dispatch** — queued `IInvocable` after message send / reveal state change
-- **Moderator alert email** — queued `IInvocable` on report submission
-- **Match generation** — scheduled `IInvocable` (periodic) + idempotent startup check
-- **Trial expiry notifications** — scheduled `IInvocable` checking premium trial expiry dates daily
-
-```bash
-dotnet add package Coravel
-```
-
----
-
-### Email / Notifications
-
-**Decision: SMTP via hosting provider + MailKit**
-
-VPS hosting provider's included SMTP service is sufficient at MVP volume. MailKit (`MimeKit` + `MailKit`) is the standard .NET SMTP client. Email templates rendered via Coravel's built-in Razor mailing support.
-
-- SMTP credentials configured via `IOptions<SmtpSettings>` bound to `appsettings.json` — credentials sourced from environment variables on the VPS, **never committed to source control**
-- If hosting SMTP proves unreliable, swap to Resend.com free tier (100 emails/day) without architectural change
-
-```bash
-dotnet add package MailKit
-```
-
----
-
-### Push Notifications
-
-**Decision: Direct FCM + APNs from the .NET backend (no third-party routing service)**
-
-All push notification dispatch runs inside the .NET process on the VPS. Mobile client registers its native device token with the backend on login; backend dispatches directly to Google FCM (Android) and Apple APNs (iOS) via official SDKs.
-
-- `FirebaseAdmin` NuGet — official Google Firebase Admin SDK for .NET; dispatches via FCM HTTP v1 API to Android devices
-- `dotAPNS` NuGet — APNs HTTP/2 client for iOS devices
-- Mobile client calls `getDevicePushTokenAsync()` (raw native token, **not** `getExpoPushTokenAsync()`) and POSTs it to `POST /api/account/device-token` on login and re-authentication
-- `DeviceToken` table stores `user_id`, `token`, `platform` (Android/iOS), `created_at` — indexed on `user_id`
-- **`SendPushNotificationJob.cs` must delete stale tokens** on FCM `registration-token-not-registered` or APNs `BadDeviceToken` error responses — otherwise the table grows unboundedly
-- APNs credentials: **Auth Key (`.p8` file, 10-year validity)** — never certificate (requires annual rotation); stored as `APNS_KEY` env var, never committed to source control
-- Firebase credentials: service account JSON stored as `FIREBASE_CREDENTIALS_JSON` env var (content, not file path); `FirebaseAdmin` initialized from a stream
-- APNs environment: `PushNotifications:UseApnsSandbox` flag in `appsettings.json` — `true` in Development/Staging, `false` in Production
-- `IPushNotificationService` interface with platform-branching dispatcher — mock-friendly for unit and integration tests; `FakePushNotificationService` in test environment
-
-```bash
-dotnet add package FirebaseAdmin
-dotnet add package dotAPNS
-```
-
----
-
-### In-App Purchase Webhook Security
-
-**Decision: Server-side JWT signature verification required on all IAP webhooks**
-
-Both Apple and Google deliver subscription state change notifications as signed JWTs to `SubscriptionController`. **Without verification, any actor can POST a fake webhook to unlock premium features (OWASP A01 — Broken Access Control).** Verification is mandatory and must not be skippable in production.
-
-**Apple AppStore Server Notifications:**
-- Payload is a signed JWT (RS256); verify against Apple's JWKS endpoint: `https://appleid.apple.com/auth/keys`
-- Verify `iss` claim = `"https://appleid.apple.com"` and `bundle_id` claim matches app
-- Use `Microsoft.IdentityModel.Tokens` (already present via `JwtBearer` package) — no additional dependency
-- **Cache JWKS keys with 24h TTL** — never call the JWKS endpoint per-request (rate-limiting and latency risk)
-
-**Google Play Real-Time Developer Notifications:**
-- Configure as HTTPS push (direct POST to endpoint) rather than Pub/Sub for MVP simplicity
-- Notification carries a JWT in the `Authorization: Bearer` header; verify against Google's JWKS endpoint: `https://www.googleapis.com/oauth2/v3/certs`
-- Verify `iss` and `aud` claims match expected Google service account and package name
-
-**Test environment bypass:**
-- `appsettings.Testing.json`: `"Subscriptions:SkipWebhookVerification": true` — valid only when `WebApplicationFactory` test host is active
-- Production environment must have `SkipWebhookVerification` absent or `false` — enforced via startup assertion
-
----
-
-### Validation
-
-**Decision: FluentValidation**
-
-All API input validation goes through FluentValidation — not inline `if` statements in controllers or services. Validator classes in `Validators/` directory, one per request type. Integrates with ASP.NET Core model binding and produces Problem Details-compatible error responses automatically.
-
-```bash
-dotnet add package FluentValidation.AspNetCore
-```
-
----
-
-### Logging
-
-**Decision: Serilog with rolling file sink**
-
-Serilog replaces the default .NET logging provider. Structured JSON output to rolling daily log files on the VPS — queryable with `grep`/`jq` during production debugging. `ILogger<T>` injection used throughout — no `Console.WriteLine` in application code.
-
-```bash
-dotnet add package Serilog.AspNetCore
-dotnet add package Serilog.Sinks.File
-```
-
----
-
-### Decision Impact: Cross-Component Dependencies
-
-| Decision | Affects |
-|---|---|
-| OpenIddict (OAuth2/OIDC) + `Blinder.IdentityServer` | All token issuance, grant handling, refresh rotation, revocation — no token logic in Blinder.Api |
-| ASP.NET Core Identity + custom `ApplicationUser` | User/credential store (owned by IdentityServer); social login via `ISocialLoginTokenValidator`; admin cookie auth; EF Core schema |
-| OpenIddict remote validation in `Blinder.Api` | All API authorization via OIDC discovery — `[Authorize]` uses `OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme` |
-| Mapperly | All controller responses, service layer boundaries, EF entity ↔ DTO conversion |
-| S3 + Hetzner Object Storage | Photo upload, content scanning pipeline, reveal signed URL generation, account deletion cascade |
-| PostGIS | Matching service geographic queries, user preference radius storage |
-| Coravel | Push dispatch, email alerts, match generation scheduling, trial expiry jobs |
-| FluentValidation | All API endpoints accepting user input — registration, quiz, preferences, messages |
-| Serilog | All services — structured logging convention enforced via `ILogger<T>` injection |
-| Match generation startup check | Application startup sequence, `IHostedService` registration order |
-| FirebaseAdmin + dotAPNS | `SendPushNotificationJob`, `DeviceToken` table, `POST /api/account/device-token`, stale token cleanup |
-| IAP webhook JWT verification | `SubscriptionController`, JWKS key caching, test environment bypass flag |
-
----
-
-## Implementation Patterns & Consistency Rules
-
-### Critical Conflict Points Identified
-
-8 areas where inconsistent implementation would cause integration failures or maintenance debt across the codebase.
-
----
-
-### Naming Patterns
-
-**Database Naming Conventions (PostgreSQL via EF Core):**
-
-EF Core configured with `UseSnakeCaseNamingConvention()` — all table and column names are `snake_case` at the database level regardless of C# property casing.
-
-| Element | Convention | Example |
-|---|---|---|
-| Tables | `snake_case` plural | `users`, `conversations`, `messages`, `reveal_states` |
-| Columns | `snake_case` | `created_at`, `user_id`, `is_reveal_ready` |
-| Foreign keys | `{singular_table}_id` | `user_id`, `conversation_id` |
-| Indexes | `ix_{table}_{columns}` | `ix_users_email`, `ix_messages_conversation_id` |
-| Primary keys | `id` (always) | `id` |
-
-**API Endpoint Naming Conventions (REST):**
-
-| Element | Convention | Example |
-|---|---|---|
-| Resource paths | Plural nouns, `kebab-case` | `/api/conversations`, `/api/reveal-states` |
-| Route parameters | `{camelCase}` | `/api/conversations/{conversationId}` |
-| Query parameters | `camelCase` | `?pageSize=10&matchedUserId=abc` |
-| Controller files | `{Resource}Controller.cs` | `ConversationController.cs` |
-
-**C# Code Naming Conventions:**
-
-| Element | Convention | Example |
-|---|---|---|
-| Classes, interfaces | `PascalCase` | `ConversationService`, `IRevealRepository` |
-| Methods | `PascalCase` | `GetActiveConversationsAsync` |
-| Properties | `PascalCase` | `UserId`, `IsRevealReady` |
-| Private fields | `_camelCase` | `_userRepository`, `_logger` |
-| Local variables / params | `camelCase` | `conversationId`, `matchScore` |
-| Constants | `PascalCase` (static) or `UPPER_SNAKE_CASE` (magic values) | `MaxActiveConversations`, `DEFAULT_RADIUS_KM` |
-| No abbreviations | Full words always | `conversation` not `conv`; `userId` not `uid` |
-
-**TypeScript / React Native Naming Conventions:**
-
-| Element | Convention | Example |
-|---|---|---|
-| Component files | `PascalCase.tsx` | `ConversationCard.tsx`, `RevealButton.tsx` |
-| Hook files | `camelCase.ts`, `use` prefix | `useConversation.ts`, `useReveal.ts` |
-| Service files | `camelCase.ts` | `authService.ts`, `signalrService.ts` |
-| Component names | `PascalCase` | `ConversationCard`, `RevealScreen` |
-| Hook names | `use` prefix | `useConversation`, `useRevealState` |
-| Constants | `UPPER_SNAKE_CASE` | `MAX_ACTIVE_CONVERSATIONS`, `REVEAL_THRESHOLD` |
-| Props interfaces | `{ComponentName}Props` | `ConversationCardProps` |
-| No abbreviations | Full words always | `conversation` not `conv`; `message` not `msg` |
-
----
-
-### API Response Formats
-
-**Decision: Direct response (RFC 7807 Problem Details for errors) — Option B**
-
-Successful responses return the resource or collection directly. No response wrapper object.
-
-**Success — single resource:**
-```json
-{
-  "id": "abc123",
-  "messageCount": 14,
-  "isRevealReady": false
-}
-```
-
-**Success — collection:**
-```json
-[
-  { "id": "abc123", ... },
-  { "id": "def456", ... }
-]
-```
-
-**Success — 201 Created:** Returns the created resource body + `Location` header.
-
-**Success — 204 No Content:** Empty body (delete, state updates with no return value).
-
-**Error — RFC 7807 Problem Details (all 4xx and 5xx):**
-```json
-{
-  "type": "https://tools.ietf.org/html/rfc7807",
-  "title": "Validation failed",
-  "status": 400,
-  "detail": "One or more validation errors occurred.",
-  "errors": {
-    "messageThreshold": ["Must be greater than 0"]
-  }
-}
-```
-
-Implemented via `AddProblemDetails()` + `UseExceptionHandler()` in `Program.cs`. FluentValidation validation failures automatically produce this shape via the ASP.NET Core integration.
-
-**HTTP Status Code Usage:**
-
-| Code | When |
-|---|---|
-| 200 | Successful GET, successful action with response body |
-| 201 | Resource created (POST) |
-| 204 | Successful action with no response body (DELETE, state update) |
-| 400 | Validation failure, malformed request |
-| 401 | Unauthenticated |
-| 403 | Authenticated but not authorised |
-| 404 | Resource not found |
-| 409 | Conflict (e.g. duplicate registration, reveal already triggered) |
-| 422 | Business rule violation (distinct from validation failure) |
-| 500 | Unhandled server error (never expose stack traces in response) |
-
----
-
-### Date & Time Patterns
-
-- All datetimes stored in PostgreSQL as `timestamptz` (UTC)
-- All API responses use ISO 8601 strings: `"2026-03-11T14:00:00Z"`
-- C# uses `DateTimeOffset` (not `DateTime`) throughout — `DateTime` is prohibited in new code
-- Mobile displays in local time via `Intl.DateTimeFormat` — datetimes are never stored or transmitted as local time
-- No Unix timestamps in API contracts — ISO 8601 strings only
-
----
-
-### Structure Patterns
-
-**Backend Project Structure (`Blinder.Api/`):**
-
-```
-Blinder.Api/
-├── Controllers/          # One controller per domain resource
-├── Hubs/                 # SignalR hubs
-├── Pages/                # Razor Pages admin (/admin/**)
-├── Models/               # EF Core entity classes
-├── DTOs/                 # Request and response data transfer objects
-├── Services/             # Business logic (one interface + implementation per service)
-├── Repositories/         # Data access (if needed beyond EF Core directly)
-├── Mappings/             # Mapperly mapper partial classes
-├── Validators/           # FluentValidation validator classes
-├── BackgroundJobs/       # Coravel IInvocable background job classes
-├── Errors/               # RFC 7807 typed problem codes (AppErrors.cs)
-├── Migrations/           # EF Core migrations (committed to source control)
-└── Infrastructure/       # Cross-cutting: auth, logging config, S3 client, SMTP
-```
-
-**Backend Test Project Structure (`Blinder.Tests/`):**
-
-Mirrors `Blinder.Api/` structure. Test class naming: `{Subject}Tests.cs`.
-
-```
-Blinder.Tests/
-├── Controllers/
-├── Services/
-├── Validators/
-└── Integration/
-```
-
-**Mobile Project Structure (`mobile/`):**
-
-```
-mobile/
-├── app/                  # Expo Router file-based routing
-│   ├── (auth)/           # Unauthenticated screens (login, register, onboarding)
-│   └── (tabs)/           # Authenticated app shell
-├── components/           # Shared UI components (PascalCase files)
-├── hooks/                # Custom hooks (camelCase, use prefix)
-├── services/             # API client, SignalR service, storage service
-├── constants/            # UPPER_SNAKE_CASE values, theme tokens
-├── types/
-│   ├── api/              # Response/request types matching backend DTOs
-│   └── signalr/          # Hub method names, payload types, connection state enums
-└── utils/                # Pure utility functions (no side effects)
-```
-
----
-
-### Error Handling Patterns
-
-**Backend:**
-- Global exception handler middleware catches all unhandled exceptions and returns Problem Details 500 — never expose stack traces in responses
-- Business rule violations throw typed domain exceptions (e.g., `RevealThresholdNotMetException`) caught by middleware and mapped to 422
-- Validation failures handled by FluentValidation middleware — never manually in controllers
-- All exceptions logged via Serilog with structured context before response is returned
-
-**Mobile:**
-- Service layer functions return typed result objects — never throw to the component level
-- Components consume `{ data, error, isLoading }` shaped state — never raw `try/catch` in components
-- User-facing error messages are copy-friendly strings defined in `constants/errors.ts` — never raw exception messages shown to users
-- No `console.log` in production code — remove before commit
-
----
-
-### Loading State Patterns (Mobile)
-
-All async operations expose a consistent three-state shape:
-
-```typescript
-type AsyncState<T> = {
-  data: T | null;
-  error: string | null;
-  isLoading: boolean;
-};
-```
-
-- `isLoading: true` while request is in flight
-- `error` is a user-displayable string (not a raw exception message)
-- `data` and `error` are never both non-null simultaneously
-- Loading states are local to the hook or screen — no global loading spinner
-
----
-
-### SignalR Real-time Patterns
-
-- SignalR connection managed in a singleton `signalrService.ts` — not instantiated per-component
-- Hub method names: `PascalCase` on server, matching exactly on client — `ReceiveMessage`, `RevealStateUpdated`
-- Mobile components subscribe to hub events via hooks (`useConversation`, `useRevealState`) — never directly in components
-- Connection lifecycle (start, stop, reconnect) handled entirely within `signalrService.ts` — components are unaware of transport state
-
----
-
-### Validation Patterns (Backend)
-
-- Every API endpoint that accepts a request body or complex query params has a corresponding FluentValidation `AbstractValidator<TRequest>` class in `Validators/`
-- Validators are registered via `AddValidatorsFromAssemblyContaining<Program>()`
-- No inline validation logic in controllers or service methods
-- Validation errors automatically produce Problem Details 400 responses via the ASP.NET Core FluentValidation integration
-
----
-
-### Mapping Patterns (Backend)
-
-- All Entity ↔ DTO conversions go through a Mapperly `[Mapper]` partial class in `Mappings/`
-- No manual `new DTO { Property = entity.Property }` construction outside of Mapperly mappers
-- One mapper class per domain area: `UserMapper`, `ConversationMapper`, `RevealMapper`
-- Mapperly compile-time warnings on unmapped properties are treated as errors — configure `RespectNullableAnnotations = true`
-
----
-
-### Logging Patterns (Backend)
-
-- `ILogger<T>` injected via constructor — no static `Log.` calls, no `Console.WriteLine`
-- Log levels: `Debug` for diagnostic detail (dev only), `Information` for business events (match created, reveal triggered), `Warning` for recoverable issues, `Error` for exceptions
-- Structured log properties over string interpolation: `_logger.LogInformation("Reveal triggered {ConversationId}", id)` not `$"Reveal triggered {id}"`
-- Never log PII (user names, email addresses, message content) in structured log properties
-
----
-
-### Enforcement Guidelines
-
-**All developers and AI agents MUST:**
-
-1. Use `snake_case` database names via `UseSnakeCaseNamingConvention()` — never PascalCase columns in migrations
-2. Return direct responses (no wrapper) on success; Problem Details on all errors
-3. Store all datetimes as `DateTimeOffset` (UTC) in C#; `timestamptz` in PostgreSQL; ISO 8601 in API responses
-4. Use Mapperly for all Entity ↔ DTO mapping — no manual property copying
-5. Use FluentValidation for all input validation — no inline validation in controllers
-6. Use `expo-secure-store` for all token storage in mobile — `AsyncStorage` is prohibited for auth tokens
-7. Never log PII in structured log properties
-8. Never auto-apply EF Core migrations on startup outside local development — `Development` may create and migrate the database automatically for local workflows, but all shared environments must use an idempotent SQL script via `dotnet ef migrations script --idempotent` and apply it with `docker compose exec -T db psql` during deployment
-9. Return `AsyncState<T>` shaped state from all async hooks in mobile
-10. Never expose raw exception messages or stack traces in API responses or mobile UI
-11. Never run the API (or any backend service) directly on the host OS — all execution, in development and production, goes through Docker Compose
-12. Keep `.env.example` in sync: when adding a new environment variable, update `.env.example` in the same commit
----
-
-## Project Structure & Boundaries
-
-### Repository Root
-
-```
-blinder/
-├── backend/
-│   ├── Blinder.sln
-│   ├── Blinder.Api/
-│   ├── Blinder.Tests/
-│   └── Dockerfile                     # Multi-stage build: SDK image (build) → ASP.NET runtime image (production)
-├── mobile/
-├── docker-compose.yml                 # Production service definitions: api, db, nginx
-├── docker-compose.override.yml        # Dev overrides: bind mounts, exposed ports, dev appsettings
-├── nginx/
-│   └── nginx.conf                     # Nginx reverse proxy + TLS + /admin IP allowlist + WebSocket upgrade headers for /hubs/ (SignalR)
-├── .env.example                       # All required environment variable names with placeholder values (committed)
-└── .dockerignore
-```
-
----
-
-### Backend Structure (`backend/`)
-
-```
-Blinder.IdentityServer/                # OAuth2/OIDC Authorization Server — sole token issuer
-├── Controllers/
-│   └── OAuth2Controller.cs           # Passthrough: ROPC + refresh + authorization code grants
-├── Infrastructure/
-│   ├── Auth/
-│   │   ├── ISocialLoginTokenValidator.cs  # Interface for Apple/Google/Facebook provider validation
-│   │   └── OpenIddictSeeder.cs       # IHostedService: seeds blinder-mobile client on startup
-│   └── Data/
-│       └── OpenIddictDbContext.cs    # Manages OpenIddict tables only (4 tables); separate from AppDbContext
-├── Migrations/                       # EF Core migrations for OpenIddict tables only
-└── Program.cs                        # OpenIddict server + two DbContexts (AppDbContext + OpenIddictDbContext)
-
-Blinder.Api/                          # Resource Server — validates tokens remotely, never issues them
-├── Controllers/
-│   ├── RegisterController.cs         # POST /api/auth/register — user creation only, no token issuance
-│   ├── AccountController.cs           # FR4–7: deletion cascade, age gate, profile management; POST /api/account/device-token
-│   ├── OnboardingController.cs        # FR8–11: quiz, photo upload, first match drop
-│   ├── MatchController.cs             # FR12–16: radius, invite link gen/use, match detail
-│   ├── ConversationController.cs      # FR17–21: message list, pagination, active conv limit
-│   ├── RevealController.cs            # FR22–27: reveal flag set/get, threshold check
-│   ├── SubscriptionController.cs      # FR28–31: IAP webhook, premium state, trial — SPIKE required before first implementation story
-│   ├── ModerationController.cs        # FR32–40: reports, bans, audit log (admin-only)
-│   └── AnalyticsController.cs         # FR41–45: Gender ratio dashboard, reveal event tracking
-│
-├── Hubs/
-│   └── ChatHub.cs                     # SignalR hub at /hubs/chat (FR17)
-│
-├── Pages/
-│   └── Admin/
-│       ├── Dashboard.cshtml           # Gender ratio near-real-time panel (NFR26)
-│       ├── Reports/                   # Moderation queues (FR32–40); first story: basic CSV cohort export
-│       ├── Users/                     # User list, ban/warn/restore actions (FR36–38)
-│       └── Settings/                  # Directory — multiple admin settings will land here
-│           └── MatchingThreshold.cshtml  # Admin-configurable compatibility threshold (FR13)
-│
-├── Models/
-│   ├── ApplicationUser.cs             # : IdentityUser — gender, quiz refs, invite FK
-│   ├── UserProfile.cs                 # Quiz answers, photo object key, radius preference
-│   ├── InviteLink.cs                  # Token, generated_by FK, used_by FK, created_at
-│   ├── Match.cs                       # user_a FK, user_b FK, compatibility_score, matched_at, is_active
-│   ├── Conversation.cs                # Match FK, message_count, status (active/archived/reported)
-│   ├── Message.cs                     # Conversation FK, sender FK, body, sent_at
-│   ├── RevealState.cs                 # Conversation FK, user_a_reveal_ready, user_b_reveal_ready
-│   ├── Subscription.cs                # User FK, plan, status, trial_expires_at, platform (Apple/Google)
-│   ├── Report.cs                      # Reporter FK, reported FK, conversation FK, reason, created_at
-│   ├── ModerationAction.cs            # Report FK, moderator FK, action_type, notes, actioned_at
-│   ├── AppSettings.cs                 # Key/value admin-configurable values (matching threshold, etc.)
-│   └── DeviceToken.cs                 # user_id FK, token, platform (Android/iOS), created_at — indexed on user_id
-│
-├── DTOs/
-│   ├── Auth/                          # RegisterRequest, RegisterResponse (no token DTOs — tokens come from IdentityServer)
-│   ├── Match/                         # MatchResponse, MatchDetailResponse
-│   ├── Conversation/                  # MessageRequest, MessageResponse, ConversationSummaryResponse
-│   ├── Reveal/                        # RevealStateResponse, RevealReadyRequest
-│   └── Subscription/                  # SubscriptionStatusResponse, IAPWebhookPayload
-│
-├── Services/                          # Domain orchestration — *Service naming only
-│   ├── RegistrationService.cs         # User creation via UserManager — no token issuance
-│   ├── MatchService.cs                # Compatibility algorithm, admin threshold lookup, fallback logic
-│   ├── ConversationService.cs         # Active limit enforcement, message count tracking
-│   ├── RevealService.cs               # Flag logic, threshold gate, signed URL orchestration
-│   ├── SubscriptionService.cs         # Premium state, trial management, feature gating
-│   └── ModerationService.cs           # Report handling, ban logic, audit log writes (2yr retention)
-│
-├── Mappings/                          # Mapperly [Mapper] partial classes
-│   ├── UserMapper.cs
-│   ├── ConversationMapper.cs
-│   └── RevealMapper.cs
-│
-├── Validators/                        # FluentValidation AbstractValidator<TRequest>
-│   ├── RegisterRequestValidator.cs
-│   ├── MessageRequestValidator.cs
-│   └── RevealReadyRequestValidator.cs
-│
-├── BackgroundJobs/                    # Coravel IInvocable classes (self-documenting name)
-│   ├── MatchGenerationJob.cs          # Idempotent — also triggered on startup (critical: see Core Decisions)
-│   ├── SendPushNotificationJob.cs     # FirebaseAdmin (FCM/Android) + dotAPNS (iOS); deletes stale tokens on error response
-│   ├── SendModeratorAlertJob.cs
-│   └── TrialExpiryNotificationJob.cs
-│
-├── Errors/                            # RFC 7807 typed problem codes — never scatter error strings in controllers
-│   └── AppErrors.cs                   # Centralized problem type URIs and application error codes
-│
-├── Migrations/                        # EF Core migrations — committed to source control
-│
-├── Infrastructure/
-│   ├── Data/
-│   │   └── AppDbContext.cs            # EF Core DbContext + PostGIS + UseSnakeCaseNamingConvention
-│   ├── Auth/
-│   │   └── (none — all auth infrastructure lives in Blinder.IdentityServer)
-│   ├── Storage/
-│   │   └── S3ClientFactory.cs         # Hetzner Object Storage; ForcePathStyle = true required
-│   ├── Scanning/
-│   │   └── ContentScanningClient.cs   # External scan API client (*Client naming — not a domain service)
-│   ├── Email/
-│   │   └── SmtpSettings.cs            # IOptions<SmtpSettings> — credentials from env vars only
-│   └── Middleware/
-│       └── ExceptionHandlerMiddleware.cs  # Global Problem Details error handler (4xx/5xx)
-│
-└── appsettings.json
-
-Blinder.Tests/
-├── Unit/                              # Mirrors Blinder.Api/ structure
-│   ├── Services/
-│   ├── Validators/
-│   └── Mappings/
-└── Integration/                       # WebApplicationFactory-based controller tests
-    └── Controllers/
-```
-
----
-
-### Mobile Structure (`mobile/`)
-
-```
-mobile/
-├── app/
-│   ├── (auth)/
-│   │   ├── login.tsx
-│   │   ├── register.tsx
-│   │   ├── invite-landing.tsx         # Invite deep link entry — preserves invite context through registration flow
-│   │   └── onboarding/
-│   │       ├── quiz.tsx               # Values & personality quiz (FR8)
-│   │       ├── photo.tsx              # Photo upload + content scan gate (FR9)
-│   │       └── preferences.tsx        # Radius and matching preferences (FR15)
-│   └── (tabs)/
-│       ├── conversations/
-│       │   ├── index.tsx              # Conversation list (FR17–21)
-│       │   └── [id].tsx               # Conversation detail + SignalR live chat
-│       ├── reveal/
-│       │   └── index.tsx              # Reveal state + RevealMoment trigger (FR22–27)
-│       ├── match/
-│       │   └── index.tsx              # Current match view + EmptyMatchState (FR12–16)
-│       └── settings/
-│           └── index.tsx              # Profile, subscription, preferences
-│
-├── components/
-│   ├── chat/
-│   │   ├── MessageBubble.tsx
-│   │   └── MessageInput.tsx
-│   ├── reveal/
-│   │   ├── RevealMoment.tsx           # Emotional centrepiece — isolated, first-class component
-│   │   ├── RevealCountdown.tsx        # Pre-reveal state UI
-│   │   └── RevealPrompt.tsx           # CTA to set reveal_ready flag
-│   ├── onboarding/
-│   │   ├── QuizQuestion.tsx
-│   │   └── PhotoUpload.tsx
-│   ├── common/
-│   │   ├── EmptyMatchState.tsx        # Explicit AC in first Match story — never a polish item
-│   │   └── LoadingSpinner.tsx
-│   └── moderation/
-│       ├── ReportButton.tsx           # Reused across Conversation, Match, Profile — not reimplemented inline
-│       └── BlockConfirmation.tsx      # Shared modal — defined once, used everywhere
-│
-├── hooks/
-│   ├── useConversation.ts             # Messages, SignalR subscription, send action
-│   ├── useRevealState.ts              # Flag state, threshold check, photo URL fetch
-│   ├── useMatch.ts                    # Current match, empty state detection
-│   ├── useSubscription.ts             # Premium status, trial state, feature gates
-│   └── useAuth.ts                     # Token management, login, logout
-│
-├── services/
-│   ├── apiClient.ts                   # Axios/fetch instance + auth header injection
-│   ├── signalrService.ts              # Singleton connection manager — never instantiated per-component
-│   └── storageService.ts              # expo-secure-store wrapper (JWT tokens only)
-│
-├── constants/
-│   ├── errors.ts                      # User-facing error message strings (no raw exception messages in UI)
-│   └── theme.ts                       # NativeWind / Tailwind token overrides
-│
-├── types/
-│   ├── api/                           # Response and request types matching backend DTOs
-│   │   └── index.ts
-│   └── signalr/                       # Hub method names, payload types, connection state enums
-│       └── index.ts
-│
-└── utils/
-    └── dateFormat.ts                  # ISO 8601 → display string; never store/transmit local time
-```
-
----
-
-### Requirements-to-Structure Mapping
-
-| Domain | FR Range | Backend Owner | Mobile Owner |
-|---|---|---|---|
-| Account & Auth | FR1–7 | `AuthController`, `AccountController`, `AuthService` | `app/(auth)/`, `useAuth`, `storageService` |
-| Onboarding & Profile | FR8–11 | `OnboardingController`, `Infrastructure/Scanning/` | `app/(auth)/onboarding/`, `components/onboarding/` |
-| Matching | FR12–16 | `MatchController`, `MatchService`, `BackgroundJobs/MatchGenerationJob` | `app/(tabs)/match/`, `useMatch`, `EmptyMatchState` |
-| Real-time Chat | FR17–21 | `ConversationController`, `Hubs/ChatHub` | `app/(tabs)/conversations/`, `useConversation`, `signalrService` |
-| Reveal System | FR22–27 | `RevealController`, `RevealService`, `Infrastructure/Storage/` | `app/(tabs)/reveal/`, `useRevealState`, `components/reveal/` |
-| Subscriptions | FR28–31 | `SubscriptionController`, `SubscriptionService`, `BackgroundJobs/TrialExpiryNotificationJob` | `app/(tabs)/settings/`, `useSubscription` |
-| Safety & Moderation | FR32–40 | `ModerationController`, `ModerationService`, `Infrastructure/Scanning/`, `Pages/Admin/` | `components/moderation/` (ReportButton, BlockConfirmation) |
-| Analytics & Compliance | FR41–45 | `AnalyticsController`, `Pages/Admin/Dashboard` | DB-backed event tracking in key user journey hooks |
-
----
+**Primary database: PostgreSQL 18**
+- PostgreSQL 18 is the current major release line, with 18.3 listed as current stable patch release.
+- One shared PostgreSQL database will be used for both identity and business data.
+- Rationale: preserves transactional simplicity across trust-critical workflows while avoiding cross-database coordination overhead.
+
+**Database ownership model**
+- IdentityServer owns the `identity.*` schema.
+- Api owns the `app.*` schema.
+- Shared physical storage does not imply shared write responsibility.
+- Api may read selected identity data needed for business projections and authorization-aware workflows, but it must not mutate identity-owned tables.
+- IdentityServer may read selected application data only when required, but it must not mutate business-owned tables.
+
+**ORM and migrations**
+- Use EF Core 10 with Npgsql.EntityFrameworkCore.PostgreSQL 10.0.1.
+- Maintain separate migration sets by application/schema ownership.
+- Api migrations may only alter `app.*`.
+- IdentityServer migrations may only alter `identity.*`.
+
+**Validation and data integrity**
+- Use database constraints for invariants that must never be bypassed:
+  - foreign keys,
+  - uniqueness constraints,
+  - check constraints where appropriate,
+  - row-version/concurrency controls on trust-critical aggregates.
+- Use application-level validation for workflow rules and product behavior.
+- Keep business invariants in Api, not in AdminPanel UI code.
+
+**Caching strategy**
+- Start without distributed cache in MVP.
+- Prefer database correctness and simplicity first.
+- Re-evaluate after real usage pressure around profile lookups, match candidate generation, or token/session hot paths.
+
+### Authentication & Security
+
+**Identity authority**
+- IdentityServer is a self-hosted OAuth 2.0 / OpenID Connect provider implemented on OpenIddict 7.4.0.
+- MobileApp and AdminPanel both authenticate against IdentityServer.
+- IdentityServer is the only application allowed to create or modify identity-owned data.
+
+**Supported identity capabilities**
+- Local first-party accounts.
+- External federation for Google, Apple, and Facebook sign-in.
+- Refresh tokens, revocation, session management, and claim/scopes issuance.
+- OIDC for interactive sign-in and OAuth2 token issuance for API access.
+- MFA/passkey readiness should remain open in the design even if not delivered in MVP.
+
+**Authorization model**
+- Api uses bearer-token authorization for mobile clients.
+- AdminPanel uses OIDC sign-in against IdentityServer and then calls Api using admin-authorized access tokens.
+- Admin endpoints live in Api but are isolated via dedicated scopes, roles, and policies.
+- Moderation and user-management commands remain business workflows executed by Api, not direct UI/database actions.
+
+**Security boundaries**
+- Api must not directly modify identity data.
+- If business workflows require identity changes, Api triggers IdentityServer-owned commands for those operations.
+- Examples:
+  - account disablement,
+  - session revocation,
+  - forced re-consent,
+  - external login unlinking.
+
+**Data protection and privacy**
+- No pre-reveal media access through any API path.
+- Lock-screen and notification payloads must remain privacy-preserving.
+
+### Architectural Boundaries
+
+**API Boundaries:**
+- `Blinder.IdentityServer` is the authentication authority only.
+- `Blinder.Api` is the only business API and exposes:
+  - mobile endpoints under `/api/v1/...`
+  - admin endpoints under `/api/v1/admin/...`
+  - SignalR hubs under a dedicated real-time route surface
+- `Blinder.AdminPanel` does not perform direct business writes to the database.
+- `Blinder.AdminPanel` authenticates with IdentityServer and calls Api for moderation, support, and user-management workflows.
+
+**Component Boundaries:**
+- Mobile UI domains are split by lifecycle stage, not by generic component type alone.
+- Backend feature slices in `Blinder.Api/Features` own their contracts, application logic, domain logic, and infrastructure concerns for that feature.
+- `Blinder.SharedKernel` is for small foundational primitives only, not a dumping ground for business logic.
+- `Blinder.Contracts` contains only intentionally shared contracts needed across process boundaries.
+
+**Service Boundaries:**
+- `IdentityServer` writes only `identity.*`
+- `Api` writes only `app.*`
+- `AdminPanel` writes nothing directly to database-owned business tables
+- Integration from Api to identity-side mutations goes through explicit service/integration calls, not shared DbContext writes
+
+**Data Boundaries:**
+- `identity.*` schema belongs to IdentityServer
+- `app.*` schema belongs to Api
+- `Persistence/Migrations` folders remain separated by owning app
+- Read-only projections of identity data for Api should be implemented through controlled mappings/views/query models, not mutable entity ownership
+
+### Requirements to Structure Mapping
+
+**Feature/Epic Mapping:**
+- Onboarding and profile setup:
+  - `backend/src/Blinder.Api/Features/Onboarding/`
+  - `mobile/blinder-app/src/features/onboarding/`
+- Matching:
+  - `backend/src/Blinder.Api/Features/Matching/`
+  - `mobile/blinder-app/src/features/waiting/`
+  - `mobile/blinder-app/src/features/match-entry/`
+- Blind conversation:
+  - `backend/src/Blinder.Api/Features/Conversations/`
+  - `mobile/blinder-app/src/features/conversation/`
+- Decision gate and reveal:
+  - `backend/src/Blinder.Api/Features/DecisionGates/`
+  - `backend/src/Blinder.Api/Features/Reveals/`
+  - `mobile/blinder-app/src/features/decision-gate/`
+  - `mobile/blinder-app/src/features/reveal/`
+- Dignified endings and recovery:
+  - `backend/src/Blinder.Api/Features/Support/`
+  - `mobile/blinder-app/src/features/ending/`
+- Photo upload and moderation:
+  - `backend/src/Blinder.Api/Features/Photos/`
+  - `backend/src/Blinder.Api/Features/Moderation/`
+  - `backend/src/Blinder.AdminPanel/Pages/Moderation/`
+- Staff operations:
+  - `backend/src/Blinder.Api/Features/Admin/`
+  - `backend/src/Blinder.AdminPanel/Pages/Users/`
+  - `backend/src/Blinder.AdminPanel/Pages/Reports/`
+  - `backend/src/Blinder.AdminPanel/Pages/Appeals/`
+  - `backend/src/Blinder.AdminPanel/Pages/Support/`
+
+**Cross-Cutting Concerns:**
+- Authentication and federation:
+  - `backend/src/Blinder.IdentityServer/`
+  - `backend/src/Blinder.AdminPanel/Services/Auth/`
+  - `mobile/blinder-app/src/services/auth/`
+- Real-time communication:
+  - `backend/src/Blinder.Api/Realtime/`
+  - `mobile/blinder-app/src/services/realtime/`
+- Object storage / photo pipeline:
+  - `backend/src/Blinder.Api/Integrations/Minio/`
+  - `deploy/hetzner/`
+- Deployment and containerization:
+  - `deploy/hetzner/`
+  - root `docker-compose.yml`
+- Architecture governance and docs:
+  - `docs/architecture/`
 
 ### Integration Points
 
-| Integration | Backend Home | Notes |
-|---|---|---|
-| PostgreSQL + PostGIS | `Infrastructure/Data/AppDbContext.cs` | `postgis/postgis` Docker image; data on named volume `db-data`; `UseSnakeCaseNamingConvention()` + `UseNetTopologySuite()` |
-| Hetzner Object Storage | `Infrastructure/Storage/S3ClientFactory.cs` | `ForcePathStyle = true` — spike before upload story |
-| Content Scanning (SafeSearch / Azure CM) | `Infrastructure/Scanning/ContentScanningClient.cs` | Synchronous — called by `OnboardingController` before confirming upload; hard-fail on API outage |
-| NCMEC / PhotoDNA | `Infrastructure/Scanning/` | Parallel legal workstream — integration after agreement signed |
-| SignalR real-time | `Hubs/ChatHub.cs` ↔ `services/signalrService.ts` | Hub methods: `ReceiveMessage`, `RevealStateUpdated`, `MatchAssigned` |
-| FCM / APNs push | `BackgroundJobs/SendPushNotificationJob.cs` | Coravel fire-and-forget; acceptable to drop on restart at MVP |
-| Apple IAP + Google Play Billing | `SubscriptionController` + `SubscriptionService` | **Spike story required** before any subscription implementation |
-| DB-backed analytics | `AnalyticsController` + PostgreSQL | Reveal events and gender ratio data stored in the main PostgreSQL DB; no external analytics service |
-| SMTP via hosting | `Infrastructure/Email/SmtpSettings.cs` + Coravel mailing | Credentials from env vars via `IOptions<SmtpSettings>` |
-| Apple / Google / Facebook login | `Blinder.IdentityServer/Infrastructure/Auth/ISocialLoginTokenValidator.cs` | Provider validation plugs into OAuth2Controller via interface — not scaffold-covered; explicit implementation stories required |
+**Internal Communication:**
+- Mobile app communicates with Api over HTTPS and SignalR.
+- AdminPanel communicates with Api over HTTPS using access tokens from IdentityServer.
+- Api communicates with IdentityServer for identity-owned commands only.
+- Api communicates with PostgreSQL, MinIO, push providers, and telemetry infrastructure.
+- IdentityServer communicates with PostgreSQL and social providers.
 
----
+**External Integrations:**
+- Google / Apple / Facebook login integration through IdentityServer federation
+- APNS / FCM via Api notification integration layer
+- MinIO object storage for photos
+- Traefik ingress/reverse proxy in deployment layer
+- Registry-driven image deployment in CI/CD
 
-### Structural Constraints Summary
+**Data Flow:**
+- Authentication flow:
+  - Mobile/AdminPanel → IdentityServer → tokens → Api
+- Business flow:
+  - Client → Api → `app.*` schema / integrations
+- Identity mutation flow:
+  - Admin workflow in Api → explicit IdentityServer command → `identity.*`
+- Real-time flow:
+  - committed domain state in Api → SignalR hub notification → client reconciliation read
 
-- **`Services/` = domain orchestration only.** `*Service` naming. External API calls go in `Infrastructure/` as `*Client` classes. `ContentScanningClient`, `S3ClientFactory` live in `Infrastructure/` — not `Services/`.
-- **`BackgroundJobs/` = Coravel `IInvocable` only.** `MatchGenerationJob` must be idempotent and triggered on startup in addition to its cron schedule.
-- **`Errors/AppErrors.cs` = single source of truth for problem type codes.** Never define error type strings inline in controllers or handlers.
-- **`types/api/` and `types/signalr/` are separate.** API types track DTO contracts. SignalR types track hub event payloads and connection enums — drift between them is a common bug source.
-- **`invite-landing.tsx` is mandatory for the invite conversion flow.** Landing directly on `register.tsx` from a deep link loses invite context and breaks invite lineage tracking.
-- **`ReportButton.tsx` and `BlockConfirmation.tsx` are defined once in `components/moderation/`.** They must not be reimplemented inline in Conversation, Match, or Profile screens.
-- **`DeviceToken` table is the sole persistence layer for push tokens.** Tokens are registered via `POST /api/account/device-token`; stale tokens are deleted by `SendPushNotificationJob` on FCM/APNs error — never accumulate dead tokens.
-- **IAP webhook verification cannot be disabled in production.** `SkipWebhookVerification` flag is valid only in `appsettings.Testing.json`; a startup assertion must enforce this.
-- **`docker-compose.yml` is the single source of truth for service topology.** All services (API, database, Nginx) are defined there. Nothing runs directly on the host OS at runtime — no `systemd` units for application services.
-- **`nginx/nginx.conf` must include WebSocket upgrade headers on the `/hubs/` location block.** Missing `proxy_http_version 1.1`, `Upgrade`, `Connection "upgrade"`, and `proxy_read_timeout 3600s` causes SignalR to silently fall back to long polling, breaking the `<500ms` chat delivery NFR.
-- **`.env.example` must always be kept in sync with actual `.env` requirements.** When a new environment variable is added anywhere in the codebase or infrastructure config, `.env.example` must be updated in the same commit.
-- **Named volume `db-data` must never be removed without a verified database backup.** `docker compose down -v` is explicitly prohibited in production — it destroys all named volumes including the database.
+### File Organization Patterns
 
----
+**Configuration Files:**
+- Each app owns its `appsettings*.json`
+- Deployment-specific environment examples live under `deploy/`
+- Shared build/package policies live under backend root where appropriate
+- Secrets never live in repo-tracked production config files
+
+**Source Organization:**
+- Backend source under `backend/src/`
+- Backend tests under `backend/tests/`
+- Mobile source under `mobile/blinder-app/src/`
+- Deployment manifests separated from app source under `deploy/`
+
+**Test Organization:**
+- Unit tests per backend app in dedicated test projects
+- Cross-app integration tests in `backend/tests/Blinder.IntegrationTests/`
+- Architecture tests for boundary enforcement in `backend/tests/Blinder.ArchitectureTests/`
+- Mobile test layers split into unit, integration, and e2e
+
+**Asset Organization:**
+- Mobile static assets in `mobile/blinder-app/assets/`
+- AdminPanel static assets in `backend/src/Blinder.AdminPanel/wwwroot/`
+- Deployment assets and scripts under `deploy/`
+- Documentation artifacts under `docs/`
+
+### Development Workflow Integration
+
+**Development Server Structure:**
+- Developers can run backend apps independently or together from `backend/`
+- Mobile app runs independently from `mobile/blinder-app/`
+- Local infrastructure can be started from compose definitions without requiring production deploy structure
+
+**Build Process Structure:**
+- CI builds separate backend app artifacts/images
+- Mobile CI builds the Expo app independently
+- Container build context remains clean because app boundaries are explicit
+- Deployment pipeline references image tags, not source copies on server
+
+**Deployment Structure:**
+- Production deployment is driven from `deploy/hetzner/`
+- Compose references separate images for `identityserver`, `api`, and `adminpanel`
+- Stateful service data paths and Traefik config are isolated from source code
+- The structure supports current single-node Compose deployment and later migration to a stronger orchestrator without changing service boundaries
+- Sensitive moderation/support access must be fully auditable.
+
+### API & Communication Patterns
+
+**Primary API style**
+- Use RESTful JSON APIs as the system default.
+- Rationale: predictable, debuggable, well supported in mobile and admin clients, and a better fit than GraphQL for trust-sensitive workflow control and explicit authorization.
+
+**API structure**
+- Single Api application exposes:
+  - mobile client endpoints,
+  - admin endpoints,
+  - internal business workflow surfaces.
+- Separate route groups and authorization policies must distinguish mobile and admin surfaces.
+
+**Documentation**
+- Use built-in ASP.NET Core OpenAPI support in .NET 10.
+- Generate OpenAPI 3.1 documents.
+- Enable XML documentation comments for public endpoints and DTOs used in generated docs.
+
+**Error handling**
+- Standardize on RFC 9457 Problem Details responses.
+- Centralize exception handling and avoid leaking implementation details.
+- Validation failures, authorization failures, and workflow-rule violations should map to stable, documented error shapes.
+
+**Real-time communication**
+- Use ASP.NET Core SignalR for live conversation updates and decision-gate state transitions where near-real-time UX matters.
+- Do not make SignalR the sole source of truth.
+- All trust-critical state remains server-authoritative and recoverable via normal API reads after reconnect or app restart.
+- A SignalR backplane is not required for a single `api` instance.
+- If `api` is scaled horizontally, introduce Redis as the SignalR backplane.
+
+**Rate limiting**
+- Apply stricter rate limits to authentication, onboarding, messaging, moderation/reporting, and upload-related endpoints.
+- Admin endpoints should have tighter authorization, but not necessarily the same rate policies as public mobile endpoints.
+
+### Frontend Architecture
+
+**Mobile application**
+- Continue with Expo SDK 55 foundation and Tamagui Expo Router starter.
+- Preserve the single-focus navigation model and domain-first module structure.
+
+**State management**
+- Keep state management lean and domain-oriented.
+- Recommended split:
+  - server state through explicit API queries and synchronization,
+  - minimal client state for session/UI flow,
+  - avoid introducing heavyweight client-state frameworks unless real complexity proves necessary.
+- The core architectural rule is that trust-critical workflow state is authoritative on the server.
+
+**AdminPanel**
+- Use Razor Pages on .NET 10.
+- Treat AdminPanel as a server-rendered staff client, not as a second business backend.
+- AdminPanel authenticates with IdentityServer and performs all business/admin actions via Api.
+
+### Infrastructure & Deployment
+
+**Initial production deployment model**
+- Use Docker Compose as the initial production deployment format.
+- Deploy the solution as a set of immutable container images pulled onto the target system and started via `docker compose up -d`.
+- This choice optimizes for repeatable deployments, simple rollback, operational clarity, and vertical scaling on a single VPS.
+
+**Container boundaries**
+- Run separate containers for:
+  - `traefik`
+  - `identityserver`
+  - `api`
+  - `adminpanel`
+  - `postgres`
+  - `minio`
+- `redis` is optional initially and planned for introduction when horizontal scaling or distributed coordination needs appear.
+
+**Network and exposure model**
+- Only Traefik exposes public ports `80/443`.
+- All other services communicate on an internal Docker network.
+- Host-based routing should separate:
+  - `api.<domain>`
+  - `auth.<domain>`
+  - `admin.<domain>`
+  - storage endpoints as needed, without exposing internal consoles unnecessarily.
+
+**State and persistence rules**
+- `identityserver`, `api`, and `adminpanel` must remain stateless containers.
+- Persistent storage is limited to stateful infrastructure services and persisted application key material.
+- PostgreSQL and MinIO use persistent volumes.
+- ASP.NET Core Data Protection keys must be persisted outside ephemeral container filesystems.
+- Identity signing and encryption keys must be persisted and shared appropriately across deployments and restarts.
+
+**Scalability posture**
+- Docker Compose on a single VPS is the MVP production architecture.
+- It supports clean packaging, isolation, and vertical scaling, but does not by itself provide multi-node high availability.
+- Application-level scaling is expected before infrastructure-level HA:
+  - `api` can scale first,
+  - `adminpanel` can scale if needed,
+  - `identityserver` can scale later if load requires it.
+- Stateful services remain the harder scaling boundary and should be treated conservatively.
+
+**Future scale path**
+- Treat Docker Compose as the initial deployment format, not the permanent orchestration ceiling.
+- If product growth demands it, the same containerized services can later move to a stronger orchestrator or multi-node topology without changing the logical service split.
+- Redis is the expected first addition when introducing:
+  - SignalR horizontal scale,
+  - distributed cache,
+  - short-lived cross-instance coordination.
+
+**Operational requirements**
+- Every app service must expose health checks.
+- Images should be built in CI and pushed to a registry, never built on the production VPS.
+- Deployments should pull tagged images and restart services with minimal impact.
+- Rollback should be performed by redeploying a previous image tag.
+
+### Decision Impact Analysis
+
+**Implementation Sequence:**
+1. Initialize IdentityServer on ASP.NET Core 10 with OpenIddict 7.4.0.
+2. Initialize Api on ASP.NET Core 10 with EF Core 10 and Npgsql 10.0.1.
+3. Establish single PostgreSQL database with `identity.*` and `app.*` schemas and separate DB permissions.
+4. Initialize AdminPanel as Razor Pages application using OIDC against IdentityServer.
+5. Containerize `identityserver`, `api`, and `adminpanel` as separate images.
+6. Define Docker Compose production stack with Traefik, PostgreSQL, MinIO, and internal networking.
+7. Persist signing keys, encryption keys, and Data Protection keys outside ephemeral containers.
+8. Implement shared auth flows and token validation between IdentityServer and Api.
+9. Implement Api route separation for mobile and admin surfaces.
+10. Implement trust-critical business domains: onboarding, matching, conversation, gate, reveal, moderation.
+11. Add SignalR where live updates materially improve UX without becoming the source of truth.
+12. Add Redis when horizontal scaling or distributed coordination justifies it.
+13. Add observability, audit logging, and deployment hardening.
+
+**Cross-Component Dependencies:**
+- IdentityServer choices constrain Api token validation and AdminPanel sign-in flow.
+- Single-database ownership rules constrain migration strategy, DB users, and schema design.
+- AdminPanel design depends on Api authorization model and admin route organization.
+- SignalR design depends on Api workflow resolution, not the other way around.
+- Auditability requirements affect IdentityServer, Api, AdminPanel, and schema design simultaneously.
+
+## Implementation Patterns & Consistency Rules
+
+### Pattern Categories Defined
+
+**Critical Conflict Points Identified:**
+12 major areas where AI agents could make incompatible choices:
+- database schema ownership and naming
+- migration ownership
+- API route naming
+- DTO and JSON field naming
+- admin vs mobile endpoint separation
+- identity vs business mutation boundaries
+- error response format
+- date/time handling
+- event naming and payload contracts
+- SignalR usage patterns
+- project/module organization
+- container/configuration conventions
+
+### Naming Patterns
+
+**Database Naming Conventions:**
+- Schemas use snake_case and explicit ownership:
+  - `identity`
+  - `app`
+- Tables use snake_case plural nouns:
+  - `identity.users`
+  - `app.matches`
+  - `app.conversations`
+- Columns use snake_case:
+  - `user_id`
+  - `created_at`
+  - `decision_state`
+- Foreign keys use the referenced entity name plus `_id`:
+  - `user_id`
+  - `conversation_id`
+  - `match_id`
+- Indexes use `ix_<table>_<column_list>`:
+  - `ix_users_email`
+  - `ix_conversations_match_id_created_at`
+
+**API Naming Conventions:**
+- REST endpoints use plural nouns for collections:
+  - `/api/v1/users`
+  - `/api/v1/conversations`
+  - `/api/v1/matches`
+- Route segments use kebab-case only when multi-word:
+  - `/api/v1/decision-gates`
+  - `/api/v1/admin/photo-reviews`
+- Route parameters use `{id}` style:
+  - `/api/v1/conversations/{conversationId}`
+- Query parameters use camelCase:
+  - `?pageSize=20&beforeCursor=...`
+- Admin API routes are always prefixed with `/api/v1/admin/...`
+- Identity endpoints are never implemented inside Api unless they are pure business-facing projections
+
+**Code Naming Conventions:**
+- C# types, public members, Razor Page models, DTO classes: PascalCase
+- C# local variables and parameters: camelCase
+- Private fields: `_camelCase`
+- TypeScript/Expo components and files for components: PascalCase
+  - `ConversationScreen.tsx`
+  - `DecisionGateCard.tsx`
+- TypeScript hooks, utilities, stores, helpers: camelCase or kebab-case by existing local convention, but choose one style per folder and do not mix
+- Domain folders use kebab-case in frontend and PascalCase-neutral feature folder names in backend only if already aligned to project structure; otherwise prefer clear feature names over framework defaults
+
+### Structure Patterns
+
+**Project Organization:**
+- Organize by feature/domain first, not by technical layer alone.
+- Backend applications:
+  - `IdentityServer`: identity, federation, token issuance, account/session concerns
+  - `Api`: onboarding, matching, conversations, gate/reveal, moderation, notifications, support
+  - `AdminPanel`: Razor Pages grouped by staff workflows, not by database tables
+- Mobile app:
+  - organize around lifecycle domains:
+    - onboarding
+    - waiting
+    - match-entry
+    - conversation
+    - decision-gate
+    - reveal
+    - ending
+    - settings
+
+**File Structure Patterns:**
+- Tests are co-located or mirrored consistently per project, but one project must not mix incompatible test layouts arbitrarily.
+- Backend recommendation:
+  - production code under feature folders
+  - tests in dedicated test projects mirroring feature namespaces
+- Shared contracts that cross app boundaries belong in explicit shared libraries only when truly shared; do not create premature `common` dumping grounds.
+- Configuration files stay close to their owning application.
+- Container and deployment configuration lives outside application source folders in deployment-focused directories.
+
+### Format Patterns
+
+**API Response Formats:**
+- Success responses return direct resource payloads or explicit result DTOs, not generic `{ data, error }` wrappers.
+- List endpoints use explicit paged/result envelopes when needed:
+  - `items`
+  - `nextCursor`
+  - `hasMore`
+- Command endpoints may return explicit workflow result DTOs when state transitions matter.
+
+**Error Response Structure:**
+- All API errors use Problem Details (`application/problem+json`) with stable extension fields where needed.
+- Validation errors, domain-rule failures, authorization failures, and not-found errors must preserve a consistent shape.
+- Do not invent custom per-endpoint error objects.
+
+**Data Exchange Formats:**
+- Public JSON fields use camelCase.
+- IDs remain opaque strings or typed identifiers as chosen per domain; never expose internal implementation assumptions unnecessarily.
+- Dates/times use ISO 8601 UTC timestamps in API payloads.
+- Do not send local server time in contracts.
+- Boolean values remain booleans, never `0/1` in JSON.
+
+### Communication Patterns
+
+**Event System Patterns:**
+- Internal domain events use past-tense PascalCase names in code:
+  - `ConversationStarted`
+  - `DecisionGateReached`
+  - `PhotoApproved`
+- If events are serialized externally, use stable event names and version fields explicitly.
+- Event payloads must contain:
+  - event name
+  - event version
+  - entity identifier
+  - occurred-at timestamp
+  - minimal business-relevant payload
+- Do not expose full aggregate snapshots by default.
+
+**SignalR / Real-Time Patterns:**
+- SignalR is for UX synchronization, not business truth.
+- Hub messages must reflect already-committed server state.
+- Every hub event must have a corresponding API read model so clients can recover after reconnect or missed delivery.
+- Client code must treat hub messages as hints to refresh or reconcile, not as sole authoritative state transitions.
+
+**State Management Patterns:**
+- Server owns trust-critical workflow state.
+- Client state is limited to UI/session/transient interaction concerns.
+- State updates must be immutable in frontend code.
+- Domain stores/selectors should be organized by feature, not by primitive type.
+
+### Process Patterns
+
+**Error Handling Patterns:**
+- Backend:
+  - global exception handling middleware
+  - explicit mapping for domain exceptions to Problem Details
+  - no raw exception leakage
+- Frontend:
+  - distinguish blocking errors, retryable errors, and empty states
+  - never reuse the same UI treatment for all failures
+- AdminPanel:
+  - staff-facing errors may be more explicit than mobile-user errors, but must still avoid leaking unsafe internal details
+
+**Loading State Patterns:**
+- Use explicit loading states with domain meaning:
+  - `isLoadingConversation`
+  - `isSubmittingDecision`
+  - `isRefreshingMatch`
+- Avoid ambiguous global booleans like `isLoading` when multiple concurrent flows exist.
+- Long-running operations affecting trust-sensitive steps should always expose deterministic pending UI.
+
+**Validation Patterns:**
+- Validate at three layers:
+  - client for immediacy
+  - API boundary for request correctness
+  - domain/application layer for business invariants
+- Client validation never replaces server validation.
+- IdentityServer validates identity concerns; Api validates business concerns.
+
+**Authorization Process Patterns:**
+- Identity mutations can only originate from IdentityServer-owned handlers/services.
+- Api may request identity-side actions through explicit service calls or integration commands, never direct writes.
+- AdminPanel never bypasses Api for moderation or business operations.
+
+### Enforcement Guidelines
+
+**All AI Agents MUST:**
+- Respect schema ownership: `identity.*` is not writable by Api code.
+- Use Problem Details for API error responses.
+- Use camelCase JSON contracts and ISO 8601 UTC timestamps.
+- Keep SignalR non-authoritative and backed by API recovery paths.
+- Place admin endpoints under explicit admin route groups and policies.
+- Preserve domain-first organization instead of scattering logic into generic utility folders.
+- Persist container-independent key material outside ephemeral filesystems.
+
+**Pattern Enforcement:**
+- PRs and generated code should be checked for naming, route shape, error format, and schema ownership consistency.
+- Violations should be corrected in the implementation PR, not documented as `follow-up`.
+- If a pattern needs to change, update the architecture document first, then implement against the revised rule.
+
+### Pattern Examples
+
+**Good Examples:**
+- `POST /api/v1/conversations/{conversationId}/decision`
+- `app.conversations.decision_state`
+- `ConversationDecisionRequest`
+- `ConversationDecisionResult`
+- Problem Details response with stable `type`, `title`, `status`, and domain extension fields
+- SignalR event `DecisionGateReached` followed by client reconciliation call to fetch current conversation state
+
+**Anti-Patterns:**
+- Api writing directly into `identity.users`
+- Mixed JSON casing across endpoints
+- Returning `{ success: false, message: "..." }` on one endpoint and Problem Details on another
+- Using SignalR messages as the only way clients learn reveal/gate outcomes
+- AdminPanel pages calling the database directly for moderation actions
+- Starter-template folder structures left unrefined and treated as final architecture
 
 ## Architecture Validation Results
 
 ### Coherence Validation ✅
 
 **Decision Compatibility:**
+The selected technologies and boundaries are compatible.
 
-All technology choices are mutually compatible. Key verifications:
-- .NET 10 + EF Core 10 + Npgsql 9.x + PostGIS: fully compatible, all target `net10.0`
-- ASP.NET Core Identity + JWT Bearer + Razor Pages cookie auth: dual auth schemes (`[Authorize(AuthenticationSchemes = ...)]`) natively supported
-- FluentValidation + `AddProblemDetails()` + RFC 7807: FluentValidation ASP.NET Core integration auto-produces Problem Details 400 responses
-- Mapperly + EF Core: compile-time generation; no proxy/lazy-loading conflicts
-- Coravel + SignalR: separate concerns; jobs use `IHubContext<ChatHub>` to push events to connected clients
-- Expo SDK 55 + `@microsoft/signalr` + `expo-secure-store` + NativeWind: all compatible with React Native 0.83
-- FirebaseAdmin + dotAPNS: both run in-process inside the API container; no external routing service dependency
-- AWSSDK.S3 + Hetzner Object Storage (`ForcePathStyle = true`): standard S3 client, documented
-- Docker Compose multi-service setup: all services (API, `postgis/postgis`, Nginx) are standard images with no known compatibility conflicts on a Linux VPS host
+- .NET 10 / ASP.NET Core 10, OpenIddict 7.4.0, EF Core 10, Npgsql 10.0.1, and PostgreSQL 18 are aligned.
+- The backend split into IdentityServer, Api, and AdminPanel is coherent with the chosen security and deployment model.
+- The single-database approach is compatible with the ownership rules because schema-level write boundaries are explicitly defined.
+- Docker Compose deployment aligns with the modular service split and does not contradict future scaling plans.
+- SignalR usage is constrained appropriately as a UX synchronization layer rather than a source of truth.
 
-No conflicts identified.
+No critical decision-level contradictions were found.
 
 **Pattern Consistency:**
+The implementation patterns support the architectural decisions.
 
-- `snake_case` DB + `UseSnakeCaseNamingConvention()` + EF Core migrations: consistent end-to-end
-- RFC 7807 Option B + FluentValidation auto-integration + `AppErrors.cs` URIs: single error shape throughout
-- `AsyncState<T>` pattern applied to all async hooks: defined and enforceable
-- `DateTimeOffset` / `timestamptz` / ISO 8601: three-layer contract consistent
-- `*Service` (domain orchestration) / `*Client` (external API) naming split: enforced by directory structure (`Services/` vs `Infrastructure/`)
+- Schema ownership rules align with service boundaries.
+- API naming, Problem Details usage, and JSON conventions align with the REST-based Api model.
+- SignalR consistency rules align with the decision to keep business state server-authoritative.
+- AdminPanel patterns correctly reinforce "staff client over Api" instead of "second backend."
+- Container patterns align with the deployment decision and future horizontal scaling path.
 
 **Structure Alignment:**
+The project structure supports the architecture well.
 
-- Controllers → Services → Infrastructure/Data: clean layered boundaries, no circular dependencies
-- `ContentScanningClient` in `Infrastructure/Scanning/` (not `Services/`): correct separation
-- `BackgroundJobs/` using `IHubContext<ChatHub>` for real-time push from Coravel: valid injection pattern
-- Mobile: components → hooks → services → `apiClient`/`signalrService`: unidirectional dependency flow
-
----
+- Backend apps are physically separated in a way that reflects logical ownership.
+- Api feature folders match the product lifecycle and trust-critical workflow model.
+- Mobile structure reflects the UX lifecycle rather than generic app boilerplate.
+- Deployment structure is separated cleanly from application source.
+- Tests and contracts are positioned in a way that can support cross-boundary enforcement.
 
 ### Requirements Coverage Validation ✅
 
-**Functional Requirements (45 FRs):**
+**Feature Coverage:**
+The architecture supports all major functional areas described in the PRD and UX design:
 
-| Domain | FRs | Status |
-|---|---|---|
-| Account & Auth | FR1–7 | ✅ Full coverage — `AuthController`, `AccountController`, `SocialLoginHandler`, cascade delete, `DeviceToken` registration |
-| Onboarding & Profile | FR8–11 | ✅ Full coverage — `OnboardingController`, synchronous scan gate, `app/(auth)/onboarding/` |
-| Matching | FR12–16 | ✅ Full coverage — `MatchService`, `MatchGenerationJob` (idempotent + startup), PostGIS radius, `InviteLink`, admin threshold |
-| Chat & Conversation | FR17–21 | ✅ Full coverage — `ChatHub`, `ConversationController`, `message_count`, active conv limit |
-| Reveal System | FR22–27 | ✅ Full coverage — Dual async flags, threshold gate, signed URL gated via `RevealService` |
-| Subscription & Premium | FR28–31 | ✅ Full coverage — `SubscriptionController` with IAP webhook JWT verification, `TrialExpiryNotificationJob` |
-| Safety & Moderation | FR32–40 | ✅ Full coverage — `ContentScanningClient` (synchronous, hard-fail), NCMEC slot, `Report`/`ModerationAction`, 2yr audit retention |
-| Analytics & Compliance | FR41–45 | ✅ Full coverage — DB-backed analytics, gender ratio dashboard, reveal event tracking, audit log, GDPR deferred with posture documentation required |
+- onboarding and policy acceptance
+- matching
+- blind conversation
+- decision gate and reveal
+- dignified non-mutual endings
+- photo moderation pipeline
+- notifications
+- support/admin workflows
+- operational auditability
 
-**Non-Functional Requirements (30 NFRs):**
+Each of these areas has an architectural home in the Api, IdentityServer, AdminPanel, or mobile structure.
 
-| Category | Status | Notes |
-|---|---|---|
-| Performance | ✅ | SignalR WebSockets; synchronous scan with 10s SLA; VPS + Nginx + PostgreSQL adequate for Poland-first volume |
-| Security | ✅ | Nginx TLS; signed URL gating; IAP webhook JWT verification; no card data stored; `expo-secure-store` for tokens; no PII in logs |
-| Scalability | ✅ (deferred) | Single VPS architecture adequate for MVP; SignalR Redis backplane deferred post-MVP |
-| Accessibility | ✅ | Architecture-neutral; enforced at component layer (NativeWind, Dynamic Type, AA contrast) |
-| Reliability | ✅ | Docker Compose `restart: unless-stopped` + Nginx; hard-fail scan policy; push job acceptable drop on restart at MVP |
-| Compliance | ✅ (partial) | GDPR posture documentation required before first real user; NCMEC legal workstream as parallel action item |
-| Encryption at rest | ✅ | Hetzner Object Storage: encrypted by default; PostgreSQL VPS: **LUKS disk encryption required at provisioning** (deployment checklist item) |
+**Functional Requirements Coverage:**
+All major FR categories are architecturally supported.
 
----
+- The conversation-first loop is supported by the Api feature structure and mobile lifecycle structure.
+- The moderation pipeline is supported by MinIO integration, Moderation features, and AdminPanel workflows.
+- Identity and federation needs are supported by the IdentityServer split and OpenIddict choice.
+- Admin and support operations are supported without breaking business-boundary rules.
+- Real-time conversation needs are supported by SignalR with recovery-through-API patterns.
+
+**Non-Functional Requirements Coverage:**
+The architecture addresses the core NFRs effectively.
+
+- Reliability: server-authoritative workflow state, explicit boundaries, health checks, and containerized deployment
+- Privacy: pre-reveal access control, admin/API separation, identity/business ownership separation
+- Security: first-party identity authority, OIDC/OAuth2, policy-based admin access, explicit identity mutation ownership
+- Scalability: stateless app containers, future Redis introduction, modular service split
+- Compliance/supportability: auditability, moderation tooling, support workflow structure, deletion/account lifecycle support
+- UX integrity: server-authoritative state plus lifecycle-aware mobile structure and real-time reconciliation
 
 ### Implementation Readiness Validation ✅
 
 **Decision Completeness:**
+The architecture is sufficiently specified for implementation to begin.
 
-All critical decisions are documented with specific versions, package names, and implementation constraints. No decision is left as "TBD" for items on the critical path. Items deferred post-MVP are explicitly scoped.
+- Critical backend and data decisions are documented.
+- Deployment and service boundaries are documented.
+- Identity and authorization responsibilities are explicit.
+- Key versions are identified for the main backend technologies.
 
 **Structure Completeness:**
+The project structure is concrete enough for multiple agents to implement against consistently.
 
-Backend and mobile directory trees are fully specified to file level. All integration points have named homes. Requirements-to-structure mapping table covers all 45 FRs. Boundaries between `Services/`, `Infrastructure/`, and `BackgroundJobs/` are explicitly defined.
+- Backend apps are clearly separated.
+- Feature slices are defined.
+- Deployment folders are defined.
+- Mobile structure is defined.
+- Test locations and shared-library intent are documented.
 
 **Pattern Completeness:**
+The main conflict points for AI implementation have been addressed.
 
-All eight identified conflict points are addressed: naming conventions (DB, API, C#, TypeScript), response format, datetime handling, error handling, loading states, SignalR patterns, validation patterns, mapping patterns, logging patterns. Ten enforcement guidelines provide enforceable rules for AI agents.
+- naming rules
+- response formats
+- state and SignalR patterns
+- schema ownership
+- admin/API boundaries
+- containerization expectations
 
----
+This should materially reduce inconsistent implementation choices across agents.
 
 ### Gap Analysis Results
 
-| Priority | Gap | Resolution |
-|---|---|---|
-| 🔴 Critical | IAP webhook signature verification absent — OWASP A01 risk | ✅ Resolved — Apple RS256 JWKS + Google JWKS verification documented in Core Decisions with JWKS caching and test bypass flag |
-| 🔴 Critical | Push notification mechanism undefined — blocked 4+ stories | ✅ Resolved — Direct FCM (FirebaseAdmin) + APNs (dotAPNS) from .NET; `DeviceToken` table; stale token cleanup; `IPushNotificationService` interface |
-| 🟡 Important | Encryption at rest not documented as deployment requirement | ✅ Resolved — LUKS disk encryption documented as VPS provisioning checklist item |
-| 🟡 Important | Admin cookie CSRF protection unconfirmed | ✅ Non-issue — ASP.NET Core Razor Pages enables anti-forgery tokens by default for all POST handlers; confirmation comment sufficient |
-| 🟢 Minor | Analytics approach undefined | ✅ Resolved — DB-backed analytics; reveal events and gender ratio data stored in PostgreSQL via `AnalyticsController` |
+**Critical Gaps:** none identified.
 
-All gaps resolved. No outstanding critical or important gaps remain.
+**Important Gaps:**
+- IdentityServer internal structure is defined, but some operational identity decisions are still intentionally open:
+  - passkeys/MFA delivery timing
+  - exact signing key storage mechanism
+  - exact admin scope/role matrix
+- Api internal application style is implied by feature slicing, but not yet locked more formally:
+  - for example whether handlers/services use MediatR-style request handling or a lighter internal application service pattern
+- Mobile state-management library choice is intentionally still light-touch and may need to be made explicitly once implementation begins.
 
----
+**Nice-to-Have Gaps:**
+- Explicit ADR-style records for a few sensitive decisions could help future changes:
+  - single database ownership model
+  - SignalR usage constraints
+  - identity mutation boundary
+- A dedicated deployment runbook and secrets management guide would improve operational readiness.
+- A more explicit admin authorization matrix would help staff tooling implementation later.
+
+### Validation Issues Addressed
+
+The architecture is strong enough to proceed without blocking issues.
+
+One minor documentation issue remained:
+- the workflow frontmatter step list needed to be synchronized with the current completed step count before final completion.
+
+This has now been corrected.
 
 ### Architecture Completeness Checklist
 
 **✅ Requirements Analysis**
-- [x] Project context thoroughly analyzed (45 FRs, 30 NFRs, 8 domains)
-- [x] Scale and complexity assessed (medium complexity, Poland-first, 10K concurrent at launch)
-- [x] Technical constraints identified (SignalR WebSocket requirement, EU data residency, NCMEC legal lead time)
-- [x] Cross-cutting concerns mapped (content scanning, reveal authorization, push routing, account deletion cascade, audit retention)
+- [x] Project context thoroughly analyzed
+- [x] Scale and complexity assessed
+- [x] Technical constraints identified
+- [x] Cross-cutting concerns mapped
 
 **✅ Architectural Decisions**
-- [x] Critical decisions documented with specific versions (.NET 10, Expo SDK 55, PostgreSQL, all NuGet/npm packages named)
-- [x] Technology stack fully specified (backend + mobile + database + storage + background jobs + push + email + admin)
-- [x] Integration patterns defined (S3, FCM, APNs, SignalR, SMTP, IAP webhooks, DB-backed analytics)
-- [x] Security requirements addressed (IAP webhook JWT verification, signed URLs, TLS, token storage, no PII in logs, LUKS at rest)
+- [x] Critical decisions documented with versions
+- [x] Technology stack fully specified
+- [x] Integration patterns defined
+- [x] Performance and scaling posture addressed
 
 **✅ Implementation Patterns**
-- [x] Naming conventions established (DB snake_case, API kebab-case, C# PascalCase, TypeScript conventions)
-- [x] Structure patterns defined (`*Service` vs `*Client`, `BackgroundJobs/`, `Errors/`, `types/api/` + `types/signalr/`)
-- [x] Communication patterns specified (RFC 7807 Option B, SignalR hub method names, `AsyncState<T>`)
-- [x] Process patterns documented (error handling, loading states, validation, mapping, logging, enforcement guidelines)
+- [x] Naming conventions established
+- [x] Structure patterns defined
+- [x] Communication patterns specified
+- [x] Process patterns documented
 
 **✅ Project Structure**
-- [x] Complete directory structure defined (backend + tests + mobile to file level)
-- [x] Component boundaries established (Controllers / Services / Infrastructure / BackgroundJobs)
-- [x] Integration points mapped (9 external integrations, all with named handler locations)
-- [x] Requirements to structure mapping complete (all 45 FRs mapped to controllers, services, and mobile screens)
-
----
+- [x] Complete directory structure defined
+- [x] Component boundaries established
+- [x] Integration points mapped
+- [x] Requirements to structure mapping complete
 
 ### Architecture Readiness Assessment
 
-**Overall Status: READY FOR IMPLEMENTATION**
+**Overall Status:** READY FOR IMPLEMENTATION
 
-**Confidence Level: High**
-
-Basis: All 45 FRs and 30 NFRs are architecturally supported, all critical security decisions are documented, all technology choices are version-pinned and mutually compatible, and all known implementation conflict points have explicit resolution rules.
+**Confidence Level:** High
 
 **Key Strengths:**
-- Self-sovereign, fully containerized infrastructure: Docker Compose on VPS + direct FCM/APNs + Hetzner Object Storage — minimal third-party SaaS dependencies; environment is reproducible from day one
-- Docker-first approach means dev/prod parity from the first commit; no "works on my machine" class of deployment failures
-- Security gaps (IAP webhook verification, signed URL gating, LUKS at rest) all resolved before implementation begins
-- Coravel + startup idempotent match check prevents the worst UX failure mode (empty match screen after restart); `restart: unless-stopped` ensures containers recover on VPS reboot
-- Mapperly + FluentValidation + RFC 7807 produce a consistent, type-safe API surface that AI agents can implement without ambiguity
-- `invite-landing.tsx` + invite lineage tracking preserved from first story — no retrofit needed
+- Clear backend responsibility split
+- Explicit single-database ownership model
+- Strong alignment between UX lifecycle and mobile structure
+- Good protection against multi-agent implementation drift
+- Realistic deployment model with a credible future scaling path
+- Strong trust-and-safety alignment across architecture and operations
 
-**Areas for Future Enhancement (Post-MVP):**
-- SignalR Redis backplane when horizontal scaling is needed
-- Managed PostgreSQL service (separate from VPS) when database load warrants it
-- ML-based matching when training data exists
-- GDPR compliance feature set (right to erasure flows, DPO tooling) — noted as deferred, required before expansion beyond beta
-
----
+**Areas for Future Enhancement:**
+- formalize admin authorization matrix
+- formalize secrets/key management runbook
+- add a few focused ADRs for sensitive boundary decisions
+- lock down a final internal application pattern for Api if needed during implementation
 
 ### Implementation Handoff
 
 **AI Agent Guidelines:**
-- Follow all architectural decisions exactly as documented — no substitutions without an explicit architecture update
-- Use implementation patterns consistently across all components — enforcement guidelines are non-negotiable
-- Respect project structure and boundaries — `Services/` is domain orchestration only; `Infrastructure/` contains all external integrations
-- Refer to this document for all architectural questions before making any technology or pattern choice
+- Follow all architectural decisions exactly as documented.
+- Use implementation patterns consistently across all components.
+- Respect project structure and ownership boundaries.
+- Treat this document as the source of truth for architectural questions.
 
-**Deployment Checklist (Non-Code Requirements):**
-- [ ] Enable LUKS disk encryption at VPS provisioning (before first user data is written) — host-level requirement; Docker does not protect data at rest on the host filesystem
-- [ ] Install Docker Engine and Docker Compose plugin on VPS (`docker compose version` to verify)
-- [ ] Create `.env` from `.env.example` on VPS; populate all secrets — never commit `.env` to source control
-- [ ] Store `APNS_KEY` (`.p8` file contents) and `FIREBASE_CREDENTIALS_JSON` as values in the VPS `.env` file
-- [ ] Configure Nginx IP allowlist on `/admin` in `nginx/nginx.conf` before the Nginx container is started
-- [ ] Verify named Docker volume `db-data` persists across `docker compose down` / `up` cycles before first user data is written (run `docker volume inspect db-data`)
-- [ ] Generate idempotent migration script before first deployment: `dotnet ef migrations script --idempotent --output migrations/latest.sql` (requires SDK — run in dev environment or CI); commit `migrations/latest.sql` to the repository
-- [ ] Apply migrations on every deployment: `docker compose exec -T db psql -U $POSTGRES_USER -d $POSTGRES_DB < migrations/latest.sql` (after `docker compose up -d db`)
-- [ ] Initiate NCMEC legal agreement process (parallel workstream — external lead time weeks to months)
-- [ ] Confirm GDPR posture documentation in place before first real user onboards
-
-**First Implementation Sequence:**
-1. Backend scaffolding: `dotnet new sln -n Blinder && dotnet new webapi -n Blinder.Api --use-controllers --framework net10.0`
-2. Docker setup: `Dockerfile` (multi-stage), `docker-compose.yml`, `docker-compose.override.yml`, `nginx/nginx.conf`, `.env.example`, `.dockerignore` — committed from the first development commit; all subsequent development runs through `docker compose up`
-3. Mobile scaffolding: `npx create-expo-app@latest --template default@sdk-55`
-4. Spike: Apple + Google IAP webhook verification (unblocks subscription stories)
-5. Spike: Hetzner Object Storage `ForcePathStyle = true` + signed URL generation (unblocks photo upload story)
-6. Spike: Confirm `getDevicePushTokenAsync()` native token retrieval in Expo SDK 55 build (unblocks push notification stories)
+**First Implementation Priority:**
+1. Initialize the backend solution skeleton with `Blinder.IdentityServer`, `Blinder.Api`, `Blinder.AdminPanel`, shared projects, and test projects.
+2. Initialize the mobile app from the Tamagui Expo Router starter and immediately refactor it into the documented domain-first structure.
+3. Define the first Docker Compose deployment skeleton with Traefik, PostgreSQL, MinIO, and placeholders for `identityserver`, `api`, and `adminpanel`.

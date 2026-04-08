@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blinder Clickable Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-base: #FBF5EE;
+      --bg-surface: #EDE3D8;
+      --bg-elevated: #F5EDE2;
+      --primary: #8B4E6E;
+      --primary-light: #B87A98;
+      --reveal: #D4A85A;
+      --accent: #C4825A;
+      --text-primary: #2C1C1A;
+      --text-secondary: #7A5A52;
+      --text-muted: #A08878;
+      --border: #DDD0C4;
+      --offline: #9A9090;
+      --bg-dark: #2C1C1A;
+      --shadow: 0 12px 32px rgba(44, 28, 26, 0.24);
+      --radius-xl: 20px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-full: 9999px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Lato", sans-serif;
+      color: var(--text-primary);
+      background:
+        radial-gradient(circle at 20% 0%, #f7e7d6 0%, transparent 45%),
+        radial-gradient(circle at 100% 100%, #e5c8b1 0%, transparent 35%),
+        linear-gradient(150deg, #fbf5ee 0%, #f2e9df 45%, #ead9cc 100%);
+      padding: 24px;
+      display: grid;
+      gap: 24px;
+      justify-items: center;
+    }
+
+    .title-wrap {
+      width: min(980px, 100%);
+      display: grid;
+      gap: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 0.01em;
+      color: var(--text-primary);
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      font-size: 15px;
+      max-width: 78ch;
+    }
+
+    .prototype {
+      width: min(980px, 100%);
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .phone-shell {
+      background: #16100f;
+      border-radius: 42px;
+      padding: 14px;
+      box-shadow: 0 20px 44px rgba(0, 0, 0, 0.36);
+      position: sticky;
+      top: 24px;
+    }
+
+    .phone-screen {
+      height: 690px;
+      border-radius: 30px;
+      background: var(--bg-base);
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(44, 28, 26, 0.08);
+    }
+
+    .panel {
+      background: rgba(251, 245, 238, 0.82);
+      border: 1px solid rgba(122, 90, 82, 0.2);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(8px);
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .flow-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+
+    .flow-current {
+      font-size: 20px;
+      font-weight: 900;
+      margin: 0;
+      color: var(--text-primary);
+    }
+
+    .flow-desc {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: var(--radius-full);
+      min-height: 46px;
+      padding: 10px 16px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+      text-align: left;
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.02);
+    }
+
+    .btn.primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .btn.secondary {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn.reveal {
+      background: var(--reveal);
+      color: var(--bg-dark);
+      box-shadow: var(--shadow);
+    }
+
+    .btn.link {
+      background: transparent;
+      color: var(--accent);
+      text-decoration: underline;
+      padding-left: 0;
+      min-height: auto;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .timeline strong {
+      color: var(--text-primary);
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      background: var(--bg-base);
+      animation: fadeIn 260ms ease;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(251, 245, 238, 0.85);
+    }
+
+    .top-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
+      color: var(--text-secondary);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(140deg, var(--accent), var(--primary));
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .person-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .person-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .content {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+      flex: 1;
+      align-content: start;
+    }
+
+    .hero {
+      display: grid;
+      gap: 8px;
+      text-align: center;
+      justify-items: center;
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.3;
+      font-weight: 900;
+    }
+
+    .hero p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 700;
+    }
+
+    .starter-card {
+      padding: 14px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      display: grid;
+      gap: 4px;
+      font-size: 13px;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .starter-card .hint {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .chat-wrap {
+      padding: 12px 12px 6px;
+      display: grid;
+      gap: 8px;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .bubble {
+      max-width: 78%;
+      padding: 10px 13px;
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .bubble.them {
+      align-self: start;
+      border-bottom-left-radius: 6px;
+      background: var(--bg-surface);
+      color: var(--text-primary);
+    }
+
+    .bubble.me {
+      align-self: end;
+      border-bottom-right-radius: 6px;
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .timestamp {
+      font-size: 11px;
+      color: var(--text-muted);
+      align-self: center;
+      margin-top: 2px;
+    }
+
+    .chat-input {
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+      padding: 10px 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .field {
+      flex: 1;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .send {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+    }
+
+    .gate-cards {
+      display: grid;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .gate-card {
+      border-radius: var(--radius-xl);
+      padding: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      display: grid;
+      gap: 4px;
+    }
+
+    .gate-card h3 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .gate-card p {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+    }
+
+    .gate-card.reveal {
+      background: #f2dfb7;
+      border-color: #e5c27f;
+    }
+
+    .resolution-anim {
+      margin: 8px auto 6px;
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      border: 2px solid rgba(196, 130, 90, 0.38);
+      position: relative;
+    }
+
+    .resolution-anim::before,
+    .resolution-anim::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      border-radius: 50%;
+      animation: pulse 2s ease-out infinite;
+      border: 2px solid rgba(139, 78, 110, 0.36);
+    }
+
+    .resolution-anim::after {
+      animation-delay: 0.9s;
+    }
+
+    @keyframes pulse {
+      0% {
+        width: 20px;
+        height: 20px;
+        opacity: 0.9;
+      }
+      100% {
+        width: 86px;
+        height: 86px;
+        opacity: 0;
+      }
+    }
+
+    .reveal-portrait {
+      width: 116px;
+      height: 116px;
+      border-radius: 50%;
+      margin: 4px auto;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 34px;
+      font-weight: 900;
+      background: linear-gradient(140deg, var(--accent), var(--primary));
+      box-shadow:
+        0 0 0 12px rgba(212, 168, 90, 0.22),
+        0 0 0 26px rgba(212, 168, 90, 0.12);
+    }
+
+    .outcome-ico {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      color: var(--text-secondary);
+      margin: 6px auto;
+    }
+
+    .offline {
+      position: absolute;
+      inset: 0;
+      display: none;
+      background: rgba(44, 28, 26, 0.88);
+      color: #f6eee5;
+      z-index: 20;
+      padding: 22px;
+      align-content: center;
+      text-align: center;
+      gap: 10px;
+    }
+
+    .offline.active {
+      display: grid;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 860px) {
+      body {
+        padding: 16px;
+      }
+
+      .prototype {
+        grid-template-columns: 1fr;
+      }
+
+      .phone-shell {
+        position: static;
+        justify-self: center;
+        width: min(380px, 100%);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="title-wrap">
+    <h1>Blinder Clickable Prototype</h1>
+    <p class="subtitle">
+      Built from the selected UX direction decisions: single-focus navigation, Match Entry, Starter Forward first message,
+      Clean Minimal chat, full-screen Gate, Resolution Wait, and dignified outcomes.
+    </p>
+  </div>
+
+  <div class="prototype">
+    <div class="phone-shell">
+      <div class="phone-screen" id="phoneScreen">
+        <section class="screen" id="screen-waiting">
+          <div class="top-bar">
+            <div class="top-left">
+              <div class="person-name">Blinder</div>
+            </div>
+            <button class="icon-btn" data-go="screen-profile" aria-label="Open profile">◯</button>
+          </div>
+          <div class="content">
+            <div class="hero">
+              <span class="pill">Daily Rhythm</span>
+              <h2>Your match arrives daily</h2>
+              <p>One focused conversation at a time. Quality over quantity.</p>
+            </div>
+            <button class="btn primary" data-go="screen-match-entry">A match is ready</button>
+            <button class="btn secondary" data-toggle-offline="true">Simulate offline blocker</button>
+            <p class="footer-note">Waiting state keeps anticipation calm with a temporal anchor.</p>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-match-entry">
+          <div class="top-bar">
+            <div class="top-left">
+              <button class="icon-btn" data-go="screen-waiting" aria-label="Back">←</button>
+              <div>
+                <div class="person-name">Match Entry</div>
+                <div class="person-sub">First impression, no overload</div>
+              </div>
+            </div>
+            <button class="icon-btn" data-go="screen-profile" aria-label="Open profile">◯</button>
+          </div>
+          <div class="content">
+            <div class="hero">
+              <div class="avatar" style="width:72px;height:72px;font-size:20px;">?</div>
+              <h2>Someone is waiting to talk with you</h2>
+              <p>Skip the swipe loop and begin with a real conversation.</p>
+            </div>
+            <button class="btn primary" data-go="screen-starters">Enter conversation</button>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-starters">
+          <div class="top-bar">
+            <div class="top-left">
+              <button class="icon-btn" data-go="screen-match-entry" aria-label="Back">←</button>
+              <div>
+                <div class="person-name">Starter Forward</div>
+                <div class="person-sub">First message should feel easy</div>
+              </div>
+            </div>
+            <button class="icon-btn" data-go="screen-profile" aria-label="Open profile">◯</button>
+          </div>
+          <div class="content">
+            <div class="starter-card" data-go="screen-conversation">
+              What surprised you lately in a good way?
+              <span class="hint">Tap to send as your first message</span>
+            </div>
+            <div class="starter-card" data-go="screen-conversation">
+              What kind of conversation makes you lose track of time?
+              <span class="hint">Open-ended and low pressure</span>
+            </div>
+            <div class="starter-card" data-go="screen-conversation">
+              What's something small that improves your day?
+              <span class="hint">Warm and reflective tone</span>
+            </div>
+            <button class="btn secondary" data-go="screen-conversation">Write my own message</button>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-conversation">
+          <div class="top-bar">
+            <div class="top-left">
+              <button class="icon-btn" data-go="screen-starters" aria-label="Back">←</button>
+              <div class="avatar">A</div>
+              <div>
+                <div class="person-name">Someone new</div>
+                <div class="person-sub">Blind conversation in progress</div>
+              </div>
+            </div>
+            <button class="icon-btn" data-go="screen-profile" aria-label="Open profile">◯</button>
+          </div>
+          <div class="chat-wrap">
+            <div class="bubble them">I've always found it easier to talk before labels appear.</div>
+            <div class="bubble me">Same. It feels calmer when neither side has to perform.</div>
+            <div class="bubble them">What made you join Blinder now?</div>
+            <div class="bubble me">I wanted conversation to matter first.</div>
+            <div class="timestamp">14 messages exchanged</div>
+          </div>
+          <div class="chat-input">
+            <div class="field">Message...</div>
+            <div class="send">→</div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-gate">
+          <div class="top-bar">
+            <div class="top-left">
+              <button class="icon-btn" data-go="screen-conversation" aria-label="Back">←</button>
+              <div>
+                <div class="person-name">Decision Gate</div>
+                <div class="person-sub">Full-screen, equal-weight options</div>
+              </div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="hero" style="text-align:left;justify-items:start;">
+              <h2 style="font-size:26px;">What happens next?</h2>
+              <p>You've had a real conversation. Your choice is private. You'll find out together.</p>
+              <span class="pill">Triggered by: 14 messages</span>
+            </div>
+            <div class="gate-cards">
+              <div class="gate-card reveal">
+                <h3>Reveal</h3>
+                <p>Move to profile reveal if both of you choose this.</p>
+              </div>
+              <div class="gate-card">
+                <h3>Continue</h3>
+                <p>Keep the conversation blind and come back to this later.</p>
+              </div>
+              <div class="gate-card">
+                <h3>Abandon</h3>
+                <p>End this conversation with calm, neutral closure.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-resolution-wait">
+          <div class="top-bar">
+            <div class="top-left">
+              <div>
+                <div class="person-name">Resolution Wait</div>
+                <div class="person-sub">Highest emotional intensity</div>
+              </div>
+            </div>
+          </div>
+          <div class="content" style="justify-content:center;">
+            <div class="hero">
+              <div class="resolution-anim"></div>
+              <h2>Your answer is with them</h2>
+              <p>No rush. We will reveal the outcome once both choices are in.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-reveal">
+          <div class="top-bar">
+            <div class="top-left">
+              <div>
+                <div class="person-name">Reveal Ceremony</div>
+                <div class="person-sub">Warm, unhurried transition</div>
+              </div>
+            </div>
+          </div>
+          <div class="content" style="justify-content:center;">
+            <div class="hero">
+              <div class="reveal-portrait">AP</div>
+              <h2>It's a mutual reveal</h2>
+              <p>You connected before visuals. Keep talking with full context.</p>
+            </div>
+            <button class="btn reveal" data-go="screen-post-reveal-chat">Keep talking</button>
+            <button class="btn link" data-go="screen-conversation">Read blind conversation history</button>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-post-reveal-chat">
+          <div class="top-bar">
+            <div class="top-left">
+              <button class="icon-btn" data-go="screen-reveal" aria-label="Back">←</button>
+              <div class="avatar" style="background:linear-gradient(135deg,#d18f5f,#8b4e6e);">AP</div>
+              <div>
+                <div class="person-name">Ania P.</div>
+                <div class="person-sub">Revealed profile and chat</div>
+              </div>
+            </div>
+            <button class="icon-btn" data-go="screen-profile" aria-label="Open profile">◯</button>
+          </div>
+          <div class="chat-wrap">
+            <div class="bubble them">I'm glad we talked this way first.</div>
+            <div class="bubble me">Same here, it felt natural.</div>
+            <div class="bubble them">Coffee this weekend?</div>
+            <div class="bubble me">Yes, let's do it.</div>
+            <div class="timestamp">Reveal unlocked profile context</div>
+          </div>
+          <div class="chat-input">
+            <div class="field">Message...</div>
+            <div class="send">→</div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-acceptance">
+          <div class="top-bar">
+            <div class="top-left">
+              <div>
+                <div class="person-name">Conversation Ended</div>
+                <div class="person-sub">Dignified, non-attributing closure</div>
+              </div>
+            </div>
+          </div>
+          <div class="content" style="justify-content:center;">
+            <div class="hero">
+              <div class="outcome-ico">✧</div>
+              <h2>This conversation has ended</h2>
+              <p>Thanks for showing up with intention. Your next match is being prepared.</p>
+            </div>
+            <button class="btn primary" data-go="screen-waiting">Find my next match</button>
+            <button class="btn link" data-go="screen-waiting">Take a break</button>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-profile">
+          <div class="top-bar">
+            <div class="top-left">
+              <button class="icon-btn" data-back="true" aria-label="Back">←</button>
+              <div>
+                <div class="person-name">Profile & Settings</div>
+                <div class="person-sub">Single focus app, sheet-like entry</div>
+              </div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="starter-card" style="cursor:default;">
+              Notification preferences
+              <span class="hint">Daily match updates and safety alerts</span>
+            </div>
+            <div class="starter-card" style="cursor:default;">
+              Update profile photo
+              <span class="hint">Re-upload triggers moderation review</span>
+            </div>
+            <button class="btn secondary" data-go="screen-account-delete">Delete account</button>
+            <button class="btn primary" data-back="true">Done</button>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-account-delete">
+          <div class="top-bar">
+            <div class="top-left">
+              <button class="icon-btn" data-go="screen-profile" aria-label="Back">←</button>
+              <div>
+                <div class="person-name">Delete Account</div>
+                <div class="person-sub">Explicit confirmation required</div>
+              </div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="hero" style="text-align:left;justify-items:start;">
+              <h2 style="font-size:22px;">Are you sure?</h2>
+              <p>This action permanently deletes your account data as required by policy.</p>
+            </div>
+            <button class="btn secondary" data-go="screen-profile">Cancel</button>
+            <button class="btn secondary" style="color:#B85050;" data-go="screen-waiting">Confirm deletion</button>
+          </div>
+        </section>
+
+        <div class="offline" id="offlineOverlay" role="status" aria-live="polite">
+          <h3 style="margin:0;font-size:22px;">You are offline</h3>
+          <p style="margin:0;line-height:1.6;color:#e7d7c5;">Write actions are paused. We'll restore everything automatically when connection returns.</p>
+          <button class="btn secondary" id="restoreConnection">Restore connection</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <div>
+        <div class="flow-meta">Current State</div>
+        <p class="flow-current" id="currentState">Waiting</p>
+        <p class="flow-desc" id="currentDesc">Calm waiting screen with daily cadence anchor.</p>
+      </div>
+
+      <div class="actions" id="dynamicActions"></div>
+
+      <div class="timeline">
+        <div><strong>Flow:</strong> Waiting -> Match Entry -> Starters -> Conversation -> Gate -> Resolution Wait -> Reveal or Acceptance</div>
+        <div><strong>Navigation:</strong> No tab bar, profile access via top-right avatar only.</div>
+        <div><strong>Tone:</strong> No urgency, no blame language, equal visual weight for gate options.</div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const stateMeta = {
+      "screen-waiting": {
+        title: "Waiting",
+        desc: "Calm waiting screen with daily cadence anchor.",
+        actions: [
+          { label: "Open Match Entry", to: "screen-match-entry", kind: "primary" },
+          { label: "Open Profile", to: "screen-profile", kind: "secondary" },
+          { label: "Show Offline Blocker", offline: true, kind: "secondary" }
+        ]
+      },
+      "screen-match-entry": {
+        title: "Match Entry",
+        desc: "Single CTA transition into the first-message flow.",
+        actions: [
+          { label: "Enter Conversation", to: "screen-starters", kind: "primary" },
+          { label: "Back to Waiting", to: "screen-waiting", kind: "secondary" }
+        ]
+      },
+      "screen-starters": {
+        title: "Starter Forward",
+        desc: "Prompts reduce first-message anxiety before free chat.",
+        actions: [
+          { label: "Send Starter and Continue", to: "screen-conversation", kind: "primary" },
+          { label: "Back to Match Entry", to: "screen-match-entry", kind: "secondary" }
+        ]
+      },
+      "screen-conversation": {
+        title: "Blind Conversation",
+        desc: "Clean Minimal messaging with receding chrome and no distractions.",
+        actions: [
+          { label: "Trigger Decision Gate", to: "screen-gate", kind: "primary" },
+          { label: "Open Profile", to: "screen-profile", kind: "secondary" }
+        ]
+      },
+      "screen-gate": {
+        title: "Full-screen Gate",
+        desc: "Three equal-weight choices with no highlighted default.",
+        actions: [
+          { label: "Choose Reveal", to: "screen-resolution-wait", outcome: "reveal", kind: "reveal" },
+          { label: "Choose Continue", to: "screen-conversation", kind: "secondary" },
+          { label: "Choose Abandon", to: "screen-acceptance", kind: "secondary" }
+        ]
+      },
+      "screen-resolution-wait": {
+        title: "Resolution Wait",
+        desc: "Distinct holding state, intentionally not a spinner or progress bar.",
+        actions: [
+          { label: "Resolve to Mutual Reveal", to: "screen-reveal", kind: "reveal" },
+          { label: "Resolve to Non-mutual Ending", to: "screen-acceptance", kind: "secondary" }
+        ]
+      },
+      "screen-reveal": {
+        title: "Reveal Ceremony",
+        desc: "Warm, ceremonial reveal preserving conversation context.",
+        actions: [
+          { label: "Continue Post-Reveal Chat", to: "screen-post-reveal-chat", kind: "primary" },
+          { label: "Back to Blind History", to: "screen-conversation", kind: "secondary" }
+        ]
+      },
+      "screen-post-reveal-chat": {
+        title: "Post-Reveal Conversation",
+        desc: "Conversation continues with profile context now visible.",
+        actions: [
+          { label: "Return to Waiting", to: "screen-waiting", kind: "secondary" },
+          { label: "Open Profile", to: "screen-profile", kind: "secondary" }
+        ]
+      },
+      "screen-acceptance": {
+        title: "Gentle Acceptance",
+        desc: "Neutral closure and immediate forward path, no rejection signal.",
+        actions: [
+          { label: "Find Next Match", to: "screen-waiting", kind: "primary" },
+          { label: "Take a Break", to: "screen-waiting", kind: "secondary" }
+        ]
+      },
+      "screen-profile": {
+        title: "Profile & Settings",
+        desc: "Accessible through avatar tap from all states; no bottom navigation.",
+        actions: [
+          { label: "Open Account Deletion", to: "screen-account-delete", kind: "secondary" },
+          { label: "Go Back", back: true, kind: "primary" }
+        ]
+      },
+      "screen-account-delete": {
+        title: "Account Deletion",
+        desc: "Explicit confirmation flow for irreversible action.",
+        actions: [
+          { label: "Cancel", to: "screen-profile", kind: "secondary" },
+          { label: "Confirm Deletion", to: "screen-waiting", kind: "secondary" }
+        ]
+      }
+    };
+
+    const screens = Array.from(document.querySelectorAll(".screen"));
+    const currentStateEl = document.getElementById("currentState");
+    const currentDescEl = document.getElementById("currentDesc");
+    const dynamicActions = document.getElementById("dynamicActions");
+    const offlineOverlay = document.getElementById("offlineOverlay");
+    const restoreConnection = document.getElementById("restoreConnection");
+
+    let activeScreen = "screen-waiting";
+    const historyStack = [];
+
+    function renderActions(screenId) {
+      dynamicActions.innerHTML = "";
+      const meta = stateMeta[screenId];
+      if (!meta) {
+        return;
+      }
+
+      meta.actions.forEach((action) => {
+        const btn = document.createElement("button");
+        btn.className = `btn ${action.kind || "secondary"}`;
+        btn.textContent = action.label;
+
+        if (action.offline) {
+          btn.addEventListener("click", () => toggleOffline(true));
+        } else if (action.back) {
+          btn.addEventListener("click", goBack);
+        } else if (action.to) {
+          btn.addEventListener("click", () => showScreen(action.to));
+        }
+
+        dynamicActions.appendChild(btn);
+      });
+    }
+
+    function updateMeta(screenId) {
+      const meta = stateMeta[screenId];
+      currentStateEl.textContent = meta ? meta.title : "Unknown";
+      currentDescEl.textContent = meta ? meta.desc : "";
+      renderActions(screenId);
+    }
+
+    function showScreen(screenId, trackHistory = true) {
+      if (screenId === activeScreen) {
+        return;
+      }
+
+      const target = document.getElementById(screenId);
+      if (!target) {
+        return;
+      }
+
+      if (trackHistory) {
+        historyStack.push(activeScreen);
+      }
+
+      screens.forEach((screen) => screen.classList.remove("active"));
+      target.classList.add("active");
+      activeScreen = screenId;
+      updateMeta(screenId);
+    }
+
+    function goBack() {
+      const previous = historyStack.pop();
+      if (!previous) {
+        return;
+      }
+      showScreen(previous, false);
+    }
+
+    function toggleOffline(show) {
+      offlineOverlay.classList.toggle("active", show);
+    }
+
+    document.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-go], [data-back], [data-toggle-offline]");
+      if (!button) {
+        return;
+      }
+
+      if (button.dataset.go) {
+        showScreen(button.dataset.go);
+      } else if (button.dataset.back) {
+        goBack();
+      } else if (button.dataset.toggleOffline) {
+        toggleOffline(true);
+      }
+    });
+
+    restoreConnection.addEventListener("click", () => toggleOffline(false));
+
+    document.getElementById(activeScreen).classList.add("active");
+    updateMeta(activeScreen);
+  </script>
+</body>
+</html>

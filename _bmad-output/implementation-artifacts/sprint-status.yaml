@@ -1,5 +1,5 @@
-# generated: 2026-03-16
-# last_updated: 2026-03-27  # updated: story 2-0 review
+# generated: 2026-04-03
+# last_updated: 2026-04-03
 # project: Blinder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -34,97 +34,119 @@
 # - SM typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 2026-03-16
-last_updated: 2026-03-27
+generated: 2026-04-03
+last_updated: 2026-04-08
 project: Blinder
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
 
 development_status:
-  # Epic 1: Project Foundation & Developer Environment
+  # Epic 1: Project Foundation & Infrastructure Setup
   epic-1: in-progress
-  1-1-scaffold-backend-project: done
-  1-2-docker-compose-stack-with-nginx-and-websocket-support: done
-  1-3-scaffold-mobile-project-with-strict-typescript-and-nativewind: done
-  1-4-database-setup-with-postgis-and-ef-core-migrations-pipeline: done
-  1-5-mobile-design-system-foundation-and-accessibility-context: done
+  1-1-scaffold-asp-net-core-10-three-project-backend-solution: review
+  1-2-docker-compose-production-stack-with-traefik-postgresql-and-minio: backlog
+  1-3-postgresql-schema-separation-and-ef-core-migrations-pipeline: backlog
+  1-4-scaffold-mobile-app-with-tamagui-expo-router-starter: backlog
+  1-5-design-system-foundation-warm-dusk-token-system: backlog
   epic-1-retrospective: optional
 
-  # Epic 2: User Registration & Authentication
-  epic-2: in-progress
-  2-0-oauth2-oidc-foundation: review
-  2-1-email-password-user-registration: done
-  2-1-a-shared-mobile-component-library: done
-  2-2-user-login-jwt-tokens-and-logout: ready-for-dev
-  2-3-apple-sign-in: backlog
-  2-4-google-and-facebook-social-login: backlog
-  2-5-female-invite-only-registration-and-invite-landing-screen: backlog
-  2-6-account-deletion-with-full-data-purge-cascade: backlog
+  # Epic 2: User Authentication & Identity
+  epic-2: backlog
+  2-1-identityserver-oauth2-oidc-foundation-with-openiddict: backlog
+  2-2-local-account-registration-and-sign-in-via-identityserver-oidc: backlog
+  2-3-social-federation-via-identityserver-google-apple-and-facebook: backlog
+  2-4-age-gate-policy-acceptance-and-gdpr-consent-records: backlog
+  2-5-account-deletion-gdpr-right-to-erasure: backlog
+  2-6-welcome-registration-and-sign-in-screens-oidc-flow: backlog
+  2-7-social-sign-in-buttons-via-identityserver-federation: backlog
+  2-8-age-gate-and-policy-acceptance-screens: backlog
+  2-9-account-deletion-flow-frontend: backlog
   epic-2-retrospective: optional
 
   # Epic 3: Onboarding & Profile Setup
   epic-3: backlog
-  3-1-values-and-personality-quiz: backlog
-  3-2-private-profile-photo-upload: backlog
-  3-3-explicit-content-scanning-gate-at-photo-upload: backlog
-  3-4-csam-hash-scanning-integration-slot: backlog
-  3-5-preferences-setup-age-range-and-search-radius: backlog
-  3-6-7-day-premium-trial-activation-on-registration: backlog
-  3-7-first-match-conversation-on-onboarding-completion: backlog
+  3-1-onboarding-quiz-api-and-conversation-starter-prompt-generation: backlog
+  3-2-location-data-ingestion: backlog
+  3-3-photo-upload-and-automated-moderation-pipeline: backlog
+  3-4-manual-moderation-review-queue: backlog
+  3-5-profile-update-api: backlog
+  3-6-onboarding-quiz-flow-frontend: backlog
+  3-7-photo-upload-moderation-pending-and-remediation-screens-frontend: backlog
+  3-8-contextual-location-and-notification-permission-flows-frontend: backlog
   epic-3-retrospective: optional
 
-  # Epic 4: Matching Engine
+  # Epic 4: Daily Matching & Conversation Entry
   epic-4: backlog
-  4-1-values-weighted-compatibility-matching-algorithm: backlog
-  4-2-demographic-fallback-matching: backlog
-  4-3-match-generation-background-job-with-idempotent-startup-check: backlog
-  4-4-geographic-radius-matching-with-postgis: backlog
-  4-5-curated-match-display-no-browse-interface: backlog
-  4-6-invite-link-generation-and-tracking: backlog
+  4-1-matching-service-and-daily-match-delivery: backlog
+  4-2-match-accept-pass-and-conversation-window-activation: backlog
+  4-3-starter-prompts-retrieval-for-conversation-entry: backlog
+  4-4-waiting-state-screen-frontend: backlog
+  4-5-match-entry-screen-frontend: backlog
+  4-6-starter-screen-and-first-message-send-frontend: backlog
   epic-4-retrospective: optional
 
-  # Epic 5: Real-Time Chat
+  # Epic 5: Blind Conversation
   epic-5: backlog
-  5-1-signalr-chat-hub-and-real-time-messaging: backlog
-  5-2-conversation-list-with-message-counts: backlog
-  5-3-active-conversation-limit-enforcement-free-tier: backlog
-  5-4-push-notifications-for-chat-events: backlog
+  5-1-messaging-api-send-receive-and-conversation-history: backlog
+  5-2-signalr-real-time-conversation-updates: backlog
+  5-3-conversation-limits-enforcement: backlog
+  5-4-report-and-block-endpoints: backlog
+  5-5-blind-conversation-screen-frontend: backlog
+  5-6-report-and-block-ui-frontend: backlog
+  5-7-offline-blocked-state-frontend: backlog
   epic-5-retrospective: optional
 
-  # Epic 6: Mutual Photo Reveal
+  # Epic 6: Decision Gate & Reveal
   epic-6: backlog
-  6-1-reveal-readiness-flag-and-message-threshold-gate: backlog
-  6-2-mutual-reveal-confirmation-and-signed-photo-url-delivery: backlog
-  6-3-real-time-simultaneous-reveal-broadcast-via-signalr: backlog
-  6-4-reveal-moment-full-ux-experience: backlog
-  6-5-premium-reveal-threshold-customization: backlog
+  6-1-decision-gate-state-machine-dual-trigger-detection: backlog
+  6-2-private-simultaneous-decision-submission-and-resolution: backlog
+  6-3-mutual-reveal-profile-access-and-conversation-history-persistence: backlog
+  6-4-inactive-conversation-expiry-and-neutral-state-cleanup: backlog
+  6-5-full-screen-decision-gate: backlog
+  6-6-resolution-wait-screen: backlog
+  6-7-reveal-ceremony-screen: backlog
+  6-8-non-mutual-ending-and-outcome-screen: backlog
   epic-6-retrospective: optional
 
-  # Epic 7: Subscriptions & Premium
+  # Epic 7: Safety Operations & Moderation Admin
   epic-7: backlog
-  7-1-iap-webhook-jwt-verification-spike: backlog
-  7-2-apple-in-app-purchase-subscription-integration: backlog
-  7-3-google-play-billing-subscription-integration: backlog
-  7-4-premium-feature-gating-and-increased-limits: backlog
-  7-5-trial-expiry-notifications: backlog
-  7-6-free-tier-limit-upgrade-prompts: backlog
+  7-1-user-report-and-block-api: backlog
+  7-2-content-moderation-message-flagging: backlog
+  7-3-report-and-block-user-flow: backlog
   epic-7-retrospective: optional
 
-  # Epic 8: Safety & Content Moderation
+  # Epic 8: Push Notifications
   epic-8: backlog
-  8-1-automated-text-message-flagging: backlog
-  8-2-one-tap-reporting-with-immediate-acknowledgement: backlog
-  8-3-reveal-suspension-on-report-submission: backlog
-  8-4-moderator-reports-queue-and-admin-review-interface: backlog
-  8-5-moderator-actions-warn-reveal-suspend-and-ban: backlog
-  8-6-follow-up-notification-to-reporting-user: backlog
+  8-1-push-notification-service-and-device-token-registration: backlog
+  8-2-notification-triggers-messages-gate-and-match-events: backlog
+  8-3-user-notification-preferences: backlog
+  8-4-push-token-registration-and-notification-permission: backlog
+  8-5-notification-deep-link-routing: backlog
   epic-8-retrospective: optional
 
-  # Epic 9: Analytics, Compliance & GDPR
+  # Epic 9: Admin, Support & Operations Panel
   epic-9: backlog
-  9-1-gender-ratio-dashboard: backlog
-  9-2-tamper-evident-moderation-audit-log: backlog
-  9-3-gdpr-personal-data-export: backlog
-  9-4-gdpr-right-to-erasure: backlog
+  9-1-admin-user-management-api: backlog
+  9-2-admin-platform-configuration-api: backlog
+  9-3-admin-support-conversation-and-message-inspection: backlog
+  9-4-user-management-ui: backlog
+  9-5-moderation-queue-and-platform-config-ui: backlog
   epic-9-retrospective: optional
+
+  # Epic 10: Monetization & Conversation Capacity
+  epic-10: backlog
+  10-1-conversation-capacity-enforcement: backlog
+  10-2-in-app-purchase-verification-and-premium-upgrade: backlog
+  10-3-conversation-capacity-indicator-and-upgrade-prompt: backlog
+  10-4-in-app-purchase-flow: backlog
+  epic-10-retrospective: optional
+
+  # Epic 11: Product Quality Telemetry & Safety Pulse
+  epic-11: backlog
+  11-1-structured-logging-and-error-tracking: backlog
+  11-2-product-metrics-and-key-event-instrumentation: backlog
+  11-3-safety-pulse-monitoring-moderation-signal-aggregation: backlog
+  11-4-health-check-endpoints: backlog
+  11-5-client-side-error-reporting: backlog
+  epic-11-retrospective: optional

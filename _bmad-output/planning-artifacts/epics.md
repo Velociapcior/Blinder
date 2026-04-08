@@ -1,5 +1,6 @@
 ---
-stepsCompleted: [step-01-validate-prerequisites, step-02-design-epics, step-03-create-stories, step-04-final-validation]
+stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'step-04-final-validation']
+separationRule: 'backend-and-frontend-stories-are-always-separate'
 inputDocuments:
   - '_bmad-output/planning-artifacts/prd.md'
   - '_bmad-output/planning-artifacts/architecture.md'
@@ -10,1733 +11,1760 @@ inputDocuments:
 
 ## Overview
 
-This document provides the complete epic and story breakdown for Blinder, decomposing the requirements from the PRD, UX Design, and Architecture into implementable stories.
+This document provides the complete epic and story breakdown for Blinder, decomposing the requirements from the PRD, UX Design, and Architecture requirements into implementable stories.
 
 ## Requirements Inventory
 
 ### Functional Requirements
 
-FR1: A new user can register with email/password
-FR2: A new user can register using social login (Apple, Google, or Facebook)
-FR3: A user can log in and log out of their account
-FR4: A user can delete their account, which triggers permanent erasure of all personal data (photos, chat history, profile data)
-FR5: A user must declare they are 18 or older during registration
-FR6: A user can update their preferences (age range, search radius)
-FR7: A female user can only complete registration via a valid invite link from an existing female member
-FR8: A new user can complete a values and personality quiz covering interests, life priorities, and relationship intent
-FR9: A new user can upload a profile photo, which is stored privately and never displayed until mutual reveal is confirmed
-FR10: A new user is placed into a first match conversation immediately upon completing onboarding
-FR11: A registered user receives a 7-day free premium trial automatically activated on registration
-FR12: The system matches users using a rules-based, values-weighted compatibility algorithm derived from quiz responses
-FR13: When no match meets the compatibility threshold, the system falls back to demographic matching (age range + location)
-FR14: A user receives curated matches only — no browsing or searching of other user profiles is available
-FR15: A user can set a search radius to control geographic matching scope
-FR16: The system generates and tracks unique invite links associated with individual female user accounts
-FR17: A matched user can send and receive real-time text messages within a conversation
-FR18: A user can have a maximum of 3 active conversations simultaneously (free tier)
-FR19: The system tracks the total message count per conversation
-FR20: A user can view their active conversations and their respective message counts
-FR21: A user receives push notifications for new messages, new matches, and reveal-related events
-FR22: A user can express readiness to reveal their photo to their match
-FR23: The reveal option is only available after the conversation has reached the minimum message threshold
-FR24: A user's photo is only delivered to their match after both parties have independently expressed reveal readiness
-FR25: Both users receive each other's photos simultaneously upon mutual reveal confirmation
-FR26: Neither user can view the other's photo before mutual reveal confirmation, regardless of subscription tier
-FR27: A premium user can lower their personal reveal readiness threshold (their side only — the other party's independent consent remains mandatory)
-FR28: A user can subscribe to a premium tier via in-app purchase (Apple In-App Purchase / Google Play Billing)
-FR29: A premium user has access to an increased daily match allowance and higher active conversation limit
-FR30: A user receives an in-app notification when their free premium trial is approaching expiry
-FR31: A user receives an in-app prompt to upgrade when they reach their free tier conversation or match limit
-FR32: All user-uploaded images are scanned for explicit content before being stored or delivered
-FR33: All user-uploaded images are scanned against CSAM hash databases before being stored or delivered
-FR34: The system automatically flags text messages containing harassment patterns or explicit solicitation
-FR35: A user can report a conversation or message with a single tap, selecting a report category
-FR36: A reporting user receives an immediate acknowledgement that their report has been received
-FR37: A reporting user receives a follow-up notification when their report has been reviewed and actioned
-FR38: A moderator can view flagged reports including conversation content and automated screening signals
-FR39: A moderator can apply a warning, reveal suspension, or account ban to a reported user
-FR40: A reported user's reveal capability is suspended pending moderation review upon report submission
-FR41: The system records reveal initiation, mutual reveal confirmation, and reveal abandonment as distinct trackable events
-FR42: An operator can view a near-real-time gender ratio dashboard
-FR43: A user can request export of their personal data (GDPR right of access)
-FR44: A user's data deletion request results in permanent erasure of all personal data within a defined retention window (GDPR right to erasure)
-FR45: The system records a timestamped audit log entry for every moderation action taken
+**Account, Identity, and Consent**
+- FR1: A user can create an account and sign in to access Blinder.
+- FR2: A user can delete their account from within the app.
+- FR3: A user can review and accept product policies required for use.
+- FR4: A user can confirm legal-age eligibility before entering dating flows.
+- FR5: A user can grant or deny required permissions during feature use.
+- FR6: A user can update profile basics required for matching participation.
 
-**Total: 45 FRs**
+**Onboarding and Matching Inputs**
+- FR7: A user can complete an onboarding quiz that captures conversation-relevant traits.
+- FR8: The system can generate conversation starter prompts from onboarding inputs.
+- FR9: A user can provide location data for location-based matching.
+- FR10: A user can upload profile photos for post-reveal profile use.
+- FR11: A user can proceed through onboarding input flows only after required inputs are completed.
+- FR12: A user can re-enter onboarding input flows to update match-relevant information.
+
+**Match Lifecycle and Conversation Start**
+- FR13: A user can receive a new match opportunity in the app.
+- FR14: A user can accept or pass on a presented match opportunity.
+- FR15: The system can start a conversation window only after both matched users send an initial message.
+- FR16: A user can send and receive messages during the blind phase.
+- FR17: A user can view conversation context and starter prompts while in blind chat.
+- FR18: A user can continue active trust-critical conversation contexts within configured limits.
+
+**Decision Gate and Outcome Handling**
+- FR19: The system can trigger a decision gate based on time-floor conditions.
+- FR20: The system can trigger a decision gate based on message-threshold conditions.
+- FR21: A user can choose Reveal, Continue, or Abandon at the decision gate.
+- FR22: The system can resolve decision outcomes using private, simultaneous decision handling.
+- FR23: The system can transition both users to revealed state when reveal is mutual.
+- FR24: The system can keep outcomes anonymized when conversations end without mutual reveal.
+- FR25: A user can receive a clear conversation end state without counterpart-blame attribution.
+- FR26: The system can expire inactive match or conversation states and release users back to matching eligibility.
+- FR46: A user can view why the decision gate was triggered for a conversation.
+- FR50: A user can view neutral status messaging when a match or conversation expires.
+
+**Safety, Moderation, and Abuse Handling**
+- FR27: The system can evaluate uploaded photos before they become available in product flows.
+- FR28: The system can prevent disallowed media from entering user-visible flows.
+- FR29: The system can route uncertain media cases for manual review.
+- FR30: A user can report harmful or uncomfortable behavior encountered in conversation.
+- FR31: A user can block another user from further interaction.
+- FR32: The system can maintain auditable records for safety-critical and state-transition events.
+- FR33: Internal trust-and-safety operators can review moderation decisions and apply corrective actions.
+- FR34: A user can receive remediation or next-step guidance when media is rejected.
+
+**Notifications and Engagement Model**
+- FR35: A user can receive notifications for meaningful state transitions only.
+- FR36: The system can notify users about new match availability.
+- FR37: The system can notify users about partner replies.
+- FR38: The system can notify users when a decision gate is reached.
+- FR39: The system can avoid non-essential engagement notifications unrelated to trust-critical flow events.
+
+**Monetization and Access Control**
+- FR48: A user can subscribe to higher concurrent conversation capacity through premium access.
+- FR49: The system can enforce configured concurrent conversation limits by subscription tier.
+
+**Operations, Support, and Product Governance**
+- FR40: Internal support staff can inspect conversation state timelines for issue investigation.
+- FR41: Internal support staff can communicate user-facing issue outcomes without exposing counterpart-sensitive decision details.
+- FR42: Product operators can monitor core quality indicators tied to matching and conversation outcomes.
+- FR43: Product operators can monitor safety and moderation indicators for risk escalation.
+- FR44: Internal teams can review cohort-level behavior signals to inform scope and quality decisions.
+- FR45: The system can restrict core matching and conversation actions when connectivity is unavailable and present a clear blocked state.
+- FR51: Internal support staff can view decision-gate trigger and resolution history for issue diagnosis.
+- FR52: Product operators can configure market-specific policy controls for feature availability.
+- FR53: The system can collect a lightweight post-outcome fairness or safety pulse from users.
+
+**Permissions and Transparency**
+- FR47: A user can view contextual rationale before granting precise location permission.
 
 ### NonFunctional Requirements
 
-NFR1: Chat message delivery (send → receive) completes within 500ms under normal network conditions
-NFR2: App launch to first interactive screen completes within 3 seconds on a mid-range device
-NFR3: Image upload and content scanning pipeline completes within 10 seconds before confirming upload success
-NFR4: Reveal photo delivery completes within 3 seconds of mutual confirmation
-NFR5: Matching algorithm produces a match result within 30 seconds of onboarding completion
-NFR6: API response time for all non-media endpoints is under 300ms at the 95th percentile for Poland-region users
-NFR7: All personal data is encrypted at rest using AES-256 or equivalent
-NFR8: All data in transit uses TLS 1.2 or higher
-NFR9: Profile photos served only via authenticated, time-limited signed URLs — no public URL access permitted
-NFR10: Authentication tokens expire after 30 days of inactivity
-NFR11: CSAM scanning occurs server-side before image storage — no CSAM material may be persisted
-NFR12: Moderation audit logs retained for minimum 2 years and are tamper-evident
-NFR13: GDPR special category data stored only in EU-region infrastructure
-NFR14: Payment processing must not store raw card data — PCI DSS compliance delegated to payment provider
-NFR15: Backend must support 10,000 concurrent users in Poland-first launch geography
-NFR16: Matching system must sustain throughput to 100,000 registered users without architectural changes
-NFR17: Real-time chat infrastructure must support horizontal scaling beyond initial launch targets
-NFR18: Content scanning pipeline must process images within SLA at up to 1,000 concurrent uploads
-NFR19: Core user flows meet WCAG 2.1 AA compliance
-NFR20: All interactive elements have accessible labels compatible with VoiceOver (iOS) and TalkBack (Android)
-NFR21: App supports dynamic text sizing without breaking core UI layouts
-NFR22: Colour contrast ratios meet WCAG AA minimums
-NFR23: Core services target 99.5% uptime measured monthly
-NFR24: Undelivered messages queued and delivered when connectivity restored, with no message loss
-NFR25: Content scanning pipeline must have fallback on third-party API failure — images not accepted if scanning cannot be confirmed
-NFR26: CSAM detection pipeline failure must trigger immediate alert to operations team
-NFR27: Apple IAP and Google Play Billing must process subscription state changes within 60 seconds
-NFR28: Push notification delivery must achieve >95% delivery rate within 60 seconds for time-sensitive events
-NFR29: Reveal event tracking (initiation, confirmation, abandonment) must be recorded with no data loss — events are DB writes within the same transaction as the reveal state change
-NFR30: NCMEC/PhotoDNA integration must be tested with known hash sets prior to launch
+**Performance**
+- NFR1: 95% of core in-app navigation actions complete in <= 2.0 seconds under normal network conditions.
+- NFR2: 95% of message send acknowledgments are returned in <= 2.5 seconds under normal network conditions.
+- NFR3: 95% of decision-gate action submissions (Reveal/Continue/Abandon) receive definitive server outcome in <= 3.0 seconds under normal network conditions.
+- NFR4: Match availability checks complete in <= 2.0 seconds for 95% of requests.
 
-**Total: 30 NFRs**
+**Security & Privacy**
+- NFR5: All user data in transit is encrypted using TLS 1.2+.
+- NFR6: Sensitive user data at rest is encrypted using AES-256 or equivalent in persistent storage, validated by security audit prior to production launch.
+- NFR7: Pre-reveal media visibility is technically blocked across all user-facing interfaces and APIs until mutual reveal state is achieved.
+- NFR8: Access to moderation, support, and operator tools is role-based and auditable.
+- NFR9: GDPR baseline obligations are supported, including consent recordability, data export, account deletion, and retention policy enforcement.
+- NFR10: Age-gate enforcement prevents users failing legal-age checks from entering dating flows.
+
+**Reliability & Availability**
+- NFR11: Monthly availability target for core user flows (auth, matching, messaging, gate decisions) is >= 99.5%.
+- NFR12: Decision-gate resolution is exactly-once from the user perspective; duplicate client submissions cannot create conflicting outcomes.
+- NFR13: System failures in non-core subsystems must not compromise integrity of conversation state transitions.
+- NFR14: When connectivity is unavailable, the app must block core write actions and display a clear user-facing blocked state within <= 2 seconds.
+
+**Scalability**
+- NFR15: Architecture supports at least 10x growth from launch baseline without redesign of core domain model.
+- NFR16: Under 5x launch baseline concurrency, p95 latency for core flows degrades by no more than 20% versus baseline.
+- NFR17: Cohort/city rollout controls support phased expansion without full-system reconfiguration.
+
+**Accessibility**
+- NFR18: Mobile UI for core flows meets WCAG 2.1 AA-equivalent criteria applicable to native app experiences.
+- NFR19: All trust-critical actions (report, block, decision choices, account deletion) are operable with assistive technologies on iOS and Android.
+- NFR20: Critical status messages (offline blocked state, conversation ended, decision required) are presented in plain language and announced accessibly.
+
+**Integration & Interoperability**
+- NFR21: Push delivery integration supports APNS and FCM with retry handling and failure observability.
+- NFR22: Media moderation integration supports automated decision plus manual-review fallback path with traceable decision state.
+- NFR23: Integration failures (push or moderation provider outage) must fail safely and preserve trust-critical state consistency.
+
+**Observability & Auditability**
+- NFR24: All trust-critical state transitions are logged with correlation identifiers to support diagnostics and support investigation.
+- NFR25: Moderation and safety decisions are audit-logged with actor, timestamp, and outcome.
+- NFR26: Product quality guardrail metrics (conversation depth, gate completion, reveal trend, fairness/safety pulse) are available at cohort level no later than T+1 day.
+- NFR27: Support tooling can retrieve complete decision-gate trigger and resolution history for a reported conversation issue.
+
+**UX Tone**
+- NFR28: The system shall use no urgency-inducing UI elements (countdown timers, pressure language, engagement counters, streak indicators) in trust-critical flows.
 
 ### Additional Requirements
 
-Architecture-derived requirements that directly impact epic and story creation:
+**Starter Template (Epic 1, Story 1)**
+- Mobile app must be initialized using Tamagui Expo Router starter: `yarn create tamagui@latest --template expo-router`
+- Starter must be pruned of demo structure and reorganized into domain-first modules (onboarding, waiting, match-entry, conversation, gate, reveal, ending, settings)
 
-- **ARCH-1 (Greenfield scaffolding):** Backend: `dotnet new sln -n Blinder && dotnet new webapi -n Blinder.Api --use-controllers --framework net10.0`; Mobile: `npx create-expo-app@latest --template default@sdk-55`. Epic 1 Story 1 must be project scaffolding.
-- **ARCH-2 (Docker-first):** All development and production execution runs through Docker Compose. `Dockerfile` (multi-stage SDK→runtime), `docker-compose.yml`, `docker-compose.override.yml`, `nginx/nginx.conf`, `.env.example` must be in the first commit. Nothing runs on host OS.
-- **ARCH-3 (Nginx WebSocket headers):** `/hubs/` location block in `nginx/nginx.conf` MUST include `proxy_http_version 1.1`, `Upgrade $http_upgrade`, `Connection "upgrade"`, `proxy_read_timeout 3600s` — omitting these causes SignalR to silently fall back to long polling, breaking NFR1.
-- **ARCH-4 (EF Core migrations via SQL script):** `Database.MigrateAsync()` on startup is explicitly prohibited. Migrations applied via `dotnet ef migrations script --idempotent` (SDK stage only) → committed as `migrations/latest.sql` → applied via `docker compose exec -T db psql` on deploy.
-- **ARCH-5 (PostGIS from day one):** `CREATE EXTENSION postgis` in first migration. Required for geographic radius matching (FR15). Never haversine on raw column coordinates.
-- **ARCH-6 (Custom ApplicationUser):** `ApplicationUser : IdentityUser` from the first story — never add custom fields directly to `IdentityUser`. Required fields: gender, quiz refs, invite FK.
-- **ARCH-7 (expo-secure-store mandatory):** All JWT token storage on mobile uses `expo-secure-store` (maps to iOS Keychain / Android Keystore). `AsyncStorage` is explicitly prohibited for auth tokens.
-- **ARCH-8 (Mapperly for all DTO mapping):** No manual `new DTO { Property = entity.Property }` construction. All entity↔DTO conversions via Mapperly `[Mapper]` partial classes in `Mappings/`.
-- **ARCH-9 (FluentValidation for all input):** Every endpoint accepting a request body or complex query params has an `AbstractValidator<TRequest>` in `Validators/`. No inline validation in controllers.
-- **ARCH-10 (RFC 7807 Problem Details):** `AddProblemDetails()` + `UseExceptionHandler()` in `Program.cs` required from the first story. All 4xx/5xx errors return Problem Details shape. `AppErrors.cs` is the single source of truth for problem type URIs.
-- **ARCH-11 (Synchronous content scan before storage):** All images scanned via `ContentScanningClient` before upload is confirmed. Must hard-fail (reject image) if scan API is unavailable — no pass-through on timeout.
-- **ARCH-12 (Coravel match generation idempotency):** `MatchGenerationJob` must be idempotent and triggered at startup (in addition to cron schedule) to prevent empty match screen after VPS restart.
-- **ARCH-13 (SignalR real-time reveal broadcast):** When BOTH `reveal_ready` flags are set, a `RevealStateUpdated` SignalR hub event must be broadcast to both active clients immediately — this is what drives the simultaneous UX reveal moment. Not addressed in architecture narrative; must be a dedicated story in the Reveal epic.
-- **ARCH-26 (Reveal message threshold — product decision):** Initial value = **100 messages**. Stored as admin-configurable `AppSettings` record (key: `reveal_message_threshold`, value: `100`). Premium users can lower their own personal threshold via `FR27` (other party's threshold and consent always independent). This value must be seeded in the first migration that creates the `AppSettings` table.
-- **ARCH-14 (Admin Nginx IP allowlist):** `/admin` path protected by Nginx IP allowlist in `nginx/nginx.conf` in addition to application-level Razor Pages cookie auth. Must be implemented before admin UI is deployed.
-- **ARCH-15 (IAP webhook JWT verification, OWASP A01):** `SubscriptionController` must verify Apple RS256 (JWKS) and Google JWT signatures on all IAP webhooks. `SkipWebhookVerification` flag valid only in `appsettings.Testing.json`. Startup assertion must enforce this is off in production. Spike story required before any subscription implementation.
-- **ARCH-16 (Social login not scaffold-covered):** Apple, Google, Facebook login uses `ExternalLoginAsync` wiring in `SocialLoginHandler.cs` — not covered by default Identity scaffolding templates. Explicit dedicated stories are required.
-- **ARCH-17 (Hetzner Object Storage ForcePathStyle):** S3 client requires `ForcePathStyle = true` for Hetzner Object Storage non-standard endpoint. Spike story required before photo upload story.
-- **ARCH-18 (Push tokens via native token):** Mobile client calls `getDevicePushTokenAsync()` (raw native token, NOT `getExpoPushTokenAsync()`). Stale token cleanup via `SendPushNotificationJob` on FCM/APNs error response.
-- **ARCH-19 (Account deletion cascade):** FR4 deletion must purge photos, chat history, profile, and analytics references. Exception: moderation audit logs retained 2 years regardless. Deletion orchestrator required.
-- **ARCH-20 (LUKS disk encryption at VPS provisioning):** Non-code deployment checklist item. Must be setup before first user. Tracked as a deployment task in Epic 1.
-- **ARCH-21 (NCMEC/PhotoDNA legal workstream):** Non-code parallel workstream. Legal agreements must be initiated at project start. Developer tracking item, not a code story.
-- **ARCH-22 (Serilog structured logging):** Replaces default .NET logger. Rolling file sink. `ILogger<T>` injection only. No `Console.WriteLine`. No PII in structured log properties.
-- **ARCH-23 (DateTimeOffset throughout):** `DateTime` is prohibited in C# code. All datetimes `DateTimeOffset` (C#) / `timestamptz` (PostgreSQL) / ISO 8601 (API responses). Enforced in every story with date fields.
-- **ARCH-24 (EAS Build for mobile store delivery):** `eas.json` committed from first commit. EAS Build used for App Store / Play Store submissions. Not for backend deployment.
-- **ARCH-25 (TypeScript strict mode):** `strict: true` in `tsconfig.json` set before writing the first component. Retrofitting strict mode is costly.
+**Backend Initialization**
+- Backend initialized separately as ASP.NET Core 10 Web API project (not part of mobile starter)
+- Three separate backend applications: `Blinder.IdentityServer`, `Blinder.Api`, `Blinder.AdminPanel`
+- IdentityServer uses OpenIddict 7.4.0 as self-hosted OAuth2/OIDC server
+- Api uses EF Core 10 with Npgsql.EntityFrameworkCore.PostgreSQL 10.0.1
+- AdminPanel uses Razor Pages on .NET 10, authenticates via OIDC against IdentityServer
+
+**Database Architecture**
+- Single PostgreSQL 18 database with logical schema separation: `identity.*` (owned by IdentityServer) and `app.*` (owned by Api)
+- Separate EF Core migration sets per application ownership boundary
+- Database constraints for invariants: foreign keys, uniqueness, check constraints, row-version concurrency on trust-critical aggregates
+
+**API Design**
+- RESTful JSON APIs as primary integration style
+- Built-in ASP.NET Core OpenAPI 3.1 generation for API documentation
+- RFC 9457 Problem Details error responses consistently across API surface
+- Rate limiting on auth, onboarding, messaging, moderation, and upload endpoints
+- ASP.NET Core SignalR for trust-critical real-time conversation updates (not sole source of truth)
+
+**Authentication & Identity**
+- Local first-party accounts + Google, Apple, Facebook federation via IdentityServer
+- Bearer-token authorization for mobile; OIDC sign-in for AdminPanel
+- Admin endpoints isolated via dedicated scopes, roles, and authorization policies
+- MFA/passkey design must remain open even if not delivered in MVP
+
+**Infrastructure & Deployment**
+- Docker Compose initial production deployment on Hetzner VPS
+- Traefik as reverse proxy/ingress (only container exposing ports 80/443)
+- Containers: `traefik`, `identityserver`, `api`, `adminpanel`, `postgres`, `minio`
+- All app services must expose health checks
+- ASP.NET Core Data Protection keys persisted outside ephemeral container filesystems
+- Identity signing and encryption keys persisted and shared appropriately
+- Images built in CI, pushed to registry; never built on production VPS
+
+**MinIO Object Storage**
+- Self-hosted MinIO for photo storage
+- Photo moderation pipeline integrated: automated scan + manual review fallback
+
+**Architecture Tests**
+- Architecture boundary enforcement tests in `backend/tests/Blinder.ArchitectureTests/`
+- Cross-app integration tests in `backend/tests/Blinder.IntegrationTests/`
+
+**Server-Authoritative State Machine**
+- All conversation-state transitions (start, gate trigger, reveal/continue/abandon, expiry) are server-authoritative
+- Idempotent event handling to prevent race-condition trust breaks
+- Full audit trail for all safety and state-transition events
 
 ### UX Design Requirements
 
-UX-specification-derived requirements for implementation:
+**Design System Foundation**
+- UX-DR1: Design token architecture must be locked and reviewed before any screen implementation begins — hard gate. Token categories: colour (Warm Dusk palette), typography (Lato), spacing (8px base unit), border radius, shadow, motion curves.
+- UX-DR2: Typography system implementation — Lato font (Light/Regular/Bold/Black) with all scale tokens: `text.display`, `text.h1`, `text.h2`, `text.h3`, `text.body`, `text.body.sm`, `text.caption`, `text.button`.
+- UX-DR3: Spacing and layout foundation — 8px base unit, all tokens: `space.xs` (4px) through `space.2xl` (48px), border radius tokens `radius.sm` through `radius.full`.
+- UX-DR4: Motion vocabulary spec — define what animates, at what speed, with what easing, distinguish in-screen animations vs. navigation-level transitions. Reveal ceremony and gate transition must be prototyped and felt before token lock.
+- UX-DR5: Color token `color.reveal` reserved exclusively for the reveal ceremony and Reveal button at the gate — must not appear anywhere else in the app.
 
-- **UX-DR1 (Design token system):** Implement Blinder colour palette, typography scale (DM Sans), and spacing tokens in `constants/theme.ts` using NativeWind. Dark mode only at MVP. Key colours: bg `#1A1814`, primary text `#F2EDE6`, amber accent `#C8833A`, safety teal `#4A9E8A`, danger `#D94F4F`.
-- **UX-DR2 (Amber bookend):** Amber accent `#C8833A` must appear at two moments: onboarding entry (within first 3 seconds of app open) and reveal trigger screen. Visual through-line felt subconsciously.
-- **UX-DR3 (RevealMoment component):** `RevealMoment.tsx` — full-screen, no UI chrome, 600–800ms motion treatment for simultaneous photo delivery. 1–2 seconds of space before any interactive element appears. Reduce-motion fallback: opacity fade only. This is the most design-invested single component.
-- **UX-DR4 (RevealPrompt component):** `RevealPrompt.tsx` — inline, quiet reveal affordance appearing in chat when message threshold is reached. NOT a push notification, NOT a modal interrupt. Copy: "The reveal is available when you're both ready."
-- **UX-DR5 (RevealCountdown component — waiting state):** `RevealCountdown.tsx` — shown after user sets reveal_ready flag. Copy: "You've indicated you're ready. Waiting for them." No timer. No countdown. No indication to other party. Feel: shared patience, not rejection.
-- **UX-DR6 (Post-reveal continuation gate):** Both users independently asked "Would you like to keep talking?" after reveal. Asymmetric outcome hidden from both parties. Neutral framing for all outcomes.
-- **UX-DR7 (EmptyMatchState component):** `EmptyMatchState.tsx` — brand-voice copy, never generic spinner. Copy: "You have not been forgotten. Your match is being found." Explicitly specified as AC in first match story — never a polish item to add later.
-- **UX-DR8 (Warm processing screen):** Post-quiz / match assignment processing screen uses warm brand copy. Never a generic spinner. Treated with same design investment as primary screens.
-- **UX-DR9 (Consent gate pattern):** All consent gates (photo upload, reveal trigger, post-reveal continuation) have two visually EQUAL-weight options ("ready" / "not yet"). No dark patterns nudging toward one choice. Never irreversible in a single tap.
-- **UX-DR10 (Invite landing screen):** `invite-landing.tsx` — structural safety promise surfaced BEFORE any data entry. Inviter's name visible. Copy highlights structural impossibility of unsolicited photos. Invite context preserved through registration flow via deep link.
-- **UX-DR11 (Report always one tap):** `ReportButton.tsx` always accessible from the chat header. Never buried in settings. Defined once in `components/moderation/` — never reimplemented inline.
-- **UX-DR12 (AccessibilityContext at root):** `AccessibilityContext` providing `{ reduceMotion, fontScale, isScreenReaderEnabled }` at app root. All animated components and scaling decisions read from this context.
-- **UX-DR13 (Reduce motion):** All animations respect `AccessibilityInfo.isReduceMotionEnabled()`. When enabled: all transitions snap to 0ms or substitute opacity fade. `RevealMoment.tsx` uses fade-only variant.
-- **UX-DR14 (Touch targets 44×44px):** All interactive elements have minimum `minHeight: 44, minWidth: 44` touch target. `hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}` on icon-only controls (back button, report icon).
-- **UX-DR15 (Accessibility attributes):** Every interactive element declares `accessibilityRole`, `accessibilityLabel`, `accessibilityHint` (where non-obvious), and `accessibilityState`. Per-component requirements documented in UX spec.
-- **UX-DR16 (Dynamic text sizing):** All text uses `allowFontScaling={true}`. Layouts tested at system text ×1.0, ×1.3, ×2.0. No fixed-height text containers. No truncation at ×2.0.
-- **UX-DR17 (Responsive layout hook):** `useWindowDimensions()` hook stores `compact` (<375px), `regular` (375–427px), `expanded` (≥428px) in context. Applied to onboarding and reveal modal.
-- **UX-DR18 (WhatsApp-conventional chat UI):** Chat interface must feel completely familiar — no novel interaction patterns in the message layer. The conversation is the novel experience; the interface must disappear.
-- **UX-DR19 (Photo upload positioning):** Photo upload step AFTER quiz in onboarding flow. Low-pressure copy: "No one sees this until you both choose." Positioned when user is already invested from quiz completion.
-- **UX-DR20 (SignalR connection lifecycle in service):** `signalrService.ts` manages connection as singleton. Components NEVER directly manage connection state. Mobile components subscribe via hooks only (`useConversation`, `useRevealState`).
-- **UX-DR21 (AsyncState<T> shape):** All async hooks return `{ data: T | null; error: string | null; isLoading: boolean }`. Never raw `try/catch` in components. Error strings from `constants/errors.ts` only.
-- **UX-DR22 (No spinner for brand moments):** Empty states, match waiting state, and post-reveal holding state use brand-voice copy — never a `<ActivityIndicator>`. Skeleton screens use NativeWind pulsing background with reduce-motion static fallback.
+**Custom Components — Phase 1 (Trust-Critical Core)**
+- UX-DR6: `BlindAvatar` component — visual representation of unseen person, states: `default/loading/error`, variants: `sm/lg`. Must not look like a broken image; warm, dignified, human-feeling. With aria-label.
+- UX-DR7: `ConversationBubble` component — message display unit, states: `sent/received/sending/failed`, variants: `them` (surface, left-aligned) / `me` (primary colour, right-aligned). Timestamps announced on focus; failed state includes retry action.
+- UX-DR8: `GateOptionCard` component — full-width equal-weight option card for decision gate. States: `default/pressed/submitted`. Variants: `reveal` (amber `color.reveal`), `continue` (surface), `abandon` (surface, muted text). No default highlighted — product requirement. Role="radio" within group.
+- UX-DR9: `RevealTransition` component — multi-stage reveal ceremony animation: `waiting → animating → revealed`. Slow, warm, unhurried. Falls back to cross-fade at `prefers-reduced-motion`. Conversation history visible throughout.
+- UX-DR10: `ResolutionWait` component — holding state between gate submission and outcome. Not a spinner, not a progress bar. States: `waiting/resolving`. Announces "Waiting for the other person's choice" on mount.
+- UX-DR11: `OutcomeScreen` component — post-gate outcome delivery. Variants: `reveal` (hands off to RevealTransition) and `acceptance` (neutral closure). Acceptance anatomy: neutral icon + calm headline + compassionate body + "Find my next match" CTA + "Take a break" link. Never blame-attributing.
+- UX-DR12: `OfflineBlocker` component — full-screen overlay appearing within ≤2 seconds (NFR14). States: `offline/reconnecting/restored`. Calm, not alarming; no retry button; automatic reconnection. Blocks all interactive elements behind it.
 
-**Total: 22 UX Design Requirements**
+**Custom Components — Phase 2 (Full Journey)**
+- UX-DR13: `StarterCard` component — tappable conversation prompt, states: `default/pressed/selected` (auto-populates input). Open-ended, warm, non-judgmental content. Full tap target, role="button".
+- UX-DR14: `WaitingState` component — home screen with temporal anchor, states: `no_match/match_arriving/match_ready`. "Your match arrives daily" — never a blank screen or spinner.
+- UX-DR15: `MatchEntryCard` component — first impression of match between WaitingState and StarterScreen. Anatomy: `BlindAvatar` (lg) + "Someone is waiting to talk with you" + single CTA. States: `default/entering` (animated arrival).
+- UX-DR16: `ProfileAvatar` component — top-right header tap target, always visible, entry to ProfileSheet. States: `default/pending_moderation/unread_indicator`. Must be visually interactive — not passive. Sufficient touch target.
+- UX-DR17: `ProfileSheet` component — slide-up panel for own profile/settings/account management. Sections: Profile preview → Edit profile → Notification settings → Support → Account deletion. Focus trapped within sheet while open.
+- UX-DR18: `ProfileEditForm` component — edit traits, photo, location preference. Photo re-upload triggers moderation immediately. States: `viewing/editing/saving/moderation_pending`.
+- UX-DR19: `RevealedProfileView` component — post-reveal read-only profile. Anatomy: full photo + name + trait chips + "Keep talking" CTA + "Read your conversation" link. Conversation history link must be prominent.
+
+**Navigation & Information Architecture**
+- UX-DR20: Single-focus navigation — no persistent bottom tab bar at any point. Profile/settings accessible via top-right avatar tap only. Navigation chrome disappears during active conversation (full-bleed).
+- UX-DR21: Navigation state machine must be implemented: Onboarding → Waiting → Match Entry → Starter Screen → Conversation → Gate → Resolution Wait → Outcome → Waiting.
+- UX-DR22: Full-screen decision gate (D4) — gate takes over entirely, explains itself in one calm sentence with trigger reason. Three options at equal visual weight.
+- UX-DR23: Starter Forward first-message entry (D5) — 2-3 prominent starter cards before first send; transitions to conversation after first send.
+- UX-DR24: Reveal ceremony screen (D6) — animated, warm, full-screen. Conversation history visible. Earned and celebratory moment.
+- UX-DR25: Non-mutual ending screen (D6) — neutral copy, no blame, immediate forward path. Copy rules: "This conversation has ended" never "They chose not to reveal" or "match expired".
+- UX-DR26: All trust-critical flows are linear/forward-only — no back navigation during gate, resolution wait, or outcome screens. Deep-link entry resolves to correct state without disrupting in-progress flows.
+
+**Onboarding UX**
+- UX-DR27: Onboarding quiz — one question per screen, progress bar (no percentage label), full-width tappable option cards.
+- UX-DR28: Contextual permission prompts — location permission shown with rationale before system prompt; notification permission deferred until match is received, not bulk-shown at onboarding.
+- UX-DR29: Photo moderation pending state — warm photo placeholder with "Your photo is being reviewed" copy, not a blank or error state.
+
+**Interaction & Feedback Patterns**
+- UX-DR30: No toasts for emotionally significant outcomes — mutual reveal uses RevealTransition, endings use OutcomeScreen, report uses dedicated confirmation screen.
+- UX-DR31: Skeleton screens for content loading states — no full-screen spinners.
+- UX-DR32: Report/block accessible from conversation header (⋯ menu) at all times — never more than one tap away.
+- UX-DR33: Copy vocabulary enforcement — defined words to never use: "Rejected", "declined", "didn't match", "They chose not to reveal", "Match expired", "No matches yet". Use neutral forward-looking alternatives.
+- UX-DR34: Equal-weight gate options — no visual default, all three options (Reveal/Continue/Abandon) same size/radius/weight. Color differentiation for Reveal only (amber `color.reveal`), not to imply hierarchy.
+
+**Accessibility (Non-negotiable minimums)**
+- UX-DR35: All interactive elements minimum 44×44px touch targets enforced via `minHeight`/`minWidth` tokens.
+- UX-DR36: `color.text.primary` (#2C1C1A) on `color.bg.base` (#FBF5EE) meets WCAG AA contrast — verified in token design.
+- UX-DR37: iOS Dynamic Type and Android font scale respected via Tamagui text primitives (no custom font size override).
+- UX-DR38: All screens wrapped in safe area insets — required for notch/Dynamic Island/Android nav bar.
 
 ### FR Coverage Map
 
-FR1:  Epic 2 — Email/password registration
-FR2:  Epic 2 — Social login (Apple, Google, Facebook)
-FR3:  Epic 2 — Login and logout
-FR4:  Epic 2 — Account deletion with full data purge
-FR5:  Epic 2 — 18+ age declaration at registration
-FR6:  Epic 3 — Update preferences (age range, search radius)
-FR7:  Epic 2 — Female invite-only registration
-FR8:  Epic 3 — Values and personality quiz
-FR9:  Epic 3 — Private photo upload (content-scanned)
-FR10: Epic 3 — First match conversation on onboarding completion
-FR11: Epic 3 — 7-day premium trial activation
-FR12: Epic 4 — Values-weighted compatibility matching
-FR13: Epic 4 — Demographic fallback matching
-FR14: Epic 4 — Curated matches only (no browse)
-FR15: Epic 4 — Search radius preference
-FR16: Epic 4 — Invite link generation and tracking
-FR17: Epic 5 — Real-time text messaging
-FR18: Epic 5 — Max 3 active conversations (free tier)
-FR19: Epic 5 — Message count tracking per conversation
-FR20: Epic 5 — View active conversations and message counts
-FR21: Epic 5 — Push notifications for all key events
-FR22: Epic 6 — Express reveal readiness
-FR23: Epic 6 — Reveal option gated by message threshold (100)
-FR24: Epic 6 — Photo delivered only after both parties opt in
-FR25: Epic 6 — Simultaneous photo exchange on mutual confirm
-FR26: Epic 6 — No photo visible before mutual reveal
-FR27: Epic 6 — Premium lowers personal reveal threshold
-FR28: Epic 7 — Subscribe via Apple IAP / Google Play Billing
-FR29: Epic 7 — Premium: increased limits
-FR30: Epic 7 — Trial expiry notification
-FR31: Epic 7 — Free tier limit upgrade prompt
-FR32: Epic 3 — Image scan at upload (explicit content)
-FR33: Epic 3 — CSAM scan at upload
-FR34: Epic 8 — Automated text flagging for harassment
-FR35: Epic 8 — One-tap reporting with category
-FR36: Epic 8 — Immediate report acknowledgement
-FR37: Epic 8 — Follow-up notification after moderation action
-FR38: Epic 8 — Moderator views flagged reports
-FR39: Epic 8 — Moderator applies warning/suspension/ban
-FR40: Epic 8 — Reported user reveal capability suspended
-FR41: Epic 9 — Reveal event tracking (DB-stored: initiation, confirmation, abandonment)
-FR42: Epic 9 — Gender ratio dashboard
-FR43: Epic 9 — GDPR personal data export
-FR44: Epic 9 — GDPR data deletion (right to erasure)
-FR45: Epic 9 — Tamper-evident moderation audit log
+| FR | Epic | Domain |
+|---|---|---|
+| FR1 | Epic 2 | Account creation & sign-in |
+| FR2 | Epic 2 | Account deletion |
+| FR3 | Epic 2 | Policy acceptance |
+| FR4 | Epic 2 | Age gate |
+| FR5 | Epic 3 | Contextual permissions |
+| FR6 | Epic 3 | Profile basics update |
+| FR7 | Epic 3 | Onboarding quiz |
+| FR8 | Epic 3 | Starter prompt generation |
+| FR9 | Epic 3 | Location data |
+| FR10 | Epic 3 | Photo upload |
+| FR11 | Epic 3 | Required inputs gate |
+| FR12 | Epic 3 | Re-enter onboarding |
+| FR13 | Epic 4 | Receive match opportunity |
+| FR14 | Epic 4 | Accept/pass match |
+| FR15 | Epic 4 | Conversation window activation |
+| FR16 | Epic 5 | Send/receive messages |
+| FR17 | Epic 4 | Starter prompts in blind chat |
+| FR18 | Epic 5 | Active conversation limits |
+| FR19 | Epic 6 | Time-floor gate trigger |
+| FR20 | Epic 6 | Message-threshold gate trigger |
+| FR21 | Epic 6 | Reveal/Continue/Abandon choice |
+| FR22 | Epic 6 | Private simultaneous decisions |
+| FR23 | Epic 6 | Mutual reveal transition |
+| FR24 | Epic 6 | Anonymized non-mutual endings |
+| FR25 | Epic 6 | End state without blame |
+| FR26 | Epic 6 | Inactive state expiry |
+| FR27 | Epic 3 | Photo evaluation before availability |
+| FR28 | Epic 3 | Prevent disallowed media |
+| FR29 | Epic 3 | Manual review routing |
+| FR30 | Epic 5 | Report behavior |
+| FR31 | Epic 5 | Block user |
+| FR32 | Epic 7 | Safety audit records |
+| FR33 | Epic 7 | T&S operator review & corrective action |
+| FR34 | Epic 3 | Media rejection remediation |
+| FR35 | Epic 8 | Meaningful-events-only notifications |
+| FR36 | Epic 8 | Notify new match |
+| FR37 | Epic 8 | Notify partner reply |
+| FR38 | Epic 8 | Notify gate reached |
+| FR39 | Epic 8 | No non-essential notifications |
+| FR40 | Epic 9 | Support staff timeline inspection |
+| FR41 | Epic 9 | Support outcome communication (redacted) |
+| FR42 | Epic 11 | Quality indicators monitoring |
+| FR43 | Epic 11 | Safety/moderation indicators |
+| FR44 | Epic 11 | Cohort-level behavior signals |
+| FR45 | Epic 5 | Offline blocked state |
+| FR46 | Epic 6 | Gate trigger reason visibility |
+| FR47 | Epic 3 | Location permission rationale |
+| FR48 | Epic 10 | Premium subscription |
+| FR49 | Epic 10 | Conversation capacity enforcement |
+| FR50 | Epic 6 | Neutral expiry messaging |
+| FR51 | Epic 9 | Gate history for support |
+| FR52 | Epic 9 | Market-specific policy controls |
+| FR53 | Epic 11 | Post-outcome fairness/safety pulse |
 
 ## Epic List
 
-### Epic 1: Project Foundation & Developer Environment
-Developers can run the full Blinder stack locally via Docker Compose from a single command, with a scaffolded ASP.NET Core backend, Expo mobile project, Nginx reverse proxy with SignalR WebSocket headers, and all environment conventions established. This foundation enables every subsequent epic.
-**FRs covered:** None directly (ARCH-1 through ARCH-4, ARCH-22, ARCH-24, ARCH-25 — greenfield scaffolding)
+### Epic 1: Project Foundation & Infrastructure Setup
+Enable the development team to build and run the full Blinder system locally and in production from day one — backend scaffolding, database schema separation, Docker Compose stack, CI pipeline, and the frontend design system foundation.
+**FRs covered:** None (infrastructure enabler — prerequisite for all epics)
 
-### Epic 2: User Registration & Authentication
-A user can create an account (email/password or social login via Apple, Google, or Facebook), log in, log out, and permanently delete their account with full data purge. Female users can only register via a valid invite link from an existing female member. All authentication flows (email/password, social login) are built on a centralized OAuth2/OIDC token endpoint.
-**FRs covered:** FR1, FR2, FR3, FR4, FR5, FR7
-**Architecture:** ARCH-16 requires OAuth2 foundation story (2-0) before social login stories (2-3, 2-4)
+### Epic 2: User Authentication & Identity
+Users can create an account, sign in with email or social auth (Google, Apple, Facebook), accept policies, verify their age, and delete their account.
+**FRs covered:** FR1, FR2, FR3, FR4
 
 ### Epic 3: Onboarding & Profile Setup
-A new user can complete the values and personality quiz, upload a private profile photo (scanned for explicit content and CSAM before storage), set age range and radius preferences, and receive their 7-day premium trial — landing immediately in their first match conversation upon completion.
-**FRs covered:** FR6, FR8, FR9, FR10, FR11, FR32, FR33
+Users can complete the onboarding quiz, upload a photo through the moderation pipeline, grant location permission, and become fully match-ready; they can also update their profile later.
+**FRs covered:** FR5, FR6, FR7, FR8, FR9, FR10, FR11, FR12, FR27, FR28, FR29, FR34, FR47
 
-### Epic 4: Matching Engine
-The system matches users using the rules-based values-weighted compatibility algorithm (with demographic fallback when pool is insufficient), users receive curated matches only with no browsing, geographic radius controls match scope, and invite links are generated and tracked per female account.
-**FRs covered:** FR12, FR13, FR14, FR15, FR16
+### Epic 4: Daily Matching & Conversation Entry
+Users receive a daily match opportunity, decide to enter, and arrive at their first conversation with starter prompts that dissolve blank-page anxiety.
+**FRs covered:** FR13, FR14, FR15, FR17
 
-### Epic 5: Real-Time Chat
-A matched user can send and receive real-time text messages via SignalR, view their active conversation list with message counts (max 3 active on free tier), and receive push notifications for new messages, new matches, and reveal-related events.
-**FRs covered:** FR17, FR18, FR19, FR20, FR21
+### Epic 5: Blind Conversation
+Users can exchange messages in the blind phase with a distraction-free experience, report or block when needed, and the app handles connectivity loss gracefully.
+**FRs covered:** FR16, FR18, FR30, FR31, FR45
 
-### Epic 6: Mutual Photo Reveal
-A user can express reveal readiness after reaching the 100-message threshold (admin-configurable), and when both parties independently opt in, both photos are delivered simultaneously via a real-time SignalR broadcast — with the full emotional UX arc (RevealMoment, RevealPrompt, waiting state, continuation gate). Premium users can lower their personal threshold while preserving the other party's independent consent.
-**FRs covered:** FR22, FR23, FR24, FR25, FR26, FR27
+### Epic 6: Decision Gate & Reveal
+The system detects gate conditions, presents a pressure-free private decision, resolves simultaneous choices, and delivers dignified outcomes — reveal ceremony or anonymized ending.
+**FRs covered:** FR19, FR20, FR21, FR22, FR23, FR24, FR25, FR26, FR46, FR50
 
-### Epic 7: Subscriptions & Premium
-A user can subscribe to the premium tier via Apple In-App Purchase or Google Play Billing (with full JWT webhook signature verification), access increased match and conversation limits, receive trial expiry notifications, and see upgrade prompts when free tier limits are reached.
-**FRs covered:** FR28, FR29, FR30, FR31
+### Epic 7: Safety Operations & Moderation Admin
+Trust-and-safety operators can review flagged media, apply corrective actions, and access a complete audit trail — keeping the platform safe from within the AdminPanel.
+**FRs covered:** FR32, FR33
 
-### Epic 8: Safety & Content Moderation
-A user can report a conversation with one tap and receive immediate acknowledgement and follow-up notification. Text messages are automatically flagged for harassment patterns. A moderator can review flagged reports with automated screening signals and apply warnings, reveal suspensions, or permanent bans — with reported users' reveal capability automatically suspended on submission.
-**FRs covered:** FR34, FR35, FR36, FR37, FR38, FR39, FR40
+### Epic 8: Push Notifications
+Users receive push notifications exclusively for meaningful state transitions (new match, partner reply, gate reached) via direct APNS/FCM, with privacy-preserving payloads and no engagement-bait.
+**FRs covered:** FR35, FR36, FR37, FR38, FR39
 
-### Epic 9: Analytics, Compliance & GDPR
-An operator can view a near-real-time gender ratio dashboard. Users can request personal data export and data deletion (GDPR rights). All moderation actions are recorded in tamper-evident audit logs retained for 2 years. Reveal initiation, confirmation, and abandonment are tracked as distinct DB-stored events.
-**FRs covered:** FR41, FR42, FR43, FR44, FR45
+### Epic 9: Admin, Support & Operations Panel
+Internal support staff can investigate conversation issues and communicate outcomes without exposing sensitive decision details; operators can configure market-specific controls.
+**FRs covered:** FR40, FR41, FR51, FR52
+
+### Epic 10: Monetization & Conversation Capacity
+Users can subscribe to premium access for higher concurrent conversation capacity; the system enforces tier limits fairly.
+**FRs covered:** FR48, FR49
+
+### Epic 11: Product Quality Telemetry & Safety Pulse
+Product operators can monitor core quality and safety metrics at cohort level; users can share a lightweight fairness pulse after outcomes.
+**FRs covered:** FR42, FR43, FR44, FR53
 
 ---
 
-## Epic 1: Project Foundation & Developer Environment
+## Epic 1: Project Foundation & Infrastructure Setup
 
-Developers can run the full Blinder stack locally via Docker Compose from a single command, with a scaffolded ASP.NET Core backend, Expo mobile project, Nginx reverse proxy with SignalR WebSocket headers, and all environment conventions established. This foundation enables every subsequent epic.
+Enable the development team to build and run the full Blinder system locally and in production from day one — backend scaffolding, database schema separation, Docker Compose stack, CI pipeline, and the frontend design system foundation.
 
-### Story 1.1: Scaffold Backend Project
+### Story 1.1: Scaffold ASP.NET Core 10 Three-Project Backend Solution
 
 As a developer,
-I want a fully scaffolded ASP.NET Core .NET 10 backend project committed to source control,
-So that every subsequent story has a working, convention-compliant backend to build on.
+I want a scaffolded backend solution with IdentityServer, Api, and AdminPanel projects,
+So that all backend work has a consistent, boundary-enforcing structure from day one.
 
 **Acceptance Criteria:**
 
-**Given** the repository is cloned fresh
-**When** the developer runs `dotnet build` inside `backend/`
-**Then** the solution builds with zero warnings or errors
-
-**Given** the backend project is scaffolded
-**When** the project structure is inspected
-**Then** `backend/Blinder.sln`, `backend/Blinder.Api/`, and `backend/Blinder.Tests/` exist with the following packages added: `Microsoft.AspNetCore.SignalR`, `Npgsql.EntityFrameworkCore.PostgreSQL`, `Microsoft.AspNetCore.Authentication.JwtBearer`, `Microsoft.AspNetCore.RazorPages`, `Microsoft.AspNetCore.Identity.EntityFrameworkCore`, `Riok.Mapperly`, `FluentValidation.AspNetCore`, `Serilog.AspNetCore`, `Serilog.Sinks.File`, `FirebaseAdmin`, `dotAPNS`, `AWSSDK.S3`, `Coravel`, `MailKit`
-
-**Given** the project is scaffolded
-**When** `Program.cs` is reviewed
-**Then** `AddProblemDetails()` and `UseExceptionHandler()` are configured, Serilog is the logging provider (no default `Console.WriteLine`), and `AddValidatorsFromAssemblyContaining<Program>()` is registered
-
-**Given** `Blinder.Api/` is created
-**When** the directory structure is verified
-**Then** the following directories exist: `Controllers/`, `Hubs/`, `Pages/Admin/`, `Models/`, `DTOs/`, `Services/`, `Repositories/`, `Mappings/`, `Validators/`, `BackgroundJobs/`, `Errors/AppErrors.cs`, `Migrations/`, `Infrastructure/Data/`, `Infrastructure/Auth/`, `Infrastructure/Storage/`, `Infrastructure/Scanning/`, `Infrastructure/Email/`, `Infrastructure/Middleware/`
-
-**Given** the project is scaffolded
-**When** `Errors/AppErrors.cs` is reviewed
-**Then** it exists as the single source of truth for RFC 7807 problem type URIs — no error strings defined inline in any controller
+**Given** the backend source directory exists under `backend/src/`
+**When** the solution is initialized
+**Then** it contains `Blinder.IdentityServer`, `Blinder.Api`, `Blinder.AdminPanel`, `Blinder.SharedKernel`, and `Blinder.Contracts` projects targeting .NET 10
+**And** each project compiles cleanly with `dotnet build`
+**And** `Blinder.SharedKernel` contains no business logic — only foundational primitives (result types, base exceptions, correlation ID helpers)
+**And** `Blinder.Contracts` contains only intentionally shared cross-process contracts
+**And** test projects exist under `backend/tests/` for each app (unit + `Blinder.IntegrationTests` + `Blinder.ArchitectureTests`)
+**And** all projects have health check endpoints registered (returns 200 on `/health`)
+**And** `appsettings.json` and `appsettings.Development.json` are present per app with no secrets in tracked config files
 
 ---
 
-### Story 1.2: Docker Compose Stack with Nginx and WebSocket Support
+### Story 1.2: Docker Compose Production Stack with Traefik, PostgreSQL, and MinIO
 
 As a developer,
-I want the full backend stack running via `docker compose up` with Nginx correctly configured for SignalR,
-So that development and production environments are identical from the first commit and real-time chat will work at all scales.
+I want a Docker Compose stack that runs the full Blinder infrastructure locally and in production,
+So that all services are consistently deployable and network-isolated.
 
 **Acceptance Criteria:**
 
-**Given** the repository is cloned fresh and `.env` is populated from `.env.example`
-**When** the developer runs `docker compose up`
-**Then** three containers start successfully: `api` (ASP.NET Core), `db` (postgis/postgis), `nginx` (reverse proxy)
-
-**Given** the Nginx container is running
-**When** a WebSocket upgrade request is sent to `/hubs/chat`
-**Then** Nginx forwards it with `proxy_http_version 1.1`, `Upgrade $http_upgrade`, `Connection "upgrade"`, and `proxy_read_timeout 3600s` headers — SignalR does NOT fall back to long polling
-
-**Given** the Docker setup is committed
-**When** `docker-compose.yml` is reviewed
-**Then** all services use `restart: unless-stopped`, the PostgreSQL volume is a named volume `db-data` (never anonymous), and no service runs directly on the host OS
-
-**Given** the project is set up
-**When** `.env.example` is reviewed
-**Then** it documents every required environment variable with placeholder values, is committed to source control, and `.env` itself is in `.gitignore`
-
-**Given** the multi-stage `Dockerfile` is reviewed
-**When** the image is built
-**Then** the production image is based on the ASP.NET runtime image (not SDK), `dotnet-ef` tools are NOT present in the production image, and the image builds without errors
-
-**Given** `docker-compose.override.yml` exists
-**When** a developer runs `docker compose run --rm api dotnet ef migrations add Test`
-**Then** the EF CLI tools succeed because the override targets the SDK build stage — the production image is unaffected
-
-**Given** `nginx/nginx.conf` is reviewed
-**When** the `/admin` location block is inspected
-**Then** an IP allowlist (`allow` / `deny all`) is present, separate from application-level cookie authentication
+**Given** `docker-compose.yml` exists at the project root
+**When** `docker compose up -d` is run
+**Then** containers start for: `traefik`, `identityserver`, `api`, `adminpanel`, `postgres` (PostgreSQL 18), `minio`
+**And** only Traefik exposes public ports 80 and 443; all other services communicate on an internal Docker network
+**And** host-based routing separates `api.<domain>`, `auth.<domain>`, `admin.<domain>`
+**And** PostgreSQL and MinIO use persistent named volumes
+**And** ASP.NET Core Data Protection keys are persisted to a volume outside the container filesystem
+**And** identity signing and encryption keys are persisted and mounted at runtime
+**And** all app services (`identityserver`, `api`, `adminpanel`) are stateless containers
+**And** a `deploy/hetzner/` directory contains environment-specific compose override and config examples
+**And** `docker compose down` followed by `docker compose up -d` restores all services without data loss
 
 ---
 
-### Story 1.3: Scaffold Mobile Project with Strict TypeScript and NativeWind
+### Story 1.3: PostgreSQL Schema Separation and EF Core Migrations Pipeline
 
 As a developer,
-I want a fully scaffolded Expo SDK 55 React Native project with strict TypeScript, NativeWind styling, and EAS Build configured,
-So that every mobile story has a convention-compliant base with no retrofitting of type safety or styling later.
+I want a single PostgreSQL database with enforced `identity.*` and `app.*` schema ownership and separate EF Core migration sets,
+So that data boundaries are structurally enforced from the first migration.
 
 **Acceptance Criteria:**
 
-**Given** the repository is cloned fresh
-**When** the developer runs `npx expo start` from `mobile/`
-**Then** the Expo dev server starts without errors on both iOS and Android simulators
-
-**Given** the mobile project is scaffolded
-**When** `tsconfig.json` is reviewed
-**Then** `"strict": true` is set — TypeScript strict mode is active before the first component is written
-
-**Given** the mobile project is scaffolded
-**When** the `mobile/` directory structure is inspected
-**Then** the following directories and files exist: `app/(auth)/`, `app/(tabs)/`, `components/`, `hooks/`, `services/apiClient.ts`, `services/signalrService.ts`, `services/storageService.ts`, `constants/errors.ts`, `constants/theme.ts`, `types/api/index.ts`, `types/signalr/index.ts`, `utils/dateFormat.ts`
-
-**Given** the mobile project is scaffolded
-**When** the installed packages are reviewed
-**Then** `expo-router`, `expo-notifications`, `expo-image-picker`, `expo-secure-store`, `@microsoft/signalr`, `nativewind` are all installed
-
-**Given** `services/storageService.ts` is implemented
-**When** a JWT token is stored and retrieved
-**Then** `expo-secure-store` is used exclusively — `AsyncStorage` is not imported anywhere in `storageService.ts`
-
-**Given** `eas.json` is reviewed
-**When** it is verified it is committed to the repository
-**Then** it exists with at minimum `development`, `preview`, and `production` build profiles configured
-
-**Given** an async hook is implemented
-**When** the return type is inspected
-**Then** it returns `AsyncState<T>` = `{ data: T | null; error: string | null; isLoading: boolean }` — never raw `try/catch` in components
+**Given** the PostgreSQL container is running
+**When** EF Core migrations are applied
+**Then** `identity.*` schema exists and is owned exclusively by `Blinder.IdentityServer`
+**And** `app.*` schema exists and is owned exclusively by `Blinder.Api`
+**And** separate DB roles with schema-scoped permissions are provisioned (IdentityServer role cannot write to `app.*`; Api role cannot write to `identity.*`)
+**And** `Blinder.IdentityServer` has its own `Migrations/` folder that only targets `identity.*`
+**And** `Blinder.Api` has its own `Migrations/` folder that only targets `app.*`
+**And** `dotnet ef migrations add` and `dotnet ef database update` work independently per project
+**And** `Blinder.ArchitectureTests` contains a test that fails if any project references a migration outside its schema boundary
 
 ---
 
-### Story 1.4: Database Setup with PostGIS and EF Core Migrations Pipeline
+### Story 1.4: Scaffold Mobile App with Tamagui Expo Router Starter
 
 As a developer,
-I want EF Core configured with PostGIS, snake_case naming, and a proven idempotent migration deployment pipeline,
-So that all subsequent stories can add their own tables without risk of production incidents from auto-applied migrations.
+I want a scaffolded Expo mobile app using the Tamagui Expo Router starter pruned into a domain-first module structure,
+So that all mobile work starts from the correct navigation model and design system foundation.
 
 **Acceptance Criteria:**
 
-**Given** the database container is running
-**When** the first migration is applied via `docker compose exec -T db psql -U $POSTGRES_USER -d $POSTGRES_DB < migrations/latest.sql`
-**Then** the `__EFMigrationsHistory` table is created and the migration is recorded as applied
-
-**Given** `AppDbContext.cs` is reviewed
-**When** the `OnModelCreating` configuration is inspected
-**Then** `UseSnakeCaseNamingConvention()` is called, `UseNetTopologySuite()` is called (PostGIS), and no column or table uses PascalCase naming in the generated migration SQL
-
-**Given** the first migration is generated
-**When** the migration SQL is reviewed
-**Then** `CREATE EXTENSION IF NOT EXISTS postgis;` appears before any table creation statement
-
-**Given** `Program.cs` is reviewed
-**When** the application startup sequence is inspected
-**Then** `Database.MigrateAsync()` is NOT called anywhere at startup — auto-migration on startup is explicitly absent
-
-**Given** a new migration is added via `docker compose run --rm api dotnet ef migrations add <Name>`
-**When** `migrations/latest.sql` is regenerated via `dotnet ef migrations script --idempotent`
-**Then** the `--idempotent` flag produces a script that checks `__EFMigrationsHistory` before applying — safe to re-run on every deploy
+**Given** the mobile source directory exists under `mobile/blinder-app/`
+**When** initialized with `yarn create tamagui@latest --template expo-router`
+**Then** the app runs on iOS and Android via Expo Go and development build without errors
+**And** all Tamagui demo/example structure is removed
+**And** the app is reorganized into domain-first modules under `src/features/`: `onboarding/`, `waiting/`, `match-entry/`, `conversation/`, `decision-gate/`, `reveal/`, `ending/`, `settings/`
+**And** `src/services/` contains `auth/` and `realtime/` stubs
+**And** navigation uses Expo Router with a stack-based model — no bottom tab bar at any route
+**And** TypeScript strict mode is enabled with zero type errors on `tsc --noEmit`
+**And** Yarn 4.4.0+ is used as the package manager
+**And** `expo doctor` reports no blocking issues
 
 ---
 
-### Story 1.5: Mobile Design System Foundation and Accessibility Context
+### Story 1.5: Design System Foundation — Warm Dusk Token System
+
+As a developer,
+I want the complete Blinder design token system implemented in Tamagui — colours, typography, spacing, border radius, and motion vocabulary,
+So that all future screen work is built from tokens with zero hardcoded values.
+
+**Acceptance Criteria:**
+
+**Given** the Tamagui configuration file exists at `mobile/blinder-app/tamagui.config.ts`
+**When** the token system is defined
+**Then** all colour tokens from the Warm Dusk palette are implemented: `color.bg.base`, `color.bg.surface`, `color.bg.elevated`, `color.primary`, `color.primary.light`, `color.reveal`, `color.accent`, `color.text.primary`, `color.text.secondary`, `color.text.muted`, `color.border`, `color.error`, `color.offline`
+**And** `color.reveal` is defined as a named semantic token with a code comment marking it exclusive to the reveal ceremony and Reveal gate button
+**And** typography tokens cover all 8 scale levels (`text.display` through `text.button`) using Lato (300/400/700/900 weights)
+**And** spacing tokens are defined: `space.xs` (4px) through `space.2xl` (48px)
+**And** border radius tokens are defined: `radius.sm` (8px) through `radius.full` (9999px)
+**And** a `motion.ts` file documents the motion vocabulary: what animates, at what duration, with what easing curve — distinguishing in-screen animations from navigation-level transitions
+**And** `color.text.primary` (#2C1C1A) on `color.bg.base` (#FBF5EE) is verified to meet WCAG AA contrast (≥4.5:1), documented in a comment
+**And** a token showcase screen exists at a dev-only route rendering all tokens visually for design review
+**And** zero hardcoded colour, font-size, or spacing values exist anywhere in the codebase (enforced by ESLint rule)
+**And** this story has a design review gate — a human review of the token showcase screen is required before any screen implementation stories begin in Epic 3+
+
+---
+
+## Epic 2: User Authentication & Identity
+
+Users can create an account, sign in with email or social auth (Google, Apple, Facebook), accept policies, verify their age, and delete their account — all authentication flows are owned by IdentityServer via OAuth2/OIDC; `Blinder.Api` is a resource server only.
+
+### Story 2.1: IdentityServer OAuth2/OIDC Foundation with OpenIddict
+
+As a developer,
+I want a functioning IdentityServer with OpenIddict 7.4.0 that is the sole authority for all authentication, registration, and token issuance,
+So that the mobile app and AdminPanel never talk to `Blinder.Api` for identity operations — only to IdentityServer.
+
+**Acceptance Criteria:**
+
+**Given** `Blinder.IdentityServer` is running
+**When** a mobile client initiates authentication
+**Then** it uses Authorization Code Flow with PKCE against IdentityServer OIDC endpoints — `Blinder.Api` has no registration or login endpoints
+**And** OpenIddict 7.4.0 is configured with standard OIDC discovery at `/.well-known/openid-configuration`
+**And** the following endpoints are functional: `/connect/authorize`, `/connect/token`, `/connect/userinfo`, `/connect/endsession`, `/connect/introspect`, `/connect/revoke`
+**And** a mobile client (`blinder-mobile`) and admin client (`blinder-admin`) are registered in OpenIddict with correct redirect URIs, scopes, and grant types
+**And** the mobile client uses Authorization Code + PKCE only — no implicit or password grant
+**And** `identity.*` schema tables are managed exclusively by IdentityServer EF Core migrations
+**And** HTTPS (TLS 1.2+) is enforced on all IdentityServer endpoints
+**And** refresh token rotation is enabled; revoked tokens are rejected on next use
+**And** the IdentityServer health check endpoint returns 200
+
+---
+
+### Story 2.2: Local Account Registration and Sign-In via IdentityServer OIDC
 
 As a user,
-I want the app to use Blinder's dark, warm visual identity from the very first screen, with full accessibility support built in from the start,
-So that every subsequent screen is consistent, accessible, and never requires design retrofitting.
+I want to register and sign in through the IdentityServer OIDC flow,
+So that my credentials are managed entirely by the identity authority and never pass through the business API.
 
 **Acceptance Criteria:**
 
-**Given** `constants/theme.ts` is implemented
-**When** the colour tokens are reviewed
-**Then** the following tokens exist: background `#1A1814`, primary text `#F2EDE6`, secondary text `#9E9790`, amber accent `#C8833A`, safety teal `#4A9E8A`, danger red `#D94F4F`, and inactive `#635D57` — dark mode only at MVP; no light mode toggle
+**Given** IdentityServer exposes a registration endpoint under its own host (`auth.<domain>`)
+**When** a user submits a valid email and password for registration
+**Then** the account is created in `identity.*` by IdentityServer — `Blinder.Api` performs no writes to identity data
+**And** password is stored as a salted hash using ASP.NET Core Identity hashing
+**And** after registration the user is directed into the OIDC Authorization Code + PKCE flow to receive tokens — there is no separate login call to `Blinder.Api`
 
-**Given** a screen renders
-**When** WCAG AA contrast is checked between all text/background pairs
-**Then** amber on background = 4.82:1 ✅, primary text on background = 13.4:1 ✅, secondary text on background = 5.1:1 ✅
-
-**Given** `AccessibilityContext` is implemented at app root
-**When** any component accesses the context
-**Then** `{ reduceMotion: boolean, fontScale: number, isScreenReaderEnabled: boolean }` are available — no per-component `AccessibilityInfo` calls needed
-
-**Given** `reduceMotion` is `true` in `AccessibilityContext`
-**When** any animated component renders
-**Then** all transitions snap to 0ms duration or use opacity-fade-only — no motion-based transitions fire
-
-**Given** any interactive element renders
-**When** its touch target dimensions are measured
-**Then** minimum `minHeight: 44, minWidth: 44` logical pixels are applied; icon-only controls have `hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}`
-
-**Given** any interactive element renders
-**When** VoiceOver or TalkBack inspects it
-**Then** `accessibilityRole`, `accessibilityLabel`, and `accessibilityHint` (where non-obvious) are present on every element
-
-**Given** the app is running with system font size at ×2.0
-**When** any screen is rendered
-**Then** `allowFontScaling={true}` is set on all `Text` components, no text is truncated, and no fixed-height text containers clip content
+**Given** a user initiates sign-in
+**When** they complete the OIDC Authorization Code + PKCE flow against IdentityServer
+**Then** IdentityServer issues an access token, ID token, and refresh token
+**And** the access token contains the user's subject ID and configured API scopes consumable by `Blinder.Api`
+**And** failed authentication attempts return standard OIDC error responses with no credential detail leakage
+**And** `Blinder.Api` validates incoming access tokens as a resource server — it does not issue or manage tokens itself
 
 ---
 
-## Epic 2: User Registration & Authentication
+### Story 2.3: Social Federation via IdentityServer — Google, Apple, and Facebook
 
-A user can create an account (email/password or social login), log in, log out, and permanently delete their account with full data purge. Female users can only register via a valid invite link.
-
-**Identity Architecture:** All token issuance, grant handling, and revocation is owned exclusively by `Blinder.IdentityServer` (OpenIddict OAuth2/OIDC Authorization Server). `Blinder.Api` is a pure resource server — it validates tokens remotely via OIDC discovery and never issues tokens. `POST /api/auth/register` lives in `Blinder.Api` (user creation is a resource operation, not a token operation). All OAuth2 endpoints (`/api/auth/oauth/token`, `/api/auth/oauth/revoke`, `/.well-known/`) are routed by Nginx to `Blinder.IdentityServer`.
-
-### Story 2.0: OAuth2/OIDC Authentication Foundation (OpenIddict)
-
-As a developer and operator,
-I want a complete OAuth2/OIDC token endpoint and grant handler infrastructure powered by OpenIddict in a dedicated `Blinder.IdentityServer` project,
-So that all authentication flows (email/password, social login, future integrations) are built on a single, secure, standards-compliant foundation without reinventing what OpenIddict already provides.
+As a user,
+I want to sign in with Google, Apple, or Facebook through IdentityServer,
+So that external identity providers are federated through the single IdentityServer authority — not handled by the mobile app or Api directly.
 
 **Acceptance Criteria:**
 
-1. `POST /api/auth/oauth/token` hosted in `Blinder.IdentityServer` returns RFC 6749 compliant `{ access_token, refresh_token, expires_in, token_type: "Bearer" }`
-2. ROPC grant (email/password): access token **15-minute** expiry, refresh token **30-day rolling** expiry; invalid credentials → 401 `invalid_grant`; token request includes `scope=email api`
-3. Authorization Code grant framework ready with **PKCE enforced** (`RequireProofKeyForCodeExchange()`) — extensible for Stories 2-3/2-4 via `ISocialLoginTokenValidator` interface; `code_verifier` is mandatory, requests without it return `invalid_grant`
-4. Refresh token rotation: OpenIddict marks old token `redeemed` on each use; replay attempts rejected automatically — no custom `RefreshTokens` table
-5. Token revocation endpoint: `POST /api/auth/oauth/revoke` marks token revoked in `OpenIddictTokens` table; idempotent 200 OK
-6. Refresh tokens stored encrypted via ASP.NET Core Data Protection (OpenIddict automatic) — never plaintext
-7. Mobile token storage contract: `access_token` and `refresh_token` stored via `expo-secure-store`; `isTokenExpiringSoon()` uses 5-minute buffer
-8. JWT claims standardized: `sub`, `iss`, `aud` (`"blinder-api"` — the resource server identifier, **not** the client ID), `scope`, `exp`, `iat`; signed with RSA-256 certificate
-9. `OpenIddictSeeder` seeds on startup: (a) `api` scope registered with resource audience `"blinder-api"`, (b) `blinder-mobile` client registered as public client with scope permissions for `email` and `api` — without (a), `Blinder.Api` rejects all tokens; without (b), every token request returns `invalid_client`
-10. `Blinder.Api` validates tokens remotely via OpenIddict OIDC discovery with `AddAudiences("blinder-api")` — `JwtBearer` middleware is **not** used; tokens without `aud=blinder-api` are rejected
-11. Rate limiting on token endpoint: 5 requests/min/IP → 429 Too Many Requests
-
-**Dev Notes:** This story establishes zero user-facing features. It is pure infrastructure enabling Stories 2-1 (registration), 2-2 (login/logout), 2-3 (Apple), 2-4 (Google/Facebook). OpenIddict replaces all custom `OAuth2TokenService`, `RefreshTokenRepository`, and `TokenRevocationHandler` — these classes must not be created.
-
-**Estimated Effort:** 5-6 days (medium, foundational)
+**Given** IdentityServer is configured as the federation hub with Google, Apple, and Facebook as external providers
+**When** a user selects a social provider on the sign-in screen
+**Then** the mobile app initiates an Authorization Code + PKCE flow against IdentityServer — not directly against Google/Apple/Facebook
+**And** IdentityServer handles the external provider exchange, creates or links a local `identity.*` account, and returns its own access/ID/refresh tokens to the mobile client
+**And** the mobile app only ever holds IdentityServer-issued tokens — external provider tokens never reach the mobile client or `Blinder.Api`
+**And** Apple sign-in (SIWA) is configured with `name` and `email` scopes — required for App Store compliance on iOS (**launch blocker**)
+**And** if an external email matches an existing local account, IdentityServer prompts to link rather than silently duplicating
+**And** external login unlinking triggers an IdentityServer-owned command; `Blinder.Api` requests this via an explicit service call — it never mutates `identity.*` directly
 
 ---
 
-### Story 2.1: Email/Password User Registration
+### Story 2.4: Age Gate, Policy Acceptance, and GDPR Consent Records
 
-**Updated (March 25, 2026):** This story was redesigned after Story 2-0 (OAuth2 Foundation) was approved. The key change: registration no longer issues JWT tokens. Token issuance is delegated to `Blinder.IdentityServer`'s OAuth2 token endpoint.
+As a user,
+I want to confirm my age and accept product policies before entering dating flows,
+So that the product meets legal and compliance requirements.
 
-**Project ownership:** `POST /api/auth/register` lives in **`Blinder.Api`** — user creation is a resource operation, not a token operation. Nginx routes `/api/auth/register` to `Blinder.Api`. `Blinder.IdentityServer` is not touched by this story.
+**Acceptance Criteria:**
+
+**Given** a user has completed registration via IdentityServer OIDC
+**When** they submit their date of birth for age verification
+**Then** users below the legal age threshold are blocked from proceeding to dating flows (NFR10)
+**And** the age gate result is stored in `identity.*` with timestamp
+
+**Given** a user proceeds to policy acceptance
+**When** they accept the blind-phase rules, moderation boundaries, and anonymized outcome policies
+**Then** the acceptance event is recorded in `identity.*` with policy version, timestamp, and user ID (NFR9 — consent recordability)
+**And** users who have not accepted the current policy version are blocked from matching flows on subsequent sessions
+**And** a GET endpoint returns the current policy acceptance status for the authenticated user
+
+---
+
+### Story 2.5: Account Deletion — GDPR Right to Erasure
+
+As a user,
+I want to delete my account from within the app,
+So that my data is removed in compliance with GDPR right to erasure.
+
+**Acceptance Criteria:**
+
+**Given** an authenticated user submits a DELETE account request
+**When** the request is processed
+**Then** the identity account is deleted per the configured retention policy
+**And** all active sessions and refresh tokens for the user are revoked immediately via IdentityServer
+**And** a deletion record is retained for legal audit purposes (deletion timestamp, pseudonymised user ID) per GDPR retention policy
+**And** the deletion is irreversible — re-registration with the same email creates a new identity
+**And** `Blinder.Api` triggers the deletion via an explicit IdentityServer-owned command — it does not mutate `identity.*` directly
+**And** the API returns 204 on success; 409 if deletion is already in progress
+
+---
+
+### Story 2.6: Welcome, Registration, and Sign-In Screens (OIDC Flow)
 
 As a new user,
-I want to register with my email address and password,
-So that I can create a Blinder account and then authenticate via `Blinder.IdentityServer`'s OAuth2 token endpoint.
+I want to register or sign in through the IdentityServer OIDC flow from a welcoming entry screen,
+So that authentication is handled securely without the app ever handling raw credentials beyond the OIDC handshake.
 
 **Acceptance Criteria:**
 
-**Given** a `POST /api/auth/register` request with valid email, password, and `over18Declaration: true`
-**When** the request is processed by `RegisterController` in **`Blinder.Api`**
-**Then** a new `ApplicationUser` is created via `UserManager.CreateAsync()`, a 201 response is returned with `{ user_id, email, created_at }` — no token is issued; client must separately call `POST /api/auth/oauth/token` (routed to `Blinder.IdentityServer`) to obtain credentials
-
-**Given** `ApplicationUser` is created in `Blinder.Api/Models/ApplicationUser.cs`
-**When** the class definition is reviewed
-**Then** it inherits from `IdentityUser<Guid>`, includes `Gender` (enum: Male/Female/NonBinary), `QuizCompletedAt` (DateTimeOffset?), `InviteLinkId` (FK, nullable), `IsOnboardingComplete` (bool), and uses `DateTimeOffset` for all date fields — `DateTime` is never used
-
-**Given** a registration request is received
-**When** FluentValidation runs `RegisterRequestValidator`
-**Then** email format is validated, password minimum requirements enforced (≥10 chars, uppercase + lowercase + digit + symbol), `over18Declaration` must be `true` — missing or invalid fields return Problem Details 400
-
-**Given** a duplicate email is submitted
-**When** Identity attempts to create the user
-**Then** a 409 Conflict Problem Details response is returned — the error type URI comes from `AppErrors.cs`
-
-**Given** a Mapperly `UserMapper` is implemented
-**When** `ApplicationUser` is mapped to `RegisterResponse` DTO
-**Then** no manual `new RegisterResponse { ... }` construction exists — all mapping goes through `[Mapper]` partial class
-
-**Given** a new user registers
-**When** their `over18Declaration` field is reviewed
-**Then** it is stored as `age_declaration_accepted` (snake_case) in the `AspNetUsers` table with a `timestamptz` timestamp
-
-**Given** malicious actors attempt bulk account creation
-**When** the registration endpoint receives requests
-**Then** rate limit of 10 requests/IP/hour enforced via `AddRateLimiter()` in **`Blinder.Api/Program.cs`** (separate policy from IdentityServer's token endpoint policy)
+**Given** the app is launched for the first time
+**When** the welcome screen is shown
+**Then** it presents the product value proposition and two CTAs: "Create account" and "Sign in"
+**And** both CTAs initiate an Authorization Code + PKCE flow against IdentityServer — the app does not POST credentials to `Blinder.Api`
+**And** the app uses `expo-auth-session` or equivalent to manage the OIDC authorization code exchange with IdentityServer
+**And** on successful token receipt, the access token and refresh token are stored securely (Expo SecureStore / iOS Keychain / Android Keystore)
+**And** all screens use only Warm Dusk design tokens — zero hardcoded values
+**And** error responses from IdentityServer OIDC endpoints are translated into warm, non-technical user-facing copy
 
 ---
 
-### Story 2-1-A: Shared Mobile Component Library
-
-As a developer,
-I want a complete shared component library with all MVP components implemented or placeholder-scaffolded,
-So that every future screen uses consistent, accessible, theme-compliant components rather than inline primitives.
-
-**Acceptance Criteria:**
-
-**Given** `mobile/components/shared/` is reviewed
-**When** the component inventory is checked
-**Then** `Button.tsx`, `TextField.tsx`, `RadioChipGroup.tsx`, `Toggle.tsx`, `LoadingIndicator.tsx`, `ErrorBanner.tsx`, `Card.tsx`, `Modal.tsx`, `EmptyState.tsx`, `SkeletonLoader.tsx`, `StatusBadge.tsx`, `ConsentBadge.tsx` all exist alongside the existing `AccessiblePressable.tsx` and `ThemedText.tsx`
-
-**Given** `Button.tsx` is implemented
-**When** rendered with `variant` prop
-**Then** it supports `primary`, `secondary`, `ghost`, `danger` variants; accepts `isLoading` prop that renders `LoadingIndicator`; uses theme tokens exclusively; enforces `minHeight: 44`; requires `accessibilityLabel`
-
-**Given** `TextField.tsx` is implemented
-**When** rendered
-**Then** it wraps React Native `TextInput` with a `label` prop, `error` prop, `secureTextEntry` support, themed border/background, and `accessibilityLabel` derived from label; always sets `allowFontScaling={true}` (WCAG 2.1 AA)
-
-**Given** `RadioChipGroup.tsx` is implemented
-**When** rendered
-**Then** it renders a horizontal row of selectable chips; selected chip uses `colors.accent.primary` border and `colors.background.surface` fill; `accessibilityRole="radiogroup"` on container, `accessibilityRole="radio"` on each chip
-
-**Given** `Toggle.tsx` is implemented
-**When** rendered
-**Then** it wraps React Native `Switch` with a `label` prop; uses `colors.safety` as active track color; `accessibilityLabel` is required
-
-**Given** `LoadingIndicator.tsx` is implemented
-**When** rendered
-**Then** it produces three animated pulsing dots using theme colors; respects `reduceMotion` from `AccessibilityContext` — static dots when `reduceMotion === true`
-
-**Given** `ErrorBanner.tsx` is implemented
-**When** rendered with an `error` string prop
-**Then** it displays a themed error block using `colors.danger` text and `colors.background.surface` background with `accessibilityLiveRegion="polite"`
-
-**Given** placeholder components are implemented in their subdirectories (`Card`, `Modal`, `EmptyState`, `SkeletonLoader`, `StatusBadge`, `ConsentBadge` in `shared/`; `ChatBubble`, `ChatInput`, `ConversationRow` in `chat/`; `RevealMoment`, `RevealPrompt`, `RevealCountdown`, `EmptyMatchState`, `RevealProgress` in `match/`; `ReportButton` in `moderation/`; `QuizCard`, `ProgressStepper` in `onboarding/`)
-**When** each placeholder is reviewed
-**Then** each exports a typed props interface, renders a minimal visible stub using `ThemedText` with the component name, uses only theme tokens, and includes a `// TODO: implement in Story X.X` comment citing the target story
-
-**Given** `register.tsx` is refactored
-**When** the file is reviewed
-**Then** raw `TextInput` is replaced by `TextField`; submit and back buttons are replaced by `Button`; gender selector is replaced by `RadioChipGroup`; over-18 switch is replaced by `Toggle`; the local `LoadingDots` function is removed (replaced by `LoadingIndicator`); error display is replaced by `ErrorBanner`; no inline component definitions remain
-
-**Given** `docs/component-library.md` is created
-**When** reviewed
-**Then** it lists every component from this story with file path, props summary, implementation status (`ready` or `placeholder — Story X.X`), and a usage example
-
-**Given** `docs/project-context.md` is updated with Rule 18
-**When** reviewed
-**Then** it states that developers must check `mobile/components/` before building any UI element; inline component definitions in screen files are prohibited; new components must be added to `docs/component-library.md`
-
-**Given** `tsc --noEmit` is run from `mobile/`
-**When** compilation completes
-**Then** zero TypeScript errors
-
----
-
-### Story 2.2: User Login and Logout
-
-**Updated (March 25, 2026):** Redesigned to use OpenIddict (Story 2-0). This is primarily a **mobile-side story**. No new backend endpoints are created — `Blinder.IdentityServer`'s ROPC token endpoint is the login endpoint; `Blinder.IdentityServer`'s revocation endpoint is the logout endpoint. `Blinder.Api` and `Blinder.IdentityServer` are not modified by this story.
-
-As a registered user,
-I want to log in with my email and password, stay logged in automatically, and log out securely,
-So that I can access Blinder without re-entering credentials and know my session is secure.
-
-**Acceptance Criteria:**
-
-**Given** a user submits email and password on the login screen
-**When** `authService.login()` executes
-**Then** `POST /api/auth/oauth/token` (routed by Nginx to `Blinder.IdentityServer`) is called with `grant_type=password`, `client_id=blinder-mobile`, `username`, `password`, `scope=email api` (form-encoded — never JSON); `scope=email api` is mandatory — the `api` scope places `"blinder-api"` in the token `aud` claim that `Blinder.Api` validates; response contains `access_token` (15-min), `refresh_token` (30-day rolling), `expires_in`; both tokens stored via `storageService.setTokens()` using `expo-secure-store`
-
-**Given** invalid credentials are submitted
-**When** IdentityServer returns 401 `invalid_grant`
-**Then** `ErrorBanner` shows "Invalid email or password" — no user enumeration hint; form is not cleared
-
-**Given** the mobile client receives tokens
-**When** `storageService.ts` persists both tokens
-**Then** `SecureStore.setItemAsync` is used exclusively — `AsyncStorage` is never used for token storage; expiry timestamp stored for 5-minute pre-refresh buffer check
-
-**Given** a mobile app detects access token expires within 5 minutes
-**When** `apiClient.ts` intercepts an outgoing request
-**Then** `authService.refreshToken()` is called: `POST /api/auth/oauth/token` with `grant_type=refresh_token`; new token pair stored; concurrent requests during refresh are queued (not each triggering a separate refresh)
-
-**Given** a user taps Log Out
-**When** `authService.logout()` executes
-**Then** `POST /api/auth/oauth/revoke` (routed to `Blinder.IdentityServer`) is called with the **refresh token** (not the access token — revoking the refresh token triggers OpenIddict cascade revocation of all related access tokens); `storageService.clearTokens()` called regardless of revocation network result; user navigated to login screen
-
-**Given** an API request is made with an expired or revoked token
-**When** OpenIddict remote validation middleware in `Blinder.Api` processes the request
-**Then** a 401 Unauthorized Problem Details response is returned — no stack trace exposed; `JwtBearer` middleware is **not** involved
-
----
-
-### Story 2.3: Apple Sign In
-
-**Updated (March 25, 2026):** This story is simplified by Story 2-0 (OAuth2 Foundation). Social login now uses the shared OAuth2 token endpoint with provider-specific validators plugging in.
-
-As a new or returning iOS user,
-I want to register or log in using Apple Sign In,
-So that I can use Blinder without creating a separate password.
-
-**Acceptance Criteria:**
-
-**Given** a `POST /api/auth/oauth/token` request with `grant_type=authorization_code`, `provider: "Apple"`, and a valid Apple identity token
-**When** the authorization code grant handler validates the token
-**Then** the Apple identity token is verified against `https://appleid.apple.com/auth/keys` (JWKS), the `iss` claim equals `"https://appleid.apple.com"`, and the `bundle_id` claim matches the app; authorization code valid for 10 minutes, one-time use
-
-**Given** authorization code is valid
-**When** client exchanges code via `POST /api/auth/oauth/token` (same endpoint as Story 2-2 refresh)
-**Then** OAuth2TokenService issues access token (30-day) + refresh token (90-day); response format identical to email/password login (RFC 6749 compliant)
-
-**Given** Apple token validation succeeds for a new user
-**When** account is created via `ExternalLoginAsync`
-**Then** a new `ApplicationUser` is created; user directed to onboarding quiz (onboarding not skipped)
-
-**Given** Apple token validation succeeds for an existing user
-**When** the authorization code exchange completes
-**Then** tokens are issued; no new `ApplicationUser` created
-
-**Given** a social login completes
-**When** the user profile is inspected
-**Then** no profile photo is imported from Apple — social login is for authentication only
-
----
-
-### Story 2.4: Google and Facebook Social Login
-
-**Updated (March 25, 2026):** This story is simplified by Story 2-0 (OAuth2 Foundation). Social login now uses the shared OAuth2 token endpoint with provider-specific validators plugging in.
-
-As a new or returning user,
-I want to register or log in using Google or Facebook,
-So that I can use Blinder without creating a separate password.
-
-**Acceptance Criteria:**
-
-**Given** a `POST /api/auth/oauth/token` request with `grant_type=authorization_code`, `provider: "Google"` or `"Facebook"`, and a valid provider identity token
-**When** the authorization code grant handler validates the token
-**Then** the provider token is verified via provider JWKS endpoint (Google) or token validation endpoint (Facebook); authorization code valid for 10 minutes, one-time use
-
-**Given** authorization code is valid
-**When** client exchanges code via `POST /api/auth/oauth/token` (shared endpoint with Story 2-3)
-**Then** OAuth2TokenService issues access token (30-day) + refresh token (90-day); response format identical to email/password + Apple
-
-**Given** any social login provider is used
-**When** account creation occurs
-**Then** user is directed to onboarding quiz — social login does not bypass onboarding; no social graph data, no profile photos are imported
-
-**Given** a social login provider returns an email already registered via a different provider
-**When** the account lookup runs
-**Then** accounts are linked via Identity's external login system — not duplicated
-
----
-
-### Story 2.5: Female Invite-Only Registration and Invite Landing Screen
-
-As a female user invited by a Blinder member,
-I want to register via an invite link,
-So that I can join Blinder through a trusted channel that communicates structural safety before I invest any time.
-
-**Acceptance Criteria:**
-
-**Given** a female user taps an invite deep link
-**When** `invite-landing.tsx` renders
-**Then** the inviter's name is visible, the structural safety promise ("Structurally impossible to receive unsolicited photos — by design") is displayed BEFORE any data entry fields, and the invite token is preserved in navigation context throughout the registration flow
-
-**Given** a female user submits a registration request
-**When** the invite token is validated server-side
-**Then** a `GET /api/invites/{token}/validate` call confirms the token is valid, unused, and a `POST /api/auth/register` with the `inviteToken` field proceeds; the `InviteLink.used_by` FK is set to the new user's ID on completion
-
-**Given** an invalid or already-used invite token is submitted
-**When** registration is attempted
-**Then** a 422 Unprocessable Entity Problem Details response is returned — the user sees a clear in-app error message from `constants/errors.ts`
-
-**Given** a female user completes registration without an invite token
-**When** the request reaches `RegisterRequestValidator`
-**Then** validation fails with a specific error indicating an invite link is required for female registration
-
-**Given** `InviteLink` model is created
-**When** the migration is reviewed
-**Then** table `invite_links` contains `id`, `token` (unique index), `generated_by_user_id` (FK to `users`), `used_by_user_id` (FK to `users`, nullable), `created_at` (timestamptz) — all snake_case
-
----
-
-### Story 2.6: Account Deletion with Full Data Purge Cascade
+### Story 2.7: Social Sign-In Buttons via IdentityServer Federation
 
 As a user,
-I want to permanently delete my account and all associated data,
-So that I can exercise my right to erasure and have confidence my data is fully removed.
+I want to tap a social sign-in button and be authenticated through IdentityServer's federation,
+So that the app always receives IdentityServer-issued tokens regardless of the external provider used.
 
 **Acceptance Criteria:**
 
-**Given** a `DELETE /api/account` request from an authenticated user
-**When** the deletion orchestrator executes
-**Then** the following data is permanently deleted: profile photo from object storage, all messages in all conversations, all conversation records, the user's `UserProfile`, quiz answers, invite links generated by this user, subscription records, device tokens, report records (as reporter), and the `ApplicationUser` record itself
+**Given** the registration or sign-in screen is shown
+**When** the user taps a social provider button (Google, Apple, Facebook)
+**Then** the app initiates an Authorization Code + PKCE flow against IdentityServer — not directly against Google, Apple, or Facebook
+**And** IdentityServer handles the external provider exchange internally and returns its own tokens to the app
+**And** Apple sign-in button on iOS uses Apple-required visual treatment (Sign in with Apple guidelines) — App Store **required** capability and launch blocker
+**And** on successful flow completion the app receives and stores IdentityServer-issued tokens (not external provider tokens)
+**And** if the OIDC flow is cancelled or fails the user is returned to the sign-in screen with a non-alarming error message
 
-**Given** a user has been involved in moderation actions
-**When** the deletion cascade runs
-**Then** `ModerationAction` records where this user is the subject are retained for the minimum 2-year audit period — they are NOT deleted; the `user_id` reference is anonymised but the action record itself persists
+---
 
-**Given** account deletion completes
-**When** the response is returned
-**Then** HTTP 204 No Content is returned; the user's JWT becomes invalid; attempting to use the deleted account's token returns 401
+### Story 2.8: Age Gate and Policy Acceptance Screens
 
-**Given** the deletion request is received
-**When** the photo purge runs
-**Then** `AWSSDK.S3` `DeleteObjectAsync` is called for the user's photo object key — the stored photo is permanently removed from Hetzner Object Storage
+As a new user,
+I want to confirm my age and accept product policies,
+So that I understand the blind-phase rules before entering dating flows.
 
-**Given** a user has active conversations at deletion time
-**When** deletion completes
-**Then** the matched user's conversation is closed/archived and they receive an in-app notification that the conversation has ended — they are not left with an orphaned open conversation
+**Acceptance Criteria:**
+
+**Given** a newly registered user proceeds past account creation
+**When** the age gate screen is shown
+**Then** the user can enter their date of birth
+**And** users below the legal age threshold see a clear, respectful blocked state explaining they cannot proceed
+**And** users above the threshold proceed to policy acceptance
+
+**Given** the policy acceptance screen is shown
+**When** the user reviews and accepts
+**Then** the acceptance is submitted to the backend and confirmed before the user proceeds
+**And** policy copy is readable with correct font scale and line height from the token system
+**And** the "Accept" CTA is a primary button; no dark patterns are present
+
+---
+
+### Story 2.9: Account Deletion Flow (Frontend)
+
+As a user,
+I want to delete my account from within the app,
+So that I have a clear, GDPR-compliant path to remove my data.
+
+**Acceptance Criteria:**
+
+**Given** the user navigates to account deletion within ProfileSheet settings
+**When** they initiate deletion
+**Then** a Dialog confirmation screen is shown with consequences clearly stated (irreversible, data removed)
+**And** the confirmation requires an explicit tap on a destructive-styled button ("Delete my account") — not the default action
+**And** on confirmed deletion all local session state is cleared and the user is returned to the welcome screen
+**And** the flow is reachable in no more than 3 taps from the profile settings entry point (App Store compliance requirement)
 
 ---
 
 ## Epic 3: Onboarding & Profile Setup
 
-A new user completes the values and personality quiz, uploads a private profile photo (content-scanned before storage), sets preferences, and receives their 7-day premium trial — landing in their first match conversation upon completion.
+Users can complete the onboarding quiz, upload a photo through the moderation pipeline, grant location permission, and become fully match-ready. They can also update their profile later.
 
-### Story 3.1: Values and Personality Quiz
-
-As a new user completing onboarding,
-I want to answer a short values and personality quiz,
-So that the algorithm has the data it needs to find me a genuinely compatible match.
-
-**Acceptance Criteria:**
-
-**Given** a new authenticated user opens `app/(auth)/onboarding/quiz.tsx`
-**When** the quiz screen renders
-**Then** 4–5 questions appear covering interests, life priorities, and relationship intent; the total interaction takes under 3 minutes; no question asks the user to rate their own attractiveness
-
-**Given** the user completes all quiz questions and submits
-**When** `POST /api/onboarding/quiz` is called
-**Then** quiz answers are stored in `UserProfile.quiz_answers` (JSONB column, PostgreSQL); `UserProfile` is created if it does not exist; `ApplicationUser.QuizCompletedAt` is set
-
-**Given** `UserProfile` model is created
-**When** the migration is reviewed
-**Then** table `user_profiles` contains: `id`, `user_id` (FK → `users`, unique), `quiz_answers` (jsonb), `photo_object_key` (text, nullable), `radius_km` (int, default 50), `min_age` (int), `max_age` (int), `created_at` (timestamptz), `updated_at` (timestamptz)
-
-**Given** a quiz submission fails FluentValidation
-**When** the error response is returned
-**Then** HTTP 400 Problem Details is returned with per-field error details — no quiz answer is persisted on validation failure
-
-**Given** the user navigates back during the quiz
-**When** they return to the quiz screen
-**Then** previously answered questions retain their answers — progress is not lost
-
----
-
-### Story 3.2: Private Profile Photo Upload
-
-As a new user completing onboarding,
-I want to upload a profile photo that is stored privately and never shown until I choose to reveal it,
-So that I can participate in Blinder without the anxiety of being judged on my appearance immediately.
-
-**Acceptance Criteria:**
-
-**Given** `app/(auth)/onboarding/photo.tsx` renders
-**When** the photo upload step appears
-**Then** it appears AFTER the quiz step (the user is already invested); copy reads "No one sees this until you both choose." — low-pressure framing; the photo upload UI does NOT display the photo to other users
-
-**Given** the user selects a photo from the device library or camera via `expo-image-picker`
-**When** the photo is uploaded via `POST /api/onboarding/photo`
-**Then** the raw photo bytes are received by the backend BEFORE any storage write; the content scanning pipeline executes synchronously before any S3 write is confirmed
-
-**Given** the Hetzner Object Storage S3 client is configured
-**When** `S3ClientFactory.cs` creates the client
-**Then** `ForcePathStyle = true` is set — this is validated during the spike before this story is implemented
-
-**Given** the photo is successfully scanned and stored
-**When** the object key is persisted
-**Then** `UserProfile.photo_object_key` is set to `photos/{guid}` — the key does NOT contain the user's ID or any PII; the bucket has no public ACL
-
-**Given** the photo upload response is returned to the mobile client
-**When** the confirmation is received
-**Then** no public URL is returned — clients never receive a direct S3 URL for a profile photo
-
----
-
-### Story 3.3: Explicit Content Scanning Gate at Photo Upload
-
-As a platform operator,
-I want all uploaded photos to be scanned for explicit content before storage,
-So that harmful content never enters the system and the scanning pipeline fails safe (hard-reject on API outage).
-
-**Acceptance Criteria:**
-
-**Given** a photo upload request arrives at `POST /api/onboarding/photo`
-**When** `ContentScanningClient.ScanAsync` executes
-**Then** the scan completes within 10 seconds (NFR3); the photo is NOT written to S3 until a clean scan result is confirmed
-
-**Given** the content scan detects explicit content
-**When** the result is returned
-**Then** the upload is rejected with HTTP 422 Problem Details; no bytes are written to S3; the user receives a clear in-app error message
-
-**Given** the content scanning API (Google Vision SafeSearch or Azure Content Moderator) is unavailable
-**When** `ContentScanningClient` receives a timeout or connection error
-**Then** the photo is rejected (hard-fail policy) — HTTP 503 is returned; nothing is stored; `ContentScanningClient` is in `Infrastructure/Scanning/` (NOT in `Services/`)
-
-**Given** up to 1,000 concurrent photo uploads occur
-**When** the scanning pipeline is under load
-**Then** each upload still completes scan + storage within the 10-second SLA (NFR18)
-
-**Given** `ContentScanningClient` succeeds
-**When** the scan result is logged
-**Then** the scan outcome is recorded via `ILogger<T>` with structured properties — no PII (no user IDs or photo content) in log properties
-
----
-
-### Story 3.4: CSAM Hash Scanning Integration Slot
-
-As a platform operator,
-I want all uploaded photos to be checked against CSAM hash databases before storage,
-So that the platform meets its legal obligations and no CSAM material is ever persisted.
-
-**Acceptance Criteria:**
-
-**Given** a photo upload request arrives
-**When** the CSAM scan check executes
-**Then** it runs server-side BEFORE any S3 write — CSAM material is never persisted (NFR11)
-
-**Given** the CSAM scan detects a hash match
-**When** the result is returned
-**Then** the upload is rejected and the detection event is logged to the operations alert channel; a Coravel-queued `IInvocable` notifies the operations team immediately (NFR26)
-
-**Given** the NCMEC PhotoDNA legal agreement is not yet in place
-**When** the scanning pipeline runs in the interim
-**Then** the CSAM scan slot is implemented as a configurable `ICsamScanningProvider` interface with a `StubCsamScanningProvider` that logs a warning and passes — the real PhotoDNA provider is injected when the legal agreement is signed
-
-**Given** the CSAM integration is not yet active (stub mode)
-**When** the operations team reviews the configuration
-**Then** a prominent startup warning is logged: "CSAM scanning is running in STUB mode — real PhotoDNA integration not active. NCMEC agreement required before launch."
-
-**Given** the CSAM scan fails (API outage, not a detection)
-**When** the pipeline error handling runs
-**Then** an immediate alert is sent to the operations team (NFR26); the photo upload is rejected (hard-fail); silent failure is not acceptable
-
----
-
-### Story 3.5: Preferences Setup (Age Range and Search Radius)
+### Story 3.1: Onboarding Quiz API and Conversation Starter Prompt Generation
 
 As a user,
-I want to set my age range preference and search radius during onboarding,
-So that matches are geographically and demographically relevant to me.
+I want to submit my onboarding quiz answers and receive generated conversation starter prompts,
+So that my first conversations have relevant, personalised icebreakers.
 
 **Acceptance Criteria:**
 
-**Given** `app/(auth)/onboarding/preferences.tsx` renders
-**When** the user sets preferences
-**Then** minimum and maximum age range sliders and a search radius slider (in km) are presented; defaults are pre-populated (age ±5 years, 50km radius)
-
-**Given** a `POST /api/onboarding/preferences` request is submitted
-**When** the preferences are validated
-**Then** `min_age` ≥ 18, `max_age` ≤ 100, `max_age` > `min_age`, `radius_km` between 1 and 500 — violations return HTTP 400 Problem Details
-
-**Given** valid preferences are submitted
-**When** they are persisted
-**Then** `UserProfile.min_age`, `UserProfile.max_age`, and `UserProfile.radius_km` are updated; `updated_at` is set to the current UTC `DateTimeOffset`
-
-**Given** a user wants to update preferences post-onboarding
-**When** `PUT /api/account/preferences` is called
-**Then** the same validation rules apply and `UserProfile` is updated — FR6 fulfilled
+**Given** an authenticated user POSTs their quiz answers to `/api/v1/onboarding/quiz`
+**When** all required questions are answered
+**Then** answers are persisted in `app.*` linked to the user's subject ID
+**And** the system generates 2–3 conversation starter prompts from the quiz answers and stores them against the user profile
+**And** prompts are retrievable via GET `/api/v1/onboarding/prompts`
+**And** a user who has not completed the quiz cannot advance to the matching-eligible state (FR11)
+**And** a user can resubmit quiz answers to update their prompts (FR12); updated prompts take effect from the next match cycle
+**And** the endpoint returns 400 with Problem Details if required questions are missing
 
 ---
 
-### Story 3.6: 7-Day Premium Trial Activation on Registration
+### Story 3.2: Location Data Ingestion
+
+As a user,
+I want to provide my location so the matching service can find nearby matches,
+So that I receive geographically relevant daily matches.
+
+**Acceptance Criteria:**
+
+**Given** an authenticated user POSTs location coordinates to `/api/v1/onboarding/location`
+**When** valid coordinates are provided
+**Then** the location is stored in `app.*` linked to the user's subject ID
+**And** the user is not blocked from completing onboarding if they decline location permission — but location-based matching requires it
+**And** location can be updated at any time via the same endpoint (FR12)
+**And** stored coordinates are never exposed to other users at any point
+
+---
+
+### Story 3.3: Photo Upload and Automated Moderation Pipeline
+
+As a user,
+I want to upload a profile photo that is evaluated before it enters any product flow,
+So that only safe, appropriate photos become available for post-reveal display.
+
+**Acceptance Criteria:**
+
+**Given** an authenticated user POSTs a photo to `/api/v1/onboarding/photo`
+**When** the upload is received
+**Then** the photo is stored in MinIO in a private, non-public bucket under the user's ID
+**And** the moderation pipeline is triggered immediately — the photo is not marked available until moderation completes (FR27, NFR7)
+**And** the automated scan returns one of three outcomes: `approved`, `rejected`, `needs_review`
+**And** `approved` photos are marked available in post-reveal context only — never accessible during the blind phase (NFR7)
+**And** `rejected` photos trigger a remediation response with clear guidance (FR34); the user is notified and must re-upload
+**And** `needs_review` photos are queued for manual review (FR29); the user receives a pending status
+**And** if the moderation provider is unavailable the photo defaults to `needs_review` — never silently approved (NFR23)
+**And** the upload endpoint enforces rate limiting
+
+---
+
+### Story 3.4: Manual Moderation Review Queue
+
+As a trust-and-safety operator,
+I want to review photos flagged for manual review and approve or reject them,
+So that uncertain cases are resolved by a human before photos enter the product.
+
+**Acceptance Criteria:**
+
+**Given** a photo has been flagged with `needs_review` status
+**When** an authenticated T&S operator accesses `/api/v1/admin/moderation/queue`
+**Then** pending photos are returned with metadata (upload timestamp, user ID, scan confidence score)
+**And** the operator can submit an `approved` or `rejected` decision via POST `/api/v1/admin/moderation/{photoId}/decision`
+**And** the decision is audit-logged with operator ID, timestamp, and outcome (NFR25)
+**And** on approval the photo becomes available in the post-reveal context; on rejection the user is notified with remediation guidance (FR34)
+**And** the endpoint is accessible only to accounts with the `moderation` role (NFR8)
+
+---
+
+### Story 3.5: Profile Update API
+
+As a user,
+I want to update my profile basics — quiz answers, photo, location — after initial onboarding,
+So that my match-relevant information stays current.
+
+**Acceptance Criteria:**
+
+**Given** an authenticated user submits a PATCH to `/api/v1/profile`
+**When** valid fields are provided
+**Then** quiz answers and generated prompts are updated in `app.*`
+**And** a new photo upload triggers the full moderation pipeline again — the previous approved photo remains active until the new one is approved
+**And** location coordinates are updated immediately
+**And** incomplete updates with missing required fields return 400 with Problem Details
+**And** GET `/api/v1/profile` returns the current profile state including moderation status of the active photo
+
+---
+
+### Story 3.6: Onboarding Quiz Flow (Frontend)
 
 As a new user,
-I want a 7-day premium trial activated automatically when I register,
-So that I experience premium features immediately and understand what I'd be paying for.
+I want to complete the onboarding quiz one question at a time,
+So that I can share conversation-relevant traits without feeling overwhelmed.
 
 **Acceptance Criteria:**
 
-**Given** a user completes registration (any method)
-**When** their account is created
-**Then** a `Subscription` record is created with `plan: "trial"`, `status: "active"`, `trial_expires_at: now + 7 days` (UTC DateTimeOffset)
-
-**Given** `Subscription` model is created
-**When** the migration is reviewed
-**Then** table `subscriptions` contains: `id`, `user_id` (FK → `users`, unique), `plan` (text: trial/free/premium), `status` (text: active/expired/cancelled), `trial_expires_at` (timestamptz, nullable), `platform` (text: Apple/Google, nullable), `created_at` (timestamptz)
-
-**Given** a user opens the app after registration
-**When** the app shell renders
-**Then** a visible in-app notification states "Your 7-day premium trial is active" — explicit notification as per FR11
-
-**Given** the `TrialExpiryNotificationJob` runs (scheduled daily via Coravel)
-**When** a user's trial expires in 2 days
-**Then** an in-app push notification is sent: "Your premium trial expires in 2 days" — day-5 warning as per FR30
+**Given** the user reaches the onboarding quiz after age gate and policy acceptance
+**When** the quiz screen is shown
+**Then** exactly one question is displayed per screen with full-width tappable option cards (UX-DR27)
+**And** a progress bar is shown at the top with no percentage label
+**And** the user cannot advance without selecting an answer (FR11)
+**And** tapping an option card visually confirms selection and enables a "Continue" CTA
+**And** the final quiz screen submits answers to the backend and transitions to photo upload on success
+**And** all screens use only Warm Dusk tokens — zero hardcoded values
 
 ---
 
-### Story 3.7: First Match Conversation on Onboarding Completion
+### Story 3.7: Photo Upload, Moderation Pending, and Remediation Screens (Frontend)
 
-As a new user who has completed the quiz, uploaded a photo, and set preferences,
-I want to land on an active conversation with my first match immediately after onboarding,
-So that I never face an empty home screen and the product delivers on its first promise.
+As a new user,
+I want to upload my profile photo and receive clear feedback on its moderation status,
+So that I understand what happens to my photo and what to do if it is not accepted.
 
 **Acceptance Criteria:**
 
-**Given** a user completes all onboarding steps (quiz, photo, preferences)
-**When** `POST /api/onboarding/complete` is called
-**Then** `ApplicationUser.IsOnboardingComplete` is set to `true`; `MatchGenerationJob` is triggered immediately (not waiting for the next cron tick)
-
-**Given** `MatchGenerationJob` finds a compatible match
-**When** the match is created
-**Then** a `Match` record is persisted, a `Conversation` is created for the match, and a `MatchAssigned` SignalR event is broadcast to both clients; the mobile client navigates to the conversation
-
-**Given** `MatchGenerationJob` does NOT find a match immediately
-**When** the home screen renders
-**Then** `EmptyMatchState.tsx` is displayed with brand-voice copy: "You have not been forgotten. Your match is being found." — never a generic spinner or blank screen
-
-**Given** `EmptyMatchState.tsx` is implemented
-**When** a match is later assigned
-**Then** a push notification arrives and the app navigates directly to the new conversation — the empty state is replaced immediately
-
-**Given** the app server restarts (VPS reboot, deployment)
-**When** `MatchGenerationJob` initialises at startup
-**Then** an idempotent startup check runs immediately: any onboarding-complete users without an active match are queued for match generation — no user stares at an empty screen indefinitely due to a restart
-
-**Given** `Match` and `Conversation` models are created
-**When** migrations are reviewed
-**Then** `matches` table contains: `id`, `user_a_id`, `user_b_id`, `compatibility_score` (float), `matched_at` (timestamptz), `is_active` (bool); `conversations` table contains: `id`, `match_id` (FK), `message_count` (int default 0), `status` (text: active/archived/reported), `created_at` (timestamptz)
+**Given** the user reaches the photo upload screen
+**When** they select and upload a photo
+**Then** the photo is sent to the backend and a moderation pending state is shown immediately
+**And** the pending state shows a warm photo placeholder with copy "Your photo is being reviewed" — never a blank or error state (UX-DR29)
+**And** on `approved` the user is advanced to the next onboarding step
+**And** on `rejected` a remediation screen is shown with clear, non-alarming guidance and a re-upload CTA (FR34)
+**And** on `needs_review` the pending state persists with a calm holding message; the user is not blocked from completing remaining onboarding steps
+**And** all screens use only Warm Dusk tokens
 
 ---
 
-## Epic 4: Matching Engine
+### Story 3.8: Contextual Location and Notification Permission Flows (Frontend)
 
-The system matches users using a rules-based values-weighted compatibility algorithm (with demographic fallback), delivers curated matches only — no browsing — and tracks invite links per female account.
-
-### Story 4.1: Values-Weighted Compatibility Matching Algorithm
-
-As the matching system,
-I want to score compatibility between users based on their quiz answers,
-So that matches are based on genuine values alignment rather than demographics alone.
+As a new user,
+I want to grant location and notification permissions at the right moment with a clear explanation,
+So that I understand why each permission is needed before the system prompt appears.
 
 **Acceptance Criteria:**
 
-**Given** two users with completed `quiz_answers` in their `UserProfile`
-**When** `MatchService.ComputeCompatibilityScore` runs
-**Then** a deterministic float score between 0.0 and 1.0 is returned based on weighted comparison of quiz answer values — the algorithm is rules-based (not ML)
-
-**Given** the compatibility threshold is read by `MatchService`
-**When** the threshold lookup executes
-**Then** the value is read from `AppSettings` (key: `compatibility_threshold`) — it is NOT hardcoded; the threshold is admin-configurable via the Razor Pages admin UI
-
-**Given** `AppSettings` model is created
-**When** the migration is reviewed
-**Then** table `app_settings` contains: `key` (text, primary key), `value` (text), `updated_at` (timestamptz); seeded with `compatibility_threshold = "0.6"` and `reveal_message_threshold = "100"` in the migration
-
-**Given** `MatchGenerationJob` runs
-**When** an eligible user needs a match
-**Then** the job queries users of the preferred gender within the radius (PostGIS spatial query), computes compatibility scores, and selects the highest-scoring user above the threshold; if multiple users qualify, the highest scorer is selected
-
-**Given** the match is created
-**When** `Match` record is persisted
-**Then** `compatibility_score` is stored; `matched_at` is a UTC `DateTimeOffset`; both `user_a_id` and `user_b_id` are set
+**Given** the user has completed photo upload
+**When** the location permission screen is shown
+**Then** a contextual rationale screen is displayed first explaining why location is needed for matching — before the OS system prompt (FR47, UX-DR28)
+**And** the CTA "Enable location" triggers the OS prompt; "Not now" allows the user to proceed without granting it
+**And** notification permission is not requested during onboarding — it is deferred until after the user receives their first match (UX-DR28)
+**And** permission prompts are always shown individually, never in bulk
+**And** all screens use only Warm Dusk tokens
 
 ---
 
-### Story 4.2: Demographic Fallback Matching
+## Epic 4: Daily Matching & Conversation Entry
 
-As a user in a small geographic area,
-I want to receive a match even when no algorithmically compatible user is available,
-So that I don't wait indefinitely in an empty state because the pool is too small.
+Users receive a daily match opportunity, decide to enter, and arrive at their first conversation with starter prompts that dissolve blank-page anxiety.
 
-**Acceptance Criteria:**
-
-**Given** `MatchGenerationJob` finds no users above the compatibility threshold
-**When** the fallback logic runs
-**Then** demographic matching activates: users within the radius and within the age range preference are candidates; the closest-age user of the preferred gender is selected
-
-**Given** demographic fallback is used
-**When** the match is created
-**Then** `Match.compatibility_score` is set to `0.0` (indicating fallback) to distinguish from algorithm matches; the user-facing experience is identical — no indication of fallback is shown to the user
-
-**Given** no users exist in the demographic fallback pool either
-**When** the job completes
-**Then** the user remains on `EmptyMatchState.tsx`; a message is logged at `Information` level: "No match candidates found for user {UserId} in radius {RadiusKm}" — no PII in the log properties
-
----
-
-### Story 4.3: Match Generation Background Job with Idempotent Startup Check
-
-As a platform operator,
-I want match generation to run on a schedule AND immediately at startup,
-So that users who signed up or were waiting before a VPS restart immediately get a match without waiting for the next cron tick.
-
-**Acceptance Criteria:**
-
-**Given** the API container starts
-**When** the application startup sequence completes
-**Then** `MatchGenerationJob` executes immediately (before accepting HTTP traffic) as an idempotent check — all onboarding-complete users without an active match are queued for match generation
-
-**Given** `MatchGenerationJob` runs (startup or scheduled)
-**When** a user already has an active match
-**Then** the job does NOT create a duplicate match — idempotency check: `WHERE is_active = true AND (user_a_id = {userId} OR user_b_id = {userId})` returns a result → skip
-
-**Given** Coravel is configured in `Program.cs`
-**When** the job schedule is reviewed
-**Then** `MatchGenerationJob` is scheduled to run every N minutes (configurable via `app_settings`) in addition to the startup check
-
-**Given** the VPS restarts during active operations
-**When** `MatchGenerationJob` runs at startup
-**Then** any user who was waiting for their first match before the restart receives a match assignment within 30 seconds of the API container being ready (NFR5)
-
----
-
-### Story 4.4: Geographic Radius Matching with PostGIS
+### Story 4.1: Matching Service and Daily Match Delivery
 
 As a user,
-I want matches to respect my search radius preference,
-So that I only receive matches with people who are realistically meetable.
+I want to receive a new match opportunity once per daily cycle,
+So that I have a focused, quality-first matching experience rather than an overwhelming feed.
 
 **Acceptance Criteria:**
 
-**Given** a user sets their `radius_km` preference
-**When** their location is stored
-**Then** `UserProfile` stores coordinates as a `Point` (PostGIS geometry type) using `NetTopologySuite` — geographic coordinates are stored as `GEOGRAPHY(POINT, 4326)` in the migration
-
-**Given** `MatchService` queries for candidates
-**When** the spatial query executes
-**Then** a PostGIS `ST_DWithin` query filters candidates by the user's `radius_km` — no haversine calculation on raw lat/lng columns; a spatial index is present on the coordinates column
-
-**Given** a user has not provided location
-**When** the matching job runs
-**Then** geographic filtering is skipped and demographic fallback applies; the user sees a prompt to enable location services to improve match quality
-
-**Given** location data is stored
-**When** the `UserProfile` is inspected
-**Then** location is stored as coarse coordinates (not real-time tracking) — location is only updated when the user explicitly updates their radius preference, not on every app open
+**Given** a match-eligible user (onboarding complete, photo approved, location provided)
+**When** the daily match cycle runs
+**Then** a match is generated and delivered to the user stored in `app.*` with status `pending_entry`
+**And** GET `/api/v1/matches/current` returns the current pending match (or empty if none)
+**And** match availability check completes in ≤2 seconds for 95% of requests (NFR4)
+**And** a user has at most one active match at a time within the free tier
+**And** the matching logic uses location proximity as a base filter
+**And** a notification trigger event is emitted when the match is created (consumed by Epic 8)
+**And** if no eligible counterpart is available the response returns an empty match state with a `next_cycle_at` timestamp — never an error
 
 ---
 
-### Story 4.5: Curated Match Display — No Browse Interface
+### Story 4.2: Match Accept / Pass and Conversation Window Activation
 
 As a user,
-I want to see my single curated match without any ability to browse other profiles,
-So that I experience Blinder's no-browse philosophy from day one.
+I want to accept or pass on a presented match, and for the conversation to open only once both users have sent a first message,
+So that both sides enter the conversation willingly and actively.
 
 **Acceptance Criteria:**
 
-**Given** a user has an active match
-**When** `app/(tabs)/match/index.tsx` renders
-**Then** the current match is displayed with minimal information (first name, quiz-derived conversation prompt); there is NO grid of profiles, NO swipe cards, NO "see more people" button, NO search or filter UI anywhere in the app
+**Given** a user has a match in `pending_entry` status
+**When** they POST to `/api/v1/matches/{matchId}/accept`
+**Then** the match transitions to `accepted` on their side
+**And** when the counterpart also accepts the match transitions to `conversation_pending`
 
-**Given** `GET /api/matches/current` is called
-**When** the response is returned
-**Then** the response contains ONLY the current active match's anonymous info (no photo, no full profile); `UserProfile.photo_object_key` is never included in this response — not even as a signed URL
-
-**Given** `EmptyMatchState.tsx` renders
-**When** no active match exists
-**Then** the component displays brand-voice copy "You have not been forgotten. Your match is being found." with the amber `#C8833A` accent visible — never a generic loading spinner for this state (UX-DR22)
+**Given** both users have accepted the match
+**When** both users have each sent their first message (FR15)
+**Then** the conversation window transitions to `active` and the conversation clock and message counter begin
+**And** if only one user sends a first message the conversation remains in `conversation_pending` until the counterpart also sends
+**And** a user who passes via POST `/api/v1/matches/{matchId}/pass` has the match closed; the counterpart is returned to matching eligibility without blame attribution
+**And** all state transitions are server-authoritative and audit-logged (NFR24)
 
 ---
 
-### Story 4.6: Invite Link Generation and Tracking
+### Story 4.3: Starter Prompts Retrieval for Conversation Entry
 
-As a female user,
-I want to generate invite links to share with friends,
-So that I can bring trusted people into the community and Blinder can maintain gender balance.
+As a user,
+I want to retrieve my personalised conversation starter prompts when entering a new conversation,
+So that I have relevant icebreakers ready at the moment I need them most.
 
 **Acceptance Criteria:**
 
-**Given** a female authenticated user calls `POST /api/invites`
-**When** the invite is created
-**Then** a new `InviteLink` record is created with a unique cryptographically random token; the `generated_by_user_id` FK is set to the requesting user
+**Given** a user has an active or pending conversation
+**When** they GET `/api/v1/conversations/{conversationId}/starters`
+**Then** 2–3 starter prompts generated from the user's onboarding quiz are returned (FR17)
+**And** prompts are specific to the authenticated user — the counterpart's prompts are never exposed
+**And** if quiz data is unavailable a set of safe generic prompts is returned — never an empty response
+**And** the endpoint returns 403 if the requesting user is not a participant in the conversation
 
-**Given** an invite link is generated
-**When** the response is returned
-**Then** the response includes the full deep-link URL (`blinder://invite/{token}`) for sharing; the token itself is a minimum 32-character URL-safe random string
+---
 
-**Given** a male user calls `POST /api/invites`
+### Story 4.4: Waiting State Screen (Frontend)
+
+As a user,
+I want to see a calm, purposeful screen when I have no active conversation,
+So that waiting feels like calm anticipation rather than an empty void.
+
+**Acceptance Criteria:**
+
+**Given** the user has no active match or conversation
+**When** the home screen is shown
+**Then** the `WaitingState` component is displayed with a temporal anchor ("Your match arrives daily") — never a blank screen or spinner (UX-DR14)
+**And** the screen shows one of three states: `no_match`, `match_arriving`, `match_ready`
+**And** no competing UI elements are present — single-focus screen with no tab bar (UX-DR20)
+**And** the profile avatar is visible in the top-right corner as a visually interactive tap target
+**And** all elements use only Warm Dusk tokens
+
+---
+
+### Story 4.5: Match Entry Screen (Frontend)
+
+As a user,
+I want to see a warm, dedicated screen when a match is available,
+So that the moment of entering a conversation feels like an invitation, not a notification.
+
+**Acceptance Criteria:**
+
+**Given** a match is available for the user
+**When** the match entry screen is shown
+**Then** the `MatchEntryCard` component is displayed with `BlindAvatar` (lg variant), "Someone is waiting to talk with you", and a single primary CTA "Start conversation" (UX-DR15)
+**And** the card has an animated arrival state (`entering`)
+**And** the notification permission prompt is shown contextually on this screen if not yet granted (UX-DR28)
+**And** the user can pass on the match via a low-prominence text link — not a competing button
+**And** tapping "Start conversation" navigates to the Starter Screen
+**And** all elements use only Warm Dusk tokens
+
+---
+
+### Story 4.6: Starter Screen and First Message Send (Frontend)
+
+As a user,
+I want to see personalised conversation starter prompts before sending my first message,
+So that blank-page anxiety is dissolved and my first send feels natural and low-stakes.
+
+**Acceptance Criteria:**
+
+**Given** the user has entered a new conversation
+**When** the Starter Screen is shown
+**Then** 2–3 `StarterCard` components are displayed with prompts from the backend (UX-DR13)
+**And** the `BlindAvatar` (sm) and a placeholder name are shown in the conversation header
+**And** tapping a StarterCard auto-populates the message input and focuses it with the prompt text (StarterCard `selected` state)
+**And** the user can also type their own message freely
+**And** sending the first message transitions the screen to the active `ConversationScreen`
+**And** the Starter Screen is shown only before the first message is sent — subsequent opens go directly to the conversation
+**And** all elements use only Warm Dusk tokens
+
+
+---
+
+## Epic 5: Blind Conversation
+
+Users can exchange messages in the blind phase with a distraction-free experience, report or block when needed, and the app handles connectivity loss gracefully.
+
+### Story 5.1: Messaging API — Send, Receive, and Conversation History
+
+As a user,
+I want to send and receive messages in the blind phase with reliable delivery,
+So that my conversation feels responsive and nothing I send is silently lost.
+
+**Acceptance Criteria:**
+
+**Given** an authenticated user with an active conversation
+**When** they POST a message to `/api/v1/conversations/{conversationId}/messages`
+**Then** the message is persisted in `app.*` with sender ID, timestamp, and conversation ID
+**And** 95% of message send acknowledgements are returned in ≤2.5 seconds (NFR2)
+**And** the endpoint is idempotent — submitting the same client-generated message ID twice returns the existing message, not a duplicate (NFR12)
+**And** GET `/api/v1/conversations/{conversationId}/messages` returns paginated message history for participants only
+**And** the endpoint returns 403 if the requesting user is not a participant
+**And** messages are stored in `app.*` — media attachments are out of scope for the blind phase
+**And** all message events are audit-logged with correlation IDs (NFR24)
+
+---
+
+### Story 5.2: SignalR Real-Time Conversation Updates
+
+As a user,
+I want to receive new messages in near-real-time without polling,
+So that the conversation feels live and responsive.
+
+**Acceptance Criteria:**
+
+**Given** a user is connected to the SignalR hub at `/hubs/conversation`
+**When** the counterpart sends a message
+**Then** the SignalR hub pushes a `MessageReceived` event to the recipient's connection
+**And** SignalR is not the sole source of truth — on reconnect or restart GET `/api/v1/conversations/{conversationId}/messages` returns the complete authoritative history
+**And** a notification trigger event is emitted on new message (consumed by Epic 8 for push when recipient is offline)
+**And** the SignalR hub requires a valid bearer token; unauthenticated connections are rejected
+**And** hub connection failures degrade gracefully — the client falls back to polling without data loss
+
+---
+
+### Story 5.3: Conversation Limits Enforcement
+
+As the system,
+I want to enforce the maximum number of active concurrent conversations per user tier,
+So that free-tier users are limited as configured and premium users get expanded capacity.
+
+**Acceptance Criteria:**
+
+**Given** a user attempts to accept a new match
+**When** they already have the maximum allowed active conversations for their tier
+**Then** the accept endpoint returns 409 with a Problem Details response indicating the capacity limit
+**And** the limit threshold is configurable per tier in `app.*` settings (free tier default: 1 active conversation)
+**And** a completed, expired, or abandoned conversation releases the slot immediately
+**And** premium tier limits are enforced using subscription status stored in `app.*` (populated by Epic 10)
+
+---
+
+### Story 5.4: Report and Block Endpoints
+
+As a user,
+I want to report harmful behaviour or block another user,
+So that I can protect myself quickly without high friction.
+
+**Acceptance Criteria:**
+
+**Given** an authenticated user POSTs to `/api/v1/conversations/{conversationId}/report`
 **When** the request is processed
-**Then** HTTP 403 Forbidden is returned — only female users can generate invite links
+**Then** a report record is created in `app.*` with reporter ID, reported user ID, conversation ID, reason, and timestamp
+**And** the report is audit-logged (NFR24, NFR25)
+**And** the reported user is not notified of the report
 
-**Given** an invite link is used during female registration
-**When** registration completes
-**Then** `InviteLink.used_by_user_id` is updated to the new user's ID and `used_at` timestamptz is recorded — the link cannot be reused
-
-**Given** the admin gender ratio dashboard is viewed
-**When** invite usage data is queried
-**Then** invite lineage (who invited whom) is traceable via `InviteLink.generated_by_user_id` and `used_by_user_id` FKs
-
----
-
-## Epic 5: Real-Time Chat
-
-A matched user can send and receive real-time text messages via SignalR, view their conversation list with message counts, and receive push notifications for all key events.
-
-### Story 5.1: SignalR Chat Hub and Real-Time Messaging
-
-As a matched user,
-I want to send and receive messages in real time,
-So that conversations feel natural and immediate.
-
-**Acceptance Criteria:**
-
-**Given** two matched users both have the mobile app open
-**When** one user sends a message via `POST /api/conversations/{id}/messages`
-**Then** the message is persisted to the `messages` table AND a `ReceiveMessage` SignalR event is broadcast to the other user's connected client within 500ms (NFR1)
-
-**Given** `Hubs/ChatHub.cs` is implemented
-**When** the hub method is reviewed
-**Then** the SignalR hub lives at `/hubs/chat`; hub method names are PascalCase matching exactly on client: `ReceiveMessage`, `RevealStateUpdated`, `MatchAssigned`
-
-**Given** `signalrService.ts` is implemented on the mobile client
-**When** the connection is inspected
-**Then** it is a singleton — never instantiated per-component; connection lifecycle (start, stop, reconnect) is managed entirely within `signalrService.ts`; components subscribe via `useConversation` hook only
-
-**Given** the chat UI renders in `app/(tabs)/conversations/[id].tsx`
-**When** the interface is inspected
-**Then** it uses a WhatsApp-conventional layout (sender right, receiver left, timestamps below bubbles); there is NO profile photo visible anywhere in the chat interface — the conversation is photo-free until reveal
-
-**Given** `Message` model is created
-**When** the migration is reviewed
-**Then** table `messages` contains: `id`, `conversation_id` (FK), `sender_id` (FK → `users`), `body` (text), `sent_at` (timestamptz); index on `conversation_id`
-
-**Given** the backend sends a message
-**When** `Message` is mapped to `MessageResponse` DTO
-**Then** all mapping goes through `ConversationMapper` (Mapperly `[Mapper]` partial class) — no manual `new MessageResponse { ... }` construction
+**Given** an authenticated user POSTs to `/api/v1/users/{userId}/block`
+**When** the request is processed
+**Then** the block record is stored in `app.*`
+**And** any active conversation between the users is terminated immediately with a neutral closure state
+**And** the blocked user cannot be matched with the blocking user again
+**And** both endpoints enforce rate limiting to prevent abuse
 
 ---
 
-### Story 5.2: Conversation List with Message Counts
+### Story 5.5: Blind Conversation Screen (Frontend)
 
 As a user,
-I want to see all my active conversations with their message counts,
-So that I can track conversation depth and stay aware of my progress toward the reveal threshold.
+I want a clean, distraction-free conversation screen focused entirely on the message exchange,
+So that I can be fully absorbed in the conversation without UI competing for attention.
 
 **Acceptance Criteria:**
 
-**Given** an authenticated user calls `GET /api/conversations`
-**When** the response is returned
-**Then** all active conversations are listed with: conversation ID, matched user's first name, `message_count`, `last_message_preview` (first 50 chars), `last_message_at`; conversations are sorted by most recent activity
-
-**Given** `app/(tabs)/conversations/index.tsx` renders
-**When** conversations are displayed
-**Then** each conversation card shows the matched user's name and message count; the reveal threshold progress is subtly indicated (e.g., "42 / 100 messages") — no urgency framing, presented as progress not countdown
-
-**Given** a new message is sent in any conversation
-**When** `Conversation.message_count` is updated
-**Then** the increment is atomic (SQL `UPDATE conversations SET message_count = message_count + 1`) — no race condition from concurrent messages; the conversation list refreshes via SignalR push or on next poll
+**Given** the user has an active conversation
+**When** the Conversation Screen is shown
+**Then** the `ConversationBubble` component renders sent messages (primary colour, right-aligned) and received messages (surface colour, left-aligned) with timestamps (UX-DR7)
+**And** the `BlindAvatar` (sm) is shown in the conversation header — warm and dignified, never resembling a broken image (UX-DR6)
+**And** navigation chrome is hidden — full-bleed conversation screen (UX-DR20)
+**And** the message input is single-line, expands to 4 lines max, and the send button activates only when content is present (opacity change, not disabled state)
+**And** optimistic UI is used — sent bubbles appear immediately in `sending` state, confirmed on server acknowledgement, shown in `failed` state with retry action if delivery fails
+**And** the screen recovers correctly after app restart — message history loads from the API
+**And** no typing indicators are shown; all elements use only Warm Dusk tokens
 
 ---
 
-### Story 5.3: Active Conversation Limit Enforcement (Free Tier)
-
-As a free-tier user,
-I want the app to enforce the 3-conversation limit,
-So that I understand the freemium model and see a clear upgrade path when I need more.
-
-**Acceptance Criteria:**
-
-**Given** a free-tier user has 3 active conversations
-**When** the matching job attempts to assign a new match
-**Then** the new match is NOT created; the user does NOT receive a new conversation; the existing 3 remain active
-
-**Given** a free-tier user reaches their conversation limit
-**When** they open the match screen
-**Then** an in-app upgrade prompt is displayed (FR31): "You've reached your free limit of 3 conversations. Upgrade to continue."
-
-**Given** a premium user exists
-**When** the active conversation limit is checked
-**Then** the premium limit (defined in `app_settings` as `premium_max_conversations`, default 10) applies instead of the free limit of 3
-
-**Given** a free-tier user's conversation ends (both parties move on post-reveal)
-**When** the conversation status changes to `archived`
-**Then** the active conversation count decrements and the user is eligible for a new match
-
----
-
-### Story 5.4: Push Notifications for Chat Events
+### Story 5.6: Report and Block UI (Frontend)
 
 As a user,
-I want push notifications for new messages, new matches, and reveal events,
-So that I stay engaged with my conversations even when the app is in the background.
+I want to report or block someone from the conversation header in one tap,
+So that I can exit an unsafe or unwanted interaction quickly and without friction.
 
 **Acceptance Criteria:**
 
-**Given** a user logs in or re-authenticates on a mobile device
-**When** the app calls `POST /api/account/device-token`
-**Then** the device's raw native token (from `getDevicePushTokenAsync()`, NOT `getExpoPushTokenAsync()`) is stored in `DeviceTokens` with `user_id`, `token`, `platform` (Android/iOS), `created_at`
-
-**Given** a new message arrives in a conversation
-**When** the message is persisted
-**Then** `SendPushNotificationJob` is queued via Coravel with the recipient's device tokens; FCM (Android via `FirebaseAdmin`) or APNs (iOS via `dotAPNS`) delivers the notification within 60 seconds (NFR28)
-
-**Given** `SendPushNotificationJob` receives an FCM `registration-token-not-registered` error
-**When** the error is handled
-**Then** the stale token is deleted from `DeviceTokens` immediately — the table never accumulates dead tokens
-
-**Given** the following events occur
-**When** a user is not actively viewing the relevant screen
-**Then** push notifications are sent: new match assigned, incoming message, match has opted into reveal, mutual reveal confirmed, premium trial expiring (day 5)
-
-**Given** `DeviceToken` model is created
-**When** the migration is reviewed
-**Then** table `device_tokens` contains: `id`, `user_id` (FK, indexed), `token` (text, unique), `platform` (text: Android/iOS), `created_at` (timestamptz)
+**Given** the user is on the Conversation Screen
+**When** they tap the ⋯ menu in the conversation header
+**Then** "Report" and "Block" options are accessible — never more than one tap from the conversation (UX-DR32)
+**And** tapping "Block" shows a Dialog confirmation before executing
+**And** tapping "Report" goes to a brief reason selection screen
+**And** after confirming block the conversation ends immediately and the user sees a neutral closure screen
+**And** after submitting a report a dedicated confirmation screen is shown ("Our team will review this") — not a toast (UX-DR30)
+**And** both actions navigate the user to the Waiting Screen
+**And** copy never assigns blame or implies the user did something wrong (UX-DR33)
 
 ---
 
-## Epic 6: Mutual Photo Reveal
+### Story 5.7: Offline Blocked State (Frontend)
 
-A user can express reveal readiness after reaching the 100-message threshold, and when both parties independently opt in, both photos are delivered simultaneously via a real-time SignalR broadcast — with the full emotional UX arc.
-
-### Story 6.1: Reveal Readiness Flag and Message Threshold Gate
-
-As a user in a conversation,
-I want to see the reveal option appear quietly after 100 messages,
-So that I can choose to share my photo when I feel genuinely ready — not pressured by a countdown.
+As a user,
+I want the app to clearly communicate when I am offline and block write actions,
+So that I never lose a message or submit an action that cannot be completed.
 
 **Acceptance Criteria:**
 
-**Given** `RevealState` model is created
-**When** the migration is reviewed
-**Then** table `reveal_states` contains: `id`, `conversation_id` (FK, unique), `user_a_reveal_ready` (bool, default false), `user_b_reveal_ready` (bool, default false), `user_a_ready_at` (timestamptz, nullable), `user_b_ready_at` (timestamptz, nullable); `RevealState` is created alongside each `Conversation`
-
-**Given** `app_settings` is seeded
-**When** the `reveal_message_threshold` key is checked
-**Then** value is `"100"` — admin-configurable; this is the default initial value decided by the product owner
-
-**Given** a conversation's `message_count` reaches the threshold value from `app_settings`
-**When** `GET /api/conversations/{id}/reveal-state` is called
-**Then** `isThresholdMet: true` is returned; `RevealPrompt.tsx` renders in the chat interface as a quiet, non-intrusive affordance — NOT a push notification, NOT a modal interrupt
-
-**Given** `RevealPrompt.tsx` renders
-**When** the component is inspected
-**Then** copy reads "The reveal is available when you're both ready."; "Not yet" option is visually equal weight to "I'm ready" — no dark pattern nudging toward readiness; the component appears below the message input, not as an overlay
-
-**Given** a conversation has fewer than `reveal_message_threshold` messages
-**When** `GET /api/conversations/{id}/reveal-state` is called
-**Then** `isThresholdMet: false` is returned; `RevealPrompt.tsx` does NOT render — no indication of threshold proximity is shown
+**Given** the user's device loses connectivity
+**When** the connection is lost
+**Then** the `OfflineBlocker` component appears as a full-screen overlay within ≤2 seconds (NFR14, UX-DR12)
+**And** the overlay is calm and non-alarming — no retry button, reconnection is automatic
+**And** all write actions (send message, gate decision, match accept) are blocked while offline
+**And** when connectivity is restored the overlay fades out (`restored` state) and the app resumes without data loss
+**And** the offline state is communicated in plain language accessible to screen readers (NFR20)
 
 ---
 
-### Story 6.2: Mutual Reveal Confirmation and Signed Photo URL Delivery
+## Epic 6: Decision Gate & Reveal
 
-As a user who has expressed reveal readiness,
-I want my photo to only be delivered when my match has also independently opted in,
-So that no photo is ever seen without full bilateral consent.
+**Goal:** Implement the dual-trigger decision gate, private simultaneous decisioning, reveal ceremony, and all outcome branches — the core differentiating mechanic of Blinder.
 
-**Acceptance Criteria:**
-
-**Given** a user taps "I'm ready" in `RevealPrompt.tsx`
-**When** `POST /api/conversations/{id}/reveal-ready` is called
-**Then** the calling user's `reveal_ready` flag (`user_a_reveal_ready` or `user_b_reveal_ready`) is set to `true` and `*_ready_at` timestamptz is recorded; the OTHER user's flag is NOT changed and NOT visible to the first user
-
-**Given** only one user has set their flag
-**When** either user calls `GET /api/conversations/{id}/reveal-state`
-**Then** the response only shows the calling user's OWN readiness flag — the other party's flag is NEVER exposed until both are true
-
-**Given** both users have set their `reveal_ready` flags to `true`
-**When** `RevealService.GetRevealPhotoUrls` is called
-**Then** time-limited signed URLs (1-hour expiry) for BOTH parties' photos are generated via `S3ClientFactory`; URL generation is gated: if either flag is `false`, signed URLs are NOT generated and a 403 is returned
-
-**Given** signed URLs are generated
-**When** the photo is retrieved by the mobile client
-**Then** the URL expires after 1 hour; the client must request a fresh signed URL on each reveal screen open; no public S3 URL is ever returned
+**FRs covered:** FR19, FR20, FR21, FR22, FR23, FR24, FR25, FR26, FR46, FR50
 
 ---
 
-### Story 6.3: Real-Time Simultaneous Reveal Broadcast via SignalR
+### Story 6.1 — Backend: Decision Gate State Machine — Dual-Trigger Detection
 
-As both users in a conversation,
-I want to receive the reveal moment simultaneously when we both opt in,
-So that the emotional experience is a shared discovery rather than an asynchronous notification check.
+**As a** backend system,
+**I want** to detect when a conversation crosses the dual-trigger threshold (time-floor AND message-count),
+**so that** the gate is unlocked at the right moment without relying on client signals.
 
 **Acceptance Criteria:**
 
-**Given** the second user sets their `reveal_ready` flag (completing mutual readiness)
-**When** `RevealService` detects both flags are `true`
-**Then** a `RevealStateUpdated` event is broadcast via `IHubContext<ChatHub>` to BOTH connected clients simultaneously — not just the second user
+- AC1: A background service or domain event evaluates each active conversation against both triggers: time-floor (configurable, default 24h from first message) AND message-threshold (configurable, default 10 messages).
+- AC2: The gate unlocks only when both conditions are simultaneously met — neither condition alone is sufficient.
+- AC3: Gate unlock is idempotent — if evaluated multiple times, the conversation transitions to `gate_open` state exactly once (NFR12).
+- AC4: The trigger reason (time_floor_met, message_threshold_met, both) is stored on the conversation record and retrievable via GET `/api/conversations/{id}`.
+- AC5: A GET `/api/conversations/{id}` response includes `gateState` (locked | open | submitted | resolved) and `triggerReason` (null when locked; populated on unlock).
+- AC6: Unit tests cover: both conditions met → unlock; only time met → no unlock; only message count met → no unlock; repeated evaluation → no double-unlock.
+- AC7: Integration test: seed conversation with exact threshold values → verify single state transition with correct triggerReason.
 
-**Given** `RevealStateUpdated` is received by the mobile client
-**When** `useRevealState` hook processes the event
-**Then** the client immediately navigates to `RevealMoment.tsx` without requiring a manual app open or page refresh
-
-**Given** one or both users are NOT currently connected to SignalR (app backgrounded)
-**When** mutual reveal is confirmed
-**Then** a push notification is sent to the backgrounded user(s) via `SendPushNotificationJob`: "Mutual reveal confirmed — open Blinder to see your match"; on app open, the reveal state is fetched and `RevealMoment.tsx` renders
-
-**Given** the `RevealStateUpdated` SignalR event payload is defined in `types/signalr/index.ts`
-**When** the type is reviewed
-**Then** it contains `conversationId`, `revealReady: true`, and does NOT include photo URLs (those are fetched via REST after receiving the event)
+**Technical Notes:**
+- FR19 (time-floor trigger), FR20 (message-count trigger), FR46 (configurable thresholds).
+- Gate state lives in `app.conversations` schema, owned by Blinder.Api.
+- No client-side trigger — server-side only evaluation.
 
 ---
 
-### Story 6.4: Reveal Moment — Full UX Experience
+### Story 6.2 — Backend: Private Simultaneous Decision Submission and Resolution
 
-As a user experiencing a mutual reveal,
-I want the reveal to feel like a meaningful, emotionally appropriate moment,
-So that the product delivers on its core promise: a shared discovery that honours the courage it took to get here.
+**As a** user,
+**I want** to submit my gate decision privately,
+**so that** my choice is never revealed to the other person unless the outcome is mutual reveal.
 
 **Acceptance Criteria:**
 
-**Given** `RevealMoment.tsx` receives both signed photo URLs
-**When** the component mounts
-**Then** the screen is full-screen with no UI chrome (no back button, no tab bar, no navigation header); background is `#0F0D0B`; amber `#C8833A` accent is visible at the reveal moment (UX-DR2 amber bookend)
+- AC1: `POST /api/conversations/{id}/gate-decision` accepts `{ decision: "reveal" | "continue" | "abandon" }` and requires the conversation to be in `gate_open` state; returns 409 if already submitted by this user.
+- AC2: Decisions are stored privately — neither user can query the other's decision before resolution.
+- AC3: Resolution triggers when both users have submitted decisions; the full branch matrix is enforced:
+  - both `reveal` → `mutual_reveal`
+  - one `reveal` + one `continue` → `continued`
+  - both `continue` → `continued`
+  - either `abandon` → `ended_anonymized`
+  - timeout (configurable, default 72h after gate open) → `expired`
+- AC4: Resolution is atomic and idempotent (NFR12 exactly-once gate action). Concurrent submissions from both users do not produce double-resolution.
+- AC5: GET `/api/conversations/{id}` returns `gateState: "resolved"` and `outcome` (mutual_reveal | continued | ended_anonymized | expired) after resolution; no decision details of the other party are ever exposed.
+- AC6: A SignalR `GateOutcome` event is broadcast to both participants on resolution with `{ outcome, conversationId }`.
+- AC7: Unit tests cover all 5 outcome branches. Integration test: two concurrent decision submissions → single resolution with correct outcome.
 
-**Given** `RevealMoment.tsx` plays the reveal animation
-**When** `reduceMotion` is `false`
-**Then** photos appear with a 600–800ms motion treatment; after the animation completes, 1–2 seconds of space pass before any interactive element appears; copy reads "[Name] — there they are."
-
-**Given** `reduceMotion` is `true` (from `AccessibilityContext`)
-**When** the reveal animation runs
-**Then** photos appear via opacity fade only — no motion-based transition fires
-
-**Given** the continuation gate renders after the reveal
-**When** both users are asked "Would you like to keep talking?"
-**Then** each user answers independently; "Yes" and "Move on" are both present; the asymmetric outcome (one yes, one no) is NEVER shown to either party — both see only "This chapter is complete. Ready to begin another?"
-
-**Given** `RevealCountdown.tsx` renders while one user is waiting (flag set, other not yet)
-**When** the component is inspected
-**Then** copy reads "You've indicated you're ready. Waiting for them."; there is NO countdown timer, NO read receipt indicator, NO signal to the other party that this user is ready
-
-**Given** the consent gate pattern is applied
-**When** "I'm ready" and "Not yet" buttons are rendered at any consent decision point
-**Then** both options have visually equal weight (same size, same prominence) — no dark pattern and the "Not yet" option is never styled as secondary/grey/dismissive
+**Technical Notes:**
+- FR21 (private decisioning), FR22 (simultaneous resolution), FR24 (non-mutual handling), FR25 (abandon → anonymized), FR50 (outcome states).
+- NFR3: gate action complete in ≤3s end-to-end.
+- NFR12: exactly-once resolution — use optimistic concurrency or DB transaction with row lock.
 
 ---
 
-### Story 6.5: Premium Reveal Threshold Customization
+### Story 6.3 — Backend: Mutual Reveal — Profile Access and Conversation History Persistence
 
-As a premium user,
-I want to lower my personal reveal readiness threshold,
-So that I can express readiness at fewer messages — while my match's independent consent remains mandatory.
+**As a** system,
+**I want** to unlock full profile access (including photos) only on mutual reveal outcome,
+**so that** photos are never accessible before both parties consent (NFR7).
 
 **Acceptance Criteria:**
 
-**Given** a premium user's subscription status is active
-**When** `RevealService.GetEffectiveThreshold` is called for this user
-**Then** the premium threshold (from `app_settings` key `premium_reveal_threshold`, default `"50"`) is used for THIS user's side only — the other party's threshold is always the standard `reveal_message_threshold` regardless of the premium user's setting
+- AC1: On `mutual_reveal` outcome, server grants read access to both users' photos stored in MinIO private bucket — access is scoped to the matched pair only.
+- AC2: Photo URLs returned from GET `/api/users/{id}/profile` (when requesting mutual match) are signed MinIO pre-signed URLs with configurable TTL (default 1h); URL generation fails with 403 if conversation is not in `mutual_reveal` state.
+- AC3: Full conversation history remains accessible after reveal — no message pruning on state transition.
+- AC4: GET `/api/conversations/{id}/history` returns all messages regardless of gate state (messages are not deleted on resolution).
+- AC5: Attempting to access another user's photo without `mutual_reveal` state returns 403 with RFC 9457 Problem Details body.
+- AC6: Integration tests: mutual_reveal state → photo URL generation succeeds; non-mutual state → 403; conversation history intact post-reveal.
 
-**Given** a premium user reaches their lower threshold (e.g., 50 messages)
-**When** the reveal affordance check runs
-**Then** `RevealPrompt.tsx` becomes available for the premium user; the other user still sees no reveal option until THEY reach THEIR own threshold (100 messages by default)
-
-**Given** the other party is NOT premium and has NOT reached their threshold
-**When** the premium user sets their `reveal_ready` flag
-**Then** mutual reveal does NOT trigger — both flags must be `true` regardless of threshold; the premium user sees `RevealCountdown.tsx` (waiting state)
+**Technical Notes:**
+- FR23 (mutual reveal profile access).
+- NFR7: zero pre-reveal photo access — enforced server-side, not relying on client.
+- MinIO private bucket; no public URLs ever generated for user photos.
 
 ---
 
-## Epic 7: Subscriptions & Premium
+### Story 6.4 — Backend: Inactive Conversation Expiry and Neutral State Cleanup
 
-A user can subscribe via Apple IAP or Google Play Billing, access premium features, receive trial expiry notifications, and see upgrade prompts at free-tier limits.
-
-### Story 7.1: IAP Webhook JWT Verification Spike
-
-As a developer,
-I want to implement and verify JWT signature verification for both Apple and Google IAP webhooks before writing any subscription business logic,
-So that fake webhook payloads cannot be used to fraudulently unlock premium features (OWASP A01).
+**As a** system,
+**I want** to expire conversations that stall at the gate without resolution,
+**so that** stale gate-open conversations are cleaned up gracefully without blaming either party.
 
 **Acceptance Criteria:**
 
-**Given** an Apple AppStore Server Notification arrives at `POST /api/subscriptions/apple-webhook`
-**When** the controller processes the request
-**Then** the signed JWT payload is verified against Apple's JWKS endpoint (`https://appleid.apple.com/auth/keys`) using `Microsoft.IdentityModel.Tokens`; `iss` claim equals `"https://appleid.apple.com"`; `bundle_id` claim matches the app's bundle ID
+- AC1: A background job scans conversations in `gate_open` state older than the configurable expiry threshold (default 72h after gate open) and transitions them to `expired`.
+- AC2: Expiry is neutral — no information about whether either party submitted a decision is exposed to either user.
+- AC3: Expired conversations surface the copy "This conversation has ended" (neutral, non-judgmental) when fetched via GET `/api/conversations/{id}`.
+- AC4: Expiry job is idempotent — running multiple times on the same conversation does not change state after first expiry.
+- AC5: A SignalR `ConversationExpired` event is broadcast to active participants when expiry fires.
+- AC6: Integration test: seed gate_open conversation past threshold → verify expired state + neutral copy + SignalR event emitted.
 
-**Given** Apple JWKS keys are fetched
-**When** subsequent webhook requests arrive
-**Then** JWKS keys are cached with a 24-hour TTL — the JWKS endpoint is NOT called per-request
-
-**Given** a Google Play Real-Time Developer Notification arrives at `POST /api/subscriptions/google-webhook`
-**When** the controller processes the request
-**Then** the JWT in the `Authorization: Bearer` header is verified against Google's JWKS endpoint; `iss` and `aud` claims are validated against the expected service account and package name
-
-**Given** `appsettings.Testing.json` is reviewed
-**When** `Subscriptions:SkipWebhookVerification` is present
-**Then** it is `true` only in the test environment; production `appsettings.json` does NOT contain this key
-
-**Given** the API starts in production
-**When** the startup assertions run
-**Then** if `Subscriptions:SkipWebhookVerification` is `true` AND the environment is not `Testing`, startup fails with a clear error: "IAP webhook verification bypass is not permitted in production"
+**Technical Notes:**
+- FR26 (inactive expiry), FR50 (outcome states).
+- Copy string "This conversation has ended" is the canonical neutral ending text — do not vary wording.
 
 ---
 
-### Story 7.2: Apple In-App Purchase Subscription Integration
+### Story 6.5 — Frontend: Full-Screen Decision Gate
 
-As a premium iOS subscriber,
-I want to purchase a Blinder premium subscription via Apple In-App Purchase,
-So that my subscription is processed through the App Store with full Apple billing compliance.
+**As a** user,
+**I want** a full-screen decision gate UI when the conversation gate opens,
+**so that** I can make my choice deliberately without feeling rushed.
 
 **Acceptance Criteria:**
 
-**Given** an Apple subscription purchase completes on the mobile client (StoreKit)
-**When** a `SUBSCRIBED` AppStore Server Notification arrives at the verified webhook endpoint
-**Then** `SubscriptionService` updates the user's `Subscription` record: `plan: "premium"`, `status: "active"`, `platform: "Apple"`
+- AC1: When `gateState === "open"`, the ConversationScreen surfaces the full-screen gate overlay using `GateOptionCard` components for each of the three choices: Reveal, Continue, Abandon.
+- AC2: All three `GateOptionCard` components are equal weight — same size, same visual prominence. No option is visually preferred over another (NFR28 — no urgency UI).
+- AC3: The Reveal option uses `color.reveal` (`#D4A85A`) token exclusively. Continue and Abandon use standard Warm Dusk tokens. No countdown timer or progress indicator is shown.
+- AC4: Selecting an option shows a confirmation dialog ("Are you sure?") before submitting — prevents accidental taps.
+- AC5: On confirmation, the app calls `POST /api/conversations/{id}/gate-decision` and transitions to the ResolutionWait screen (Story 6.6).
+- AC6: If the user has already submitted (API returns 409), the screen shows the ResolutionWait screen directly without re-prompting.
+- AC7: TypeScript strict mode; all props typed; no `any`.
 
-**Given** an Apple subscription renews
-**When** a `DID_RENEW` notification arrives
-**Then** the `Subscription` record's `status` remains `active`; expiry date is updated
-
-**Given** an Apple subscription is cancelled or expires
-**When** the corresponding notification arrives
-**Then** `Subscription.status` is set to `expired`; the user's premium features are downgraded to free tier limits on their next API call
-
-**Given** raw webhook processing occurs
-**When** `Subscription` data is persisted
-**Then** no raw card data is ever stored — all payment data handling is delegated to Apple (PCI DSS compliance, NFR14)
+**Technical Notes:**
+- FR21 (private decisioning), FR46 (gate UX).
+- `GateOptionCard` component from UX spec.
+- NFR28: no urgency UI — no countdown, no "decide before X" copy.
+- `color.reveal` (`#D4A85A`) must not be used for any purpose other than the Reveal option.
 
 ---
 
-### Story 7.3: Google Play Billing Subscription Integration
+### Story 6.6 — Frontend: Resolution Wait Screen
 
-As a premium Android subscriber,
-I want to purchase a Blinder premium subscription via Google Play Billing,
-So that my subscription is processed through Google Play with full billing compliance.
+**As a** user,
+**I want** to see a waiting state after submitting my gate decision,
+**so that** I understand the system is waiting for the other person without anxiety-inducing UI.
 
 **Acceptance Criteria:**
 
-**Given** a Google Play subscription purchase completes on the mobile client
-**When** a verified Google Play Real-Time Developer Notification arrives
-**Then** `SubscriptionService` updates the user's `Subscription` record: `plan: "premium"`, `status: "active"`, `platform: "Google"`
+- AC1: After decision submission, the app navigates to the ResolutionWait screen using the `ResolutionWait` component from the UX spec.
+- AC2: The screen shows a calm, non-anxious waiting state — no countdown, no "they haven't decided yet" copy, no urgency language (NFR28).
+- AC3: The app subscribes to the SignalR `GateOutcome` event; on receipt, it navigates to the appropriate screen:
+  - `mutual_reveal` → Reveal Ceremony screen (Story 6.7)
+  - `continued` → ConversationScreen (normal chat resumed)
+  - `ended_anonymized` → Outcome screen (Story 6.8)
+  - `expired` → Outcome screen (Story 6.8)
+- AC4: Fallback polling: if SignalR is disconnected, the app polls GET `/api/conversations/{id}` every 15s to check for resolution. On reconnect, polling stops.
+- AC5: The `OfflineBlocker` overlay is shown if network is unavailable (NFR14 — offline state detected within ≤2s).
+- AC6: TypeScript strict mode; all props typed; no `any`.
 
-**Given** a Google Play subscription renewal or cancellation event arrives
-**When** the webhook is processed
-**Then** `Subscription.status` is updated accordingly within 60 seconds of the platform event (NFR27)
-
-**Given** both Apple and Google webhooks can update the same user's subscription
-**When** the `SubscriptionService` processes either
-**Then** the `platform` field correctly identifies the billing source; no cross-platform subscription conflict occurs
+**Technical Notes:**
+- FR22 (simultaneous resolution UX).
+- `ResolutionWait` component from UX spec.
+- SignalR primary; REST polling fallback pattern consistent with Epic 3.
 
 ---
 
-### Story 7.4: Premium Feature Gating and Increased Limits
+### Story 6.7 — Frontend: Reveal Ceremony Screen
 
-As a premium user,
-I want my premium subscription to unlock increased match and conversation limits,
-So that I can have more simultaneous conversations and matches than the free tier allows.
+**As a** user,
+**I want** a meaningful reveal animation when a mutual reveal outcome occurs,
+**so that** seeing the other person's photo for the first time feels special and intentional.
 
 **Acceptance Criteria:**
 
-**Given** a user's `SubscriptionService.IsPremium` returns `true`
-**When** active conversation limit is checked
-**Then** the premium limit (from `app_settings` key `premium_max_conversations`, default 10) is applied — not the free tier limit of 3
+- AC1: On `mutual_reveal` outcome, the app navigates to the Reveal Ceremony screen using the `RevealTransition` component cycling through states: `waiting → animating → revealed`.
+- AC2: The `RevealTransition` animation uses `color.reveal` (`#D4A85A`) as the accent color. The animation respects `prefers-reduced-motion` — if set, the transition skips animation and jumps directly to `revealed` state.
+- AC3: The `revealed` state renders the `RevealedProfileView` component showing the other person's full profile (photo + name + details).
+- AC4: The screen includes a prominent CTA to view the full conversation history (GET `/api/conversations/{id}/history`).
+- AC5: A back gesture or hardware back button on this screen is disabled — users cannot navigate back to the waiting screen.
+- AC6: TypeScript strict mode; all props typed; no `any`.
 
-**Given** a user's subscription expires
-**When** `SubscriptionService.IsPremium` returns `false`
-**Then** the user's active conversation count is compared to the free limit (3); if they exceed it, existing conversations are NOT deleted — they are preserved but no NEW conversations are created until the count drops to ≤3
-
-**Given** a premium check is performed on any feature-gated endpoint
-**When** subscription state is read
-**Then** it reads from the `subscriptions` table in real time — it is NOT cached in memory in a way that persists stale state across subscription changes
+**Technical Notes:**
+- FR23 (reveal ceremony UX).
+- `RevealTransition` and `RevealedProfileView` components from UX spec.
+- `color.reveal` exclusive to reveal; must not appear in any other context on this screen.
+- `prefers-reduced-motion` via React Native `AccessibilityInfo.isReduceMotionEnabled()`.
 
 ---
 
-### Story 7.5: Trial Expiry Notifications
+### Story 6.8 — Frontend: Non-Mutual Ending and Outcome Screen
 
-As a user whose premium trial is ending,
-I want to receive a notification before my trial expires,
-So that I can decide whether to subscribe before losing premium access.
+**As a** user,
+**I want** a respectful, neutral outcome screen when the gate does not result in mutual reveal,
+**so that** a non-mutual ending feels dignified and not shame-inducing.
 
 **Acceptance Criteria:**
 
-**Given** `TrialExpiryNotificationJob` runs daily via Coravel
-**When** the job executes
-**Then** all users with `subscriptions.plan = "trial"` AND `trial_expires_at` between now and now + 48 hours are identified; a push notification is sent: "Your premium trial expires in 2 days — upgrade to keep your benefits"
+- AC1: For `ended_anonymized` or `expired` outcomes (non-reveal terminal endings), the app navigates to the `OutcomeScreen` component using the acceptance variant styling.
+- AC2: The screen uses only neutral, non-blaming vocabulary — per UX vocabulary rules, no copy that implies rejection, failure, or suggests who chose what. Copy example: "This conversation has reached its conclusion."
+- AC3: No back navigation is possible from the OutcomeScreen — the back gesture and hardware back button are both disabled.
+- AC4: For `continued` outcome, the OutcomeScreen is NOT shown — the app returns directly to ConversationScreen (normal chat resumes). This screen is only for terminal endings.
+- AC5: The OutcomeScreen provides a CTA to return to the Discover screen (start a new conversation).
+- AC6: TypeScript strict mode; all props typed; no `any`.
 
-**Given** a user's trial has expired
-**When** `TrialExpiryNotificationJob` runs
-**Then** `Subscription.status` is set to `expired` and `plan` to `free`; the user's next API request reflects free-tier limits
-
-**Given** a push notification is sent by `TrialExpiryNotificationJob`
-**When** the job fires
-**Then** it uses `SendPushNotificationJob` via Coravel fire-and-forget — it does NOT await the push response synchronously
+**Technical Notes:**
+- FR24 (non-mutual handling), FR25 (abandon → anonymized), FR50 (outcome states).
+- `OutcomeScreen` component from UX spec.
+- Vocabulary rules: no "rejected", "unmatched", "ghosted" — neutral language only.
+- No `color.reveal` on this screen.
 
 ---
 
-### Story 7.6: Free Tier Limit Upgrade Prompts
+## Epic 7: Safety Operations & Moderation Admin
 
-As a free-tier user who has hit their limits,
-I want to see an in-app upgrade prompt when I reach my conversation or match limit,
-So that I understand my options and can easily upgrade.
+**Goal:** Give users the ability to report and block other users, and give admins the tools to action moderation reports — keeping Blinder safe while preserving user dignity.
 
-**Acceptance Criteria:**
-
-**Given** a free-tier user has 3 active conversations and a new match would be assigned
-**When** the match assignment is blocked
-**Then** an in-app notification is queued: "You've reached your free limit of 3 conversations. Upgrade to Blinder Premium for more."
-
-**Given** the upgrade prompt appears
-**When** the user taps it
-**Then** they are directed to the subscription purchase screen (Apple StoreKit / Google Play Billing); the web subscription path is NOT promoted from within the iOS app (Apple anti-steering compliance)
-
-**Given** a free-tier user's active conversation count drops below 3 (post-reveal, conversation archived)
-**When** the next match assignment runs
-**Then** the new match is assigned without requiring any user action — no stale blocked state
+**FRs covered:** FR32, FR33
 
 ---
 
-## Epic 8: Safety & Content Moderation
+### Story 7.1 — Backend: User Report and Block API
 
-A user can report a conversation with one tap and receive immediate acknowledgement and follow-up. Text messages are auto-flagged for harassment. A moderator can review reports, apply actions, and reports immediately suspend reveal capability.
-
-### Story 8.1: Automated Text Message Flagging
-
-As a platform operator,
-I want the system to automatically flag messages containing harassment patterns or explicit solicitation,
-So that moderators are alerted to potential violations without relying solely on user reports.
+**As a** user,
+**I want** to report or block another user,
+**so that** I can protect myself from harmful interactions.
 
 **Acceptance Criteria:**
 
-**Given** a message is submitted via `POST /api/conversations/{id}/messages`
-**When** the message body is evaluated
-**Then** a text flagging check runs against a configurable pattern list (stored in `app_settings` as a JSON array of regex patterns); flagged messages are still delivered to the recipient but a `Report` record is created automatically with `reason: "auto_flagged"` and the triggering pattern logged
+- AC1: `POST /api/users/{id}/report` accepts `{ reason: string, details?: string }` and creates a moderation report record in `app.*` schema; returns 201 with report ID.
+- AC2: `POST /api/users/{id}/block` creates a block record; blocked users can no longer send messages to the blocking user and cannot appear in the blocker's Discover feed.
+- AC3: Both endpoints are idempotent on repeated submission (duplicate report creates new record; duplicate block returns 200 without creating duplicate).
+- AC4: A GET `/api/moderation/reports` admin endpoint (requires admin role claim from IdentityServer) returns paginated list of open reports with `{ reportId, reporterId, reportedUserId, reason, details, status, createdAt }`.
+- AC5: `PATCH /api/moderation/reports/{id}` accepts `{ status: "reviewed" | "actioned" | "dismissed", adminNotes?: string }` and updates the report.
+- AC6: Rate limiting: max 5 reports per user per hour (NFR rate limiting).
+- AC7: Unit tests cover: report creation, block creation, duplicate block idempotency, admin list pagination. Integration test: report → admin list → patch status.
 
-**Given** an auto-flagged message creates a `Report`
-**When** the moderator queue is reviewed
-**Then** the auto-flagged report appears in the queue alongside user-submitted reports, clearly labelled as "Auto-flagged"
-
-**Given** the flagging pattern list is updated via the admin settings UI
-**When** a new regex pattern is saved to `app_settings`
-**Then** new messages are evaluated against the updated pattern list within one application restart — no code deployment required
+**Technical Notes:**
+- FR32 (report/block), FR33 (moderation admin tools).
+- Admin role claim must originate from IdentityServer — Blinder.Api validates the claim from the JWT; no admin auth logic in Api itself.
+- `app.moderation_reports` and `app.user_blocks` tables in `app.*` schema.
 
 ---
 
-### Story 8.2: One-Tap Reporting with Immediate Acknowledgement
+### Story 7.2 — Backend: Content Moderation — Message Flagging
 
-As a user who encounters harmful behaviour,
-I want to report it with a single tap and receive immediate acknowledgement,
-So that I feel heard and safe without friction between the decision to report and the action.
+**As a** system,
+**I want** to automatically flag messages that match predefined patterns,
+**so that** moderators have signal without requiring a user report.
 
 **Acceptance Criteria:**
 
-**Given** `ReportButton.tsx` renders in `app/(tabs)/conversations/[id].tsx`
-**When** the chat header is inspected
-**Then** the report icon is always visible in the header — never buried in a settings menu; `accessibilityRole="button"`, `accessibilityLabel="Report this conversation"` are present; defined once in `components/moderation/ReportButton.tsx` — NOT reimplemented inline
+- AC1: Incoming messages (POST `/api/conversations/{id}/messages`) are evaluated against a configurable blocklist (stored in DB, admin-manageable); matched messages are stored with `flagged: true` and a flag reason.
+- AC2: Flagged messages are still delivered (not blocked) but appear in the admin moderation queue.
+- AC3: A GET `/api/moderation/flagged-messages` admin endpoint returns paginated flagged messages with `{ messageId, conversationId, senderId, content, flagReason, flaggedAt }`.
+- AC4: `PATCH /api/moderation/flagged-messages/{id}` accepts `{ action: "clear" | "warn_user" | "suspend_user" }` and applies the action.
+- AC5: Blocklist entries are manageable via `POST/DELETE /api/moderation/blocklist` (admin only).
+- AC6: Unit tests cover: message flagging on match, clean message passes through, admin list, patch action.
 
-**Given** the user taps the report button
-**When** the report type selection sheet opens
-**Then** categories are: Explicit content / Harassment / Impersonation / Other; optional context text field is present but NOT required — the submit button is enabled without it
-
-**Given** the user submits a report
-**When** `POST /api/moderation/reports` is called
-**Then** a `Report` record is created with `reporter_id`, `reported_user_id`, `conversation_id`, `reason`, `created_at`; the reported user's `RevealState` flags are set to suspended (both flags reset, conversation's `reveal_suspended: true`); an immediate 200 response with acknowledgement copy is returned
-
-**Given** the acknowledgement screen renders
-**When** the response is displayed
-**Then** copy reads: "We've received your report. You are safe here."; a `BlockConfirmation.tsx` modal offers the option to block the reported user — defined once in `components/moderation/BlockConfirmation.tsx`
-
-**Given** the `Report` model is created
-**When** the migration is reviewed
-**Then** table `reports` contains: `id`, `reporter_id` (FK → `users`), `reported_user_id` (FK → `users`), `conversation_id` (FK), `reason` (text), `context` (text, nullable), `status` (text: pending/reviewed/actioned), `created_at` (timestamptz)
+**Technical Notes:**
+- FR33 (moderation tools).
+- Blocklist evaluation is synchronous on message ingestion — keep it fast (simple string/regex match, not ML).
+- `app.message_flags` and `app.moderation_blocklist` tables.
 
 ---
 
-### Story 8.3: Reveal Suspension on Report Submission
+### Story 7.3 — Frontend: Report and Block User Flow
 
-As a reporting user,
-I want the reported user's reveal capability to be immediately suspended when I submit a report,
-So that a potentially harmful user cannot proceed to a reveal while their report is under review.
+**As a** user,
+**I want** to report or block another user from within the app,
+**so that** I can take protective action without leaving the conversation.
 
 **Acceptance Criteria:**
 
-**Given** a report is submitted via `POST /api/moderation/reports`
-**When** the report is persisted
-**Then** `RevealState.reveal_suspended` is set to `true` for the conversation; `RevealService.GetRevealPhotoUrls` for this conversation returns 403 until the suspension is lifted
+- AC1: A "Report / Block" option is accessible from the conversation header menu (three-dot menu or equivalent) on the ConversationScreen.
+- AC2: Selecting "Report" opens a bottom sheet with a list of reason options (harassment, inappropriate content, spam, other) plus an optional free-text details field.
+- AC3: On submission, the app calls `POST /api/users/{id}/report` and shows a confirmation toast ("Your report has been submitted").
+- AC4: Selecting "Block" shows a confirmation dialog ("Block this person? They won't be able to contact you.") before calling `POST /api/users/{id}/block`.
+- AC5: After a successful block, the conversation is removed from the active conversations list and the user is navigated to the Discover screen.
+- AC6: All Warm Dusk tokens used; no `color.reveal` on this flow. TypeScript strict mode; all props typed; no `any`.
 
-**Given** `RevealState` is updated to add `reveal_suspended`
-**When** the migration is reviewed
-**Then** `reveal_states.reveal_suspended` (bool, default false) column exists; existing rows default to `false`
-
-**Given** a moderator reviews the report and finds no violation
-**When** the moderation action is applied
-**Then** `reveal_suspended` is set back to `false` for the conversation; both users can continue to the reveal if they were both ready
+**Technical Notes:**
+- FR32 (user-facing report/block).
+- Uses standard bottom sheet and toast patterns established in Epic 3/4.
 
 ---
 
-### Story 8.4: Moderator Reports Queue and Admin Review Interface
+## Epic 8: Push Notifications
 
-As a moderator,
-I want to see a queue of pending reports with automated screening signals,
-So that I can efficiently review and action cases with full context.
+**Goal:** Deliver timely, meaningful push notifications for messages, gate events, and match updates — without being intrusive or waking users for low-priority events.
 
-**Acceptance Criteria:**
-
-**Given** a moderator is authenticated on the Razor Pages admin (`/admin/reports`)
-**When** the reports queue page loads
-**Then** all `Report` records with `status: "pending"` are listed with: reporter info (anonymised), reported user info, report reason, conversation message excerpt, auto-scan signals (text flagging matches, if any), `created_at`
-
-**Given** the moderator opens a specific report
-**When** the report detail page renders
-**Then** the full conversation transcript is displayed; automated screening signals are shown (text flag patterns matched); the reported user's account age and prior moderation history is visible
-
-**Given** the admin reports page exists
-**When** `/admin/reports` is accessed without a valid admin cookie session
-**Then** a redirect to the admin login page occurs — Razor Pages cookie auth is enforced; the Nginx IP allowlist also blocks access from non-allowlisted IPs
+**FRs covered:** FR35, FR36, FR37, FR38, FR39
 
 ---
 
-### Story 8.5: Moderator Actions — Warn, Reveal Suspend, and Ban
+### Story 8.1 — Backend: Push Notification Service and Device Token Registration
 
-As a moderator,
-I want to apply proportional moderation actions to reported users,
-So that violations are addressed consistently and with full audit trail.
+**As a** system,
+**I want** to store and manage push notification device tokens per user,
+**so that** I can deliver notifications to the correct device.
 
 **Acceptance Criteria:**
 
-**Given** a moderator reviews a report and clicks "Warn"
-**When** `POST /admin/moderation/actions` is called
-**Then** a `ModerationAction` record is created with `action_type: "warning"`, `moderator_id`, `report_id`, `notes`, `actioned_at`; the reported user receives an in-app notification: "Your account has received a warning for [reason]"; `Report.status` is updated to `"actioned"`
+- AC1: `POST /api/users/me/push-tokens` accepts `{ token: string, platform: "ios" | "android" }` and upserts the device token for the authenticated user; returns 200.
+- AC2: `DELETE /api/users/me/push-tokens/{token}` removes a specific token (e.g., on logout).
+- AC3: A notification dispatch service (internal, not exposed externally) accepts `{ userId, type, payload }` and looks up the user's active tokens, then dispatches to APNs (iOS) or FCM (Android) accordingly.
+- AC4: Dispatch failures (invalid token, expired token) are handled gracefully — invalid tokens are automatically removed from the DB; transient failures are retried up to 3 times with exponential backoff.
+- AC5: Unit tests cover: token upsert, token deletion, dispatch with valid token, dispatch with expired token (auto-removal), retry logic.
 
-**Given** a moderator applies a reveal suspension
-**When** the action is saved
-**Then** `ModerationAction` is created with `action_type: "reveal_suspended"`; the user's reveal capability is suspended across ALL their conversations (not just the reported one) for the suspension period
-
-**Given** a moderator applies a permanent ban
-**When** the action is saved
-**Then** `ModerationAction` is created with `action_type: "banned"`; `ApplicationUser.LockoutEnd` is set to `DateTimeOffset.MaxValue` (permanent lockout via ASP.NET Core Identity); all active conversations for the banned user are archived; the banned user's JWT becomes invalid on next request
-
-**Given** `ModerationAction` model is created
-**When** the migration is reviewed
-**Then** table `moderation_actions` contains: `id`, `report_id` (FK), `moderator_id` (FK → `users`), `action_type` (text), `notes` (text, nullable), `actioned_at` (timestamptz); all rows are APPEND-ONLY — no updates or deletes permitted on this table
+**Technical Notes:**
+- FR35 (push notification infrastructure).
+- `app.push_tokens` table. APNs and FCM credentials stored as environment config (never hardcoded).
+- Notification dispatch is fire-and-forget from the API perspective — does not block the originating request.
 
 ---
 
-### Story 8.6: Follow-Up Notification to Reporting User
+### Story 8.2 — Backend: Notification Triggers — Messages, Gate, and Match Events
 
-As a user who submitted a report,
-I want to receive a follow-up notification after the moderator has reviewed my report,
-So that I know my report was taken seriously and actioned.
+**As a** system,
+**I want** to send push notifications when key events occur,
+**so that** users are informed without needing to keep the app open.
 
 **Acceptance Criteria:**
 
-**Given** a moderator actions a report (any action type)
-**When** the moderation action is saved
-**Then** `SendModeratorAlertJob` (renamed for reporter notification context: `SendReportFollowUpJob`) is queued via Coravel to notify the reporter
+- AC1: New message received (while recipient is not active in the conversation) → send "New message" notification with conversation ID in payload.
+- AC2: Gate unlocks (`gate_open` transition) → send "Your conversation has reached a milestone" notification to both participants.
+- AC3: Gate resolution → send outcome-appropriate notification:
+  - `mutual_reveal` → "It's a match! See who you've been talking to."
+  - `continued` → "Your conversation continues."
+  - `ended_anonymized` / `expired` → "This conversation has ended." (neutral copy, no blame)
+- AC4: New starter card assigned (new conversation available in Discover) → send "Someone wants to talk" notification.
+- AC5: All notification copy follows the vocabulary rules (no "rejected", "unmatched", urgency language).
+- AC6: Notifications are not sent if the user has the app in the foreground and is actively viewing the relevant screen (presence-aware suppression via SignalR connection state).
+- AC7: Unit tests cover all 5 trigger types. Integration test: message sent → notification dispatched.
 
-**Given** `SendReportFollowUpJob` executes
-**When** the notification is sent
-**Then** the reporting user receives an in-app push notification: "We've reviewed your report and taken action. Thank you for helping keep Blinder safe."; no detail about WHAT action was taken is disclosed to the reporter
-
-**Given** the report resolution notification is sent
-**When** the `Report` record is reviewed
-**Then** `Report.status` is `"actioned"` and `actioned_at` timestamptz is set
+**Technical Notes:**
+- FR36 (message notifications), FR37 (gate notifications), FR38 (match notifications), FR39 (discover notifications).
+- Presence-aware suppression: if the user has an active SignalR connection scoped to the relevant conversation, suppress the push notification.
 
 ---
 
-## Epic 9: Analytics, Compliance & GDPR
+### Story 8.3 — Backend: User Notification Preferences
 
-An operator can view a near-real-time gender ratio dashboard. Users can request data export and deletion. All moderation actions are in tamper-evident audit logs. Reveal initiation, confirmation, and abandonment are tracked as distinct DB-stored events.
-
-### Story 9.1: Gender Ratio Dashboard
-
-As a platform operator,
-I want a near-real-time gender ratio dashboard,
-So that I can immediately intervene if the gender balance falls outside the 40–60% safe zone before it degrades user experience.
+**As a** user,
+**I want** to control which notifications I receive,
+**so that** I can manage my attention without being overwhelmed.
 
 **Acceptance Criteria:**
 
-**Given** an authenticated admin accesses `/admin/dashboard`
-**When** the gender ratio panel renders
-**Then** it shows: total registered users, female count, male count, non-binary count, female % and male % with a visual indicator; data is at most 5 minutes stale
+- AC1: `GET /api/users/me/notification-preferences` returns current preferences: `{ messages: bool, gateEvents: bool, matchEvents: bool, discoverEvents: bool }`.
+- AC2: `PATCH /api/users/me/notification-preferences` accepts partial update and persists preferences.
+- AC3: Notification dispatch respects user preferences — if `gateEvents: false`, no gate-related push is sent regardless of event type.
+- AC4: Default preferences on account creation: all `true`.
+- AC5: Unit tests cover: get preferences, patch partial, dispatch respects disabled preference.
 
-**Given** the female percentage drops below 40% or male percentage drops below 40%
-**When** the dashboard renders
-**Then** a prominent warning indicator is displayed: "⚠️ Gender ratio outside safe zone — immediate action required"
-
-**Given** invite link usage is queried
-**When** the dashboard shows invite funnel data
-**Then** invite send count, invite acceptance rate, and invite conversion (accepted → registered) are shown — enabling supply-side control via invite management
+**Technical Notes:**
+- FR35 (notification preferences).
+- `app.user_notification_preferences` table.
 
 ---
 
-### Story 9.2: Tamper-Evident Moderation Audit Log
+### Story 8.4 — Frontend: Push Token Registration and Notification Permission
 
-As a legal compliance officer,
-I want all moderation actions to be recorded in a tamper-evident log,
-So that Blinder can demonstrate legal defensibility for every moderation decision for a minimum of 2 years.
+**As a** user,
+**I want** the app to request notification permission at the right moment,
+**so that** I can opt in without being prompted too early.
 
 **Acceptance Criteria:**
 
-**Given** any moderation action is applied (warn, suspend, ban)
-**When** `ModerationAction` is written
-**Then** the record is append-only: no UPDATE or DELETE SQL operations are permitted on `moderation_actions`; EF Core is configured with `ToTable` + no-update/delete conventions for this entity
+- AC1: The app requests notification permission (via Expo `Notifications.requestPermissionsAsync()`) after the user completes onboarding (first successful profile save), not at app launch.
+- AC2: If permission is granted, the app retrieves the Expo push token and calls `POST /api/users/me/push-tokens` to register it.
+- AC3: If permission is denied, the app gracefully degrades — no error shown; the user can still use the app without notifications.
+- AC4: On logout, the app calls `DELETE /api/users/me/push-tokens/{token}` to deregister the current device token.
+- AC5: Token registration is retried once on network failure; subsequent failure is silently swallowed (non-critical path).
+- AC6: TypeScript strict mode; all props typed; no `any`.
 
-**Given** an account deletion (`DELETE /api/account`) runs
-**When** the purge cascade executes
-**Then** `ModerationAction` records where the deleted user is the subject are NOT deleted — they are retained for 2 years from `actioned_at` (NFR12); `reported_user_id` FK is nullified / anonymised but the action record persists
-
-**Given** the admin audit log page renders at `/admin/moderation/audit-log`
-**When** an admin views the log
-**Then** all moderation actions are listed with: `actioned_at` (timestamptz), `action_type`, moderator identifier (hashed), `report_id`, `notes` — the log is read-only in the UI; no edit or delete controls exist
-
-**Given** the 2-year retention window passes for an action record
-**When** a scheduled cleanup job runs
-**Then** `ModerationAction` records older than 2 years (based on `actioned_at`) are eligible for purge — a `ModerationLogRetentionJob` (Coravel, daily schedule) deletes only records beyond the retention window
+**Technical Notes:**
+- FR35 (device token registration).
+- Expo `expo-notifications` package. Uses Expo push token (not raw APNs/FCM token) for simplicity.
 
 ---
 
-### Story 9.3: GDPR Personal Data Export
+### Story 8.5 — Frontend: Notification Deep-Link Routing
 
-As a user exercising my GDPR right of access,
-I want to request and receive a complete export of all my personal data,
-So that I can see exactly what Blinder holds about me.
+**As a** user,
+**I want** tapping a notification to take me directly to the relevant screen,
+**so that** I don't have to navigate manually after being notified.
 
 **Acceptance Criteria:**
 
-**Given** an authenticated user calls `POST /api/account/data-export`
-**When** the request is received
-**Then** an export job is queued; HTTP 202 Accepted is returned immediately with a message: "Your data export is being prepared. You'll receive a notification when it's ready."
+- AC1: Incoming notifications carry a `type` and `conversationId` (or `screenTarget`) payload.
+- AC2: Tapping a "New message" notification navigates to `ConversationScreen` for that conversation ID.
+- AC3: Tapping a gate or match notification navigates to the appropriate screen (ResolutionWait, Reveal Ceremony, or Outcome screen) based on current conversation state fetched on tap.
+- AC4: Tapping a Discover notification navigates to the Discover screen.
+- AC5: If the app is cold-started from a notification, the navigation state is correctly initialized (deep link handled on startup via Expo Router).
+- AC6: If the target conversation no longer exists (e.g., deleted), the app navigates to the Discover screen with no error crash.
+- AC7: TypeScript strict mode; all props typed; no `any`.
 
-**Given** the export job completes
-**When** the export package is prepared
-**Then** a ZIP file is created containing: `profile.json` (quiz answers, preferences, registration date), `messages.json` (all sent messages with timestamps), `matches.json` (match history), `subscription.json` (subscription history); NO photos are included in the export — a signed URL to download the photo is included instead
-
-**Given** the export ZIP is generated
-**When** the user is notified
-**Then** a push notification arrives: "Your data export is ready. Download it in your profile settings." The download link is a signed URL valid for 24 hours.
-
-**Given** a user is not authenticated
-**When** `POST /api/account/data-export` is called
-**Then** HTTP 401 Unauthorized is returned — data exports require authentication
+**Technical Notes:**
+- FR36–FR39 (notification deep-linking).
+- Expo Router handles deep links via notification response listener (`Notifications.addNotificationResponseReceivedListener`).
+- Navigation state machine must handle cold-start and foreground-tap cases.
 
 ---
 
-### Story 9.4: GDPR Right to Erasure
+## Epic 9: Admin, Support & Operations Panel
 
-As a user exercising my GDPR right to erasure,
-I want requesting account deletion to permanently purge all my personal data within the required retention window,
-So that Blinder fully complies with GDPR Article 17.
+**Goal:** Give internal admins a web-based panel to manage users, review content, handle support actions, and oversee platform operations — built on Blinder.AdminPanel.
+
+**FRs covered:** FR40, FR41, FR51, FR52
+
+---
+
+### Story 9.1 — Backend: Admin User Management API
+
+**As an** admin,
+**I want** API endpoints to view, search, suspend, and delete user accounts,
+**so that** I can manage the user base without direct DB access.
 
 **Acceptance Criteria:**
 
-**Given** an authenticated user calls `DELETE /api/account`
-**When** the deletion orchestrator runs (Story 2.6)
-**Then** all personal data (profile, quiz answers, messages, conversations, photos, device tokens, subscription records) is permanently deleted within the deletion request; `DeletedAt` is recorded for the erasure event in an anonymised compliance log
+- AC1: `GET /api/admin/users` returns paginated user list with search by email/displayName; requires admin role claim from IdentityServer JWT.
+- AC2: `GET /api/admin/users/{id}` returns full user profile including account status (`active | suspended | deleted`), registration date, last active, report count.
+- AC3: `PATCH /api/admin/users/{id}` accepts `{ status: "suspended" | "active" }` with optional `reason` and applies the change; suspended users receive 403 on all authenticated endpoints.
+- AC4: `DELETE /api/admin/users/{id}` soft-deletes the account — anonymizes PII fields, retains record for audit; returns 204.
+- AC5: All admin actions are written to an `app.admin_audit_log` table with `{ adminId, action, targetId, reason, timestamp }`.
+- AC6: Unit tests cover: list/search, get, patch status, soft-delete, audit log entry. Integration test: suspend user → user gets 403 on next API call.
 
-**Given** the deletion is complete
-**When** a compliance audit is performed
-**Then** a `DataErasureLog` record exists with: `erased_at` (timestamptz), `data_categories_erased` (JSON array), `retention_window_complied` (bool) — this record contains NO PII; it records the fact of erasure only
+**Technical Notes:**
+- FR40 (user management), FR51 (account deletion/suspension).
+- Admin role claim from IdentityServer — Blinder.Api never issues admin tokens itself.
+- Soft-delete: anonymize `email`, `displayName`, `photos`; retain `userId` and timestamps for audit integrity.
 
-**Given** `DataErasureLog` model is created
-**When** the migration is reviewed
-**Then** table `data_erasure_log` contains: `id`, `erased_at` (timestamptz), `categories_erased` (jsonb), `moderation_records_retained` (bool), `created_at` (timestamptz)
+---
 
-**Given** a user deletes their account and then attempts to re-register with the same email
-**When** the registration attempt is made
-**Then** the registration is permitted — the deleted account's email is no longer in the system; no ghost record blocks re-registration
+### Story 9.2 — Backend: Admin Platform Configuration API
 
+**As an** admin,
+**I want** API endpoints to manage platform-level configuration at runtime,
+**so that** I can tune thresholds and feature flags without redeployment.
+
+**Acceptance Criteria:**
+
+- AC1: `GET /api/admin/config` returns current platform config: `{ gateLockDuration: int (hours), messageThreshold: int, gateTimeoutDuration: int (hours), conversationExpiryDuration: int (hours), maxActiveConversations: int }`.
+- AC2: `PATCH /api/admin/config` accepts partial update and persists changes; new values take effect on next evaluation cycle (no restart required).
+- AC3: Config changes are written to `app.admin_audit_log`.
+- AC4: Invalid values (e.g., negative durations, zero thresholds) return 422 with RFC 9457 Problem Details.
+- AC5: Unit tests cover: get config, valid patch, invalid patch → 422, audit log entry.
+
+**Technical Notes:**
+- FR52 (platform config), FR46 (configurable thresholds).
+- Config stored in `app.platform_config` table (single-row keyed config). Application reads config on each evaluation cycle, not cached indefinitely.
+
+---
+
+### Story 9.3 — Backend: Admin Support — Conversation and Message Inspection
+
+**As an** admin,
+**I want** to inspect any conversation and its messages,
+**so that** I can investigate reports and support tickets.
+
+**Acceptance Criteria:**
+
+- AC1: `GET /api/admin/conversations` returns paginated list with filters: `{ userId?, status?, reportedOnly? }`.
+- AC2: `GET /api/admin/conversations/{id}` returns full conversation metadata including both participant IDs, gate state, outcome, and message count.
+- AC3: `GET /api/admin/conversations/{id}/messages` returns full message history (admin bypasses gate state restrictions).
+- AC4: Admin message inspection access is logged to `app.admin_audit_log`.
+- AC5: Unit tests cover: list with filters, get conversation, get messages, audit log.
+
+**Technical Notes:**
+- FR41 (support tooling), FR33 (moderation).
+- Admin endpoints are in Blinder.Api (not AdminPanel) — AdminPanel is the UI that calls these APIs.
+
+---
+
+### Story 9.4 — Frontend (AdminPanel): User Management UI
+
+**As an** admin,
+**I want** a web UI to search, view, suspend, and delete users,
+**so that** I can perform user management without using API tools directly.
+
+**Acceptance Criteria:**
+
+- AC1: AdminPanel is a Razor Pages or Blazor Server web app within `Blinder.AdminPanel` project; accessible only via Traefik after authenticating with IdentityServer (admin role required).
+- AC2: A Users page shows a searchable/paginated table: columns = displayName, email, status, registrationDate, reportCount.
+- AC3: Clicking a user opens a detail view with full profile, status change controls (Suspend / Reactivate), and a Delete (soft) button with confirmation dialog.
+- AC4: Suspension and deletion actions call the corresponding Blinder.Api admin endpoints and refresh the view on success.
+- AC5: All admin actions show a confirmation dialog before executing.
+- AC6: Unauthorized access (non-admin token) redirects to IdentityServer login.
+
+**Technical Notes:**
+- FR40, FR51.
+- AdminPanel authenticates via IdentityServer Authorization Code flow (server-side, no PKCE needed for server web app).
+- No custom CSS framework required — use Bootstrap or ASP.NET default styling; this is an internal tool.
+
+---
+
+### Story 9.5 — Frontend (AdminPanel): Moderation Queue and Platform Config UI
+
+**As an** admin,
+**I want** a web UI to review the moderation queue and adjust platform configuration,
+**so that** I can keep the platform safe and tune behavior at runtime.
+
+**Acceptance Criteria:**
+
+- AC1: A Moderation page shows two tabs: "Reports" (user-submitted reports) and "Flagged Messages" (auto-flagged).
+- AC2: Each report row shows: reporter, reported user, reason, status; clicking opens detail with action buttons (Reviewed / Actioned / Dismissed).
+- AC3: Each flagged message row shows: sender, conversation, content preview, flag reason; clicking opens detail with action buttons (Clear / Warn User / Suspend User).
+- AC4: A Platform Config page shows current config values as editable fields; a Save button calls `PATCH /api/admin/config` and shows success/error feedback.
+- AC5: Blocklist management: a simple list of blocked terms with add/remove controls calling `POST/DELETE /api/moderation/blocklist`.
+- AC6: Unauthorized access redirects to IdentityServer login.
+
+**Technical Notes:**
+- FR33, FR52.
+- Shares the same AdminPanel auth session as Story 9.4.
+
+---
+
+## Epic 10: Monetization & Conversation Capacity
+
+**Goal:** Implement the freemium conversation slot model — free users get a limited number of active conversations; premium users unlock expanded capacity — with in-app purchase flows on both platforms.
+
+**FRs covered:** FR48, FR49
+
+---
+
+### Story 10.1 — Backend: Conversation Capacity Enforcement
+
+**As a** system,
+**I want** to enforce per-user active conversation limits based on their tier,
+**so that** free users are capped and premium users get expanded capacity.
+
+**Acceptance Criteria:**
+
+- AC1: When a new starter card is about to be assigned to a user, the system checks the user's current active conversation count against their tier limit.
+- AC2: Free tier limit is configurable via platform config (default: 3 active conversations). Premium tier limit is configurable (default: unlimited / 999).
+- AC3: If the user is at their limit, no new starter card is assigned; the user is not notified of missed matches (no urgency signal).
+- AC4: `GET /api/users/me/capacity` returns `{ tier: "free" | "premium", activeConversations: int, limit: int }`.
+- AC5: Unit tests cover: free user at limit → no new assignment; free user under limit → assignment proceeds; premium user → always proceeds.
+
+**Technical Notes:**
+- FR48 (conversation slot limits).
+- Tier determination based on a `tier` field on the user record in `app.users`. Premium is set server-side after purchase verification — never trusted from the client.
+
+---
+
+### Story 10.2 — Backend: In-App Purchase Verification and Premium Upgrade
+
+**As a** user,
+**I want** my in-app purchase to be verified server-side and my account upgraded,
+**so that** premium access is securely granted.
+
+**Acceptance Criteria:**
+
+- AC1: `POST /api/users/me/purchase/verify` accepts `{ platform: "ios" | "android", receiptData: string, productId: string }` and validates the receipt with Apple App Store / Google Play server-side verification APIs.
+- AC2: On successful verification, the user's `tier` is updated to `premium` and a purchase record is written to `app.purchases` with `{ userId, platform, productId, transactionId, verifiedAt }`.
+- AC3: On failed verification (invalid receipt, already used, expired), returns 422 with RFC 9457 Problem Details; tier is not changed.
+- AC4: Purchase verification is idempotent — re-submitting the same `transactionId` returns 200 without creating a duplicate record or double-upgrading.
+- AC5: `GET /api/users/me/subscription` returns `{ tier, premiumSince?, expiresAt? }`.
+- AC6: Unit tests cover: valid receipt → upgrade; invalid receipt → 422; duplicate transactionId → idempotent. Integration test (mocked store API): full verify flow.
+
+**Technical Notes:**
+- FR49 (in-app purchase).
+- Apple and Google store API credentials in environment config. Never trust client-reported purchase status — always verify server-side.
+- Initial launch may be one-time purchase (lifetime premium) rather than subscription — productId-based, configurable.
+
+---
+
+### Story 10.3 — Frontend: Conversation Capacity Indicator and Upgrade Prompt
+
+**As a** user,
+**I want** to see how many conversation slots I have left and be offered an upgrade when I'm at the limit,
+**so that** I understand the freemium model without feeling trapped.
+
+**Acceptance Criteria:**
+
+- AC1: The Discover screen displays the user's current capacity usage (e.g., "2 of 3 conversations active") fetched from `GET /api/users/me/capacity`.
+- AC2: When the user reaches their limit, the Discover screen shows a non-blocking upgrade prompt (not a modal wall) — a banner or card offering premium upgrade.
+- AC3: The upgrade prompt uses neutral, value-positive language ("Unlock more conversations") — no scarcity or urgency language.
+- AC4: Tapping the upgrade prompt opens the Upgrade screen (Story 10.4).
+- AC5: Premium users see no capacity indicator or upgrade prompt — the feature is invisible to them.
+- AC6: TypeScript strict mode; all props typed; no `any`. All Warm Dusk tokens.
+
+**Technical Notes:**
+- FR48 (capacity display), FR49 (upgrade entry point).
+- Capacity data is fetched on Discover screen focus (not cached across navigation).
+
+---
+
+### Story 10.4 — Frontend: In-App Purchase Flow
+
+**As a** user,
+**I want** to purchase premium access through the native store,
+**so that** I can unlock more conversations without leaving the app.
+
+**Acceptance Criteria:**
+
+- AC1: The Upgrade screen displays the premium product with price (fetched from the native store via `expo-iap` or `react-native-iap`), feature list, and a single purchase CTA.
+- AC2: Tapping the CTA triggers the native store purchase sheet (Apple Sheet / Google Play billing).
+- AC3: On successful native purchase, the app calls `POST /api/users/me/purchase/verify` with the receipt; on server confirmation, the UI updates to show premium status and the capacity indicator disappears from Discover.
+- AC4: On purchase failure or cancellation, the app shows a neutral dismissible error ("Purchase was not completed") and returns to the Upgrade screen. No state change occurs.
+- AC5: Restore Purchases button is present (required for App Store compliance) — calls the native restore flow and re-verifies with the server.
+- AC6: TypeScript strict mode; all props typed; no `any`. All Warm Dusk tokens.
+
+**Technical Notes:**
+- FR49 (IAP flow).
+- App Store requires a restore purchases mechanism — failure to include it will cause App Store rejection.
+- `expo-iap` preferred for Expo SDK 55 compatibility; fallback to `react-native-iap` if not compatible.
+
+---
+
+## Epic 11: Product Quality Telemetry & Safety Pulse
+
+**Goal:** Instrument the platform with the metrics, error tracking, and safety signal monitoring needed to operate Blinder confidently in production — covering both technical health and product quality signals.
+
+**FRs covered:** FR42, FR43, FR44, FR53
+
+---
+
+### Story 11.1 — Backend: Structured Logging and Error Tracking
+
+**As a** system,
+**I want** all backend services to emit structured logs and report unhandled errors to a centralized sink,
+**so that** on-call engineers can diagnose issues quickly.
+
+**Acceptance Criteria:**
+
+- AC1: All three backend projects (Blinder.IdentityServer, Blinder.Api, Blinder.AdminPanel) use structured logging via Serilog with JSON output format.
+- AC2: Log entries include: `timestamp`, `level`, `service` (identityserver | api | adminpanel), `traceId`, `userId` (when available, never PII like email), `message`, `exception` (if applicable).
+- AC3: Unhandled exceptions are caught by a global middleware and logged at `Error` level with full stack trace; the response returns RFC 9457 Problem Details with a `traceId` reference.
+- AC4: Log sink is configurable via environment variable (`LOG_SINK`: stdout | seq | file); default is stdout for Docker compatibility.
+- AC5: No PII (email, display name, photo URLs) appears in log output — only opaque IDs.
+- AC6: Unit test: global exception middleware returns RFC 9457 with traceId; log output contains traceId but not PII.
+
+**Technical Notes:**
+- FR42 (error tracking), FR44 (structured logging).
+- `traceId` correlates across IdentityServer and Api using `Activity.Current.TraceId` (W3C trace context).
+- Seq is the preferred local dev sink (runs in Docker Compose); stdout in production.
+
+---
+
+### Story 11.2 — Backend: Product Metrics and Key Event Instrumentation
+
+**As a** product team,
+**I want** key product events emitted as structured metrics,
+**so that** we can track activation, engagement, and reveal rates without manual SQL queries.
+
+**Acceptance Criteria:**
+
+- AC1: The following events are emitted as structured log entries (metric-tagged) on occurrence:
+  - `user.registered` — new user completes registration
+  - `user.onboarded` — user completes profile (photo + bio + preferences)
+  - `conversation.started` — first message sent in a new conversation
+  - `gate.opened` — dual-trigger threshold crossed
+  - `gate.decision.submitted` — user submits gate decision
+  - `gate.resolved` — gate resolution fires (with `outcome` field)
+  - `reveal.completed` — mutual reveal outcome viewed
+  - `user.reported` — user report submitted
+  - `user.blocked` — user block submitted
+- AC2: Each event entry includes `{ eventType, userId (opaque), timestamp, properties }` — no PII in properties.
+- AC3: Events are emitted in addition to (not instead of) normal request processing — fire-and-forget, non-blocking.
+- AC4: Unit tests cover: each event type is emitted on the corresponding action.
+
+**Technical Notes:**
+- FR43 (product metrics).
+- Events are structured log entries, not a separate metrics pipeline — keeps infrastructure simple at launch. Can be extracted to a proper event bus post-launch.
+- `outcome` field on `gate.resolved` = mutual_reveal | continued | ended_anonymized | expired.
+
+---
+
+### Story 11.3 — Backend: Safety Pulse Monitoring — Moderation Signal Aggregation
+
+**As an** operations team,
+**I want** a dashboard-ready endpoint that surfaces safety signal aggregates,
+**so that** we can detect spikes in harmful behavior without building a separate analytics system.
+
+**Acceptance Criteria:**
+
+- AC1: `GET /api/admin/safety-pulse` (admin only) returns rolling 24h aggregates: `{ reportCount, flaggedMessageCount, suspendedUserCount, blockedPairCount, topReportReasons: [{ reason, count }] }`.
+- AC2: Aggregates are computed from live DB data (no separate cache required at launch); query must complete in ≤2s.
+- AC3: A `since` query parameter (ISO 8601 datetime) allows custom time window queries.
+- AC4: Unit test: endpoint returns correctly shaped response. Integration test: seed report data → verify aggregate counts.
+
+**Technical Notes:**
+- FR53 (safety pulse).
+- Admin role claim required from IdentityServer JWT.
+- Keep aggregation queries simple (COUNT + GROUP BY) — no materialized views at launch.
+
+---
+
+### Story 11.4 — Backend: Health Check Endpoints
+
+**As an** infrastructure operator,
+**I want** health check endpoints on all backend services,
+**so that** Docker Compose and Traefik can route traffic only to healthy instances.
+
+**Acceptance Criteria:**
+
+- AC1: All three backend projects expose `GET /health` returning `{ status: "healthy" | "degraded" | "unhealthy", checks: [{ name, status, duration }] }`.
+- AC2: Health checks include: database connectivity (PostgreSQL ping), MinIO connectivity (Blinder.Api only), IdentityServer discovery document reachability (Blinder.Api only).
+- AC3: `GET /health/live` returns 200 if the process is running (liveness); `GET /health/ready` returns 200 only when all checks pass (readiness).
+- AC4: Traefik health check configuration uses `/health/ready`; Docker Compose `healthcheck` uses `/health/live`.
+- AC5: Unit test: healthy state returns 200; degraded DB returns 503 on `/health/ready`.
+
+**Technical Notes:**
+- FR44 (operational health).
+- ASP.NET Core built-in `IHealthCheck` infrastructure. No external dependencies for health check implementation.
+
+---
+
+### Story 11.5 — Frontend: Client-Side Error Reporting
+
+**As a** developer,
+**I want** unhandled mobile errors reported to a server-side endpoint,
+**so that** production crashes are visible without requiring a third-party crash SDK at launch.
+
+**Acceptance Criteria:**
+
+- AC1: A global React error boundary wraps the app root; caught errors call `POST /api/diagnostics/client-error` with `{ errorMessage, stackTrace, screenName, appVersion, platform }`.
+- AC2: The error boundary renders a neutral fallback UI ("Something went wrong. Please restart the app.") — not a raw stack trace.
+- AC3: `POST /api/diagnostics/client-error` is unauthenticated (errors may occur before login) and rate-limited to 10 reports per IP per minute to prevent abuse.
+- AC4: Error payloads are logged via the structured logging pipeline (Story 11.1) — no separate storage table needed at launch.
+- AC5: TypeScript strict mode; all props typed; no `any`.
+
+**Technical Notes:**
+- FR42 (client error tracking).
+- No third-party crash SDK (Sentry, etc.) at launch — keeps infrastructure lean. The `/api/diagnostics/client-error` endpoint can be replaced by a proper SDK post-launch.
+- `stackTrace` is truncated server-side to 4KB max before logging.

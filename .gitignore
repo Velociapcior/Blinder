@@ -185,3 +185,5 @@ mc/
 *.swp
 *.swo
 .cache/
+
+postgres/
