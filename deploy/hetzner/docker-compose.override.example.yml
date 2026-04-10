@@ -1,0 +1,35 @@
+# Production override for Hetzner VPS deployment.
+# Copy this to docker-compose.override.yml on the VPS (do not commit the live override).
+# This override replaces local build: directives with registry-backed images.
+
+services:
+
+  traefik:
+    volumes: !override
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./deploy/hetzner/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - traefik-certs:/certs
+
+  identityserver:
+    build: !reset null
+    image: ${REGISTRY:-ghcr.io/your-org}/blinder-identityserver:${IMAGE_TAG:-latest}
+    labels:
+      traefik.http.routers.identityserver.entrypoints: websecure
+      traefik.http.routers.identityserver.tls: "true"
+      traefik.http.routers.identityserver.tls.certresolver: letsencrypt
+
+  api:
+    build: !reset null
+    image: ${REGISTRY:-ghcr.io/your-org}/blinder-api:${IMAGE_TAG:-latest}
+    labels:
+      traefik.http.routers.api.entrypoints: websecure
+      traefik.http.routers.api.tls: "true"
+      traefik.http.routers.api.tls.certresolver: letsencrypt
+
+  adminpanel:
+    build: !reset null
+    image: ${REGISTRY:-ghcr.io/your-org}/blinder-adminpanel:${IMAGE_TAG:-latest}
+    labels:
+      traefik.http.routers.adminpanel.entrypoints: websecure
+      traefik.http.routers.adminpanel.tls: "true"
+      traefik.http.routers.adminpanel.tls.certresolver: letsencrypt

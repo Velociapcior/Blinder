@@ -1,0 +1,168 @@
+networks:
+  blinder-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  minio-data:
+  traefik-certs:
+  dataprotection-keys:
+  identityserver-keys:
+
+services:
+
+  traefik:
+    image: traefik:v3.0
+    container_name: blinder-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+    networks:
+      - blinder-net
+    labels:
+      traefik.enable: "false"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  postgres:
+    image: postgres:18-alpine
+    container_name: blinder-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-blinder}
+      POSTGRES_USER: ${POSTGRES_USER:-blinder_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-blinder_dev_password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - blinder-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-blinder_user} -d ${POSTGRES_DB:-blinder}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: blinder-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-blinderminio}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-blinderminiosecret}
+    volumes:
+      - minio-data:/data
+    networks:
+      - blinder-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      traefik.enable: "false"
+
+  identityserver:
+    build:
+      context: ./backend
+      dockerfile: src/Blinder.IdentityServer/Dockerfile
+    container_name: blinder-identityserver
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: >-
+        Host=postgres;Database=${POSTGRES_DB:-blinder};
+        Username=${POSTGRES_USER:-blinder_user};Password=${POSTGRES_PASSWORD:-blinder_dev_password}
+      IdentityKeys__Password: ${IDENTITY_KEYS_PASSWORD:-blinder-local-identity-password}
+    volumes:
+      - identityserver-keys:/app/keys
+      - dataprotection-keys:/app/dataprotection-keys
+    networks:
+      - blinder-net
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.identityserver.rule: "Host(`auth.${DOMAIN:-blinder.local}`)"
+      traefik.http.routers.identityserver.entrypoints: "web"
+      traefik.http.services.identityserver.loadbalancer.server.port: "8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: src/Blinder.Api/Dockerfile
+    container_name: blinder-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: >-
+        Host=postgres;Database=${POSTGRES_DB:-blinder};
+        Username=${POSTGRES_USER:-blinder_user};Password=${POSTGRES_PASSWORD:-blinder_dev_password}
+      Minio__Endpoint: "minio:9000"
+      Minio__AccessKey: ${MINIO_ACCESS_KEY:-blinderminio}
+      Minio__SecretKey: ${MINIO_SECRET_KEY:-blinderminiosecret}
+      Minio__UseSSL: "false"
+    volumes:
+      - dataprotection-keys:/app/dataprotection-keys
+    networks:
+      - blinder-net
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.api.rule: "Host(`api.${DOMAIN:-blinder.local}`)"
+      traefik.http.routers.api.entrypoints: "web"
+      traefik.http.services.api.loadbalancer.server.port: "8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  adminpanel:
+    build:
+      context: ./backend
+      dockerfile: src/Blinder.AdminPanel/Dockerfile
+    container_name: blinder-adminpanel
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: >-
+        Host=postgres;Database=${POSTGRES_DB:-blinder};
+        Username=${POSTGRES_USER:-blinder_user};Password=${POSTGRES_PASSWORD:-blinder_dev_password}
+    volumes:
+      - dataprotection-keys:/app/dataprotection-keys
+    networks:
+      - blinder-net
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.adminpanel.rule: "Host(`admin.${DOMAIN:-blinder.local}`)"
+      traefik.http.routers.adminpanel.entrypoints: "web"
+      traefik.http.services.adminpanel.loadbalancer.server.port: "8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
