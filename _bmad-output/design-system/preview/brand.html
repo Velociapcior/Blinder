@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Brand · Blinder</title>
+<style>
+/* =============================================================
+   Blinder Design System — Tokens
+   Warm Dusk palette · Lato type · 8pt spacing · anti-urgency motion
+   ============================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap");
+
+:root {
+  /* ----- Colour · Warm Dusk -------------------------------- */
+  --bg-base:       #FBF5EE;
+  --bg-surface:    #EDE3D8;
+  --bg-elevated:   #F5EDE2;
+  --bg-dark:       #2C1C1A;
+
+  --primary:       #8B4E6E;
+  --primary-light: #B87A98;
+  --reveal:        #D4A85A;  /* reserved for reveal ceremony only */
+  --accent:        #C4825A;
+
+  --text-primary:   #2C1C1A;
+  --text-secondary: #7A5A52;
+  --text-muted:     #A08878;
+
+  --border:  #DDD0C4;
+  --error:   #B85050;
+  --offline: #9A9090;
+
+  /* Semantic pairings */
+  --on-primary:  #FFFFFF;
+  --on-reveal:   #2C1C1A;
+  --on-dark:     #F6EEE5;
+
+  /* ----- Type · Lato --------------------------------------- */
+  --font-sans: "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --fw-light:   300;
+  --fw-regular: 400;
+  --fw-bold:    700;
+  --fw-black:   900;
+
+  --text-display-size: 32px; --text-display-lh: 1.2;  --text-display-weight: 900;
+  --text-h1-size:      24px; --text-h1-lh:      1.3;  --text-h1-weight:      700;
+  --text-h2-size:      20px; --text-h2-lh:      1.35; --text-h2-weight:      700;
+  --text-h3-size:      17px; --text-h3-lh:      1.4;  --text-h3-weight:      700;
+  --text-body-size:    15px; --text-body-lh:    1.65; --text-body-weight:    400;
+  --text-body-sm-size: 13px; --text-body-sm-lh: 1.6;  --text-body-sm-weight: 400;
+  --text-caption-size: 11px; --text-caption-lh: 1.5;  --text-caption-weight: 300;
+  --text-button-size:  14px; --text-button-lh:  1;    --text-button-weight:  700;
+
+  --tracking-default: 0;
+  --tracking-button:  0.04em;
+
+  /* ----- Spacing · 8pt grid -------------------------------- */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+  --space-2xl: 48px;
+
+  /* Per UX spec: 16px screen horizontal padding token, but layout
+     preview gets 24px breathing room to feel appropriate on-screen. */
+  --screen-padding: 16px;
+
+  /* ----- Radius ------------------------------------------- */
+  --radius-sm:   8px;
+  --radius-md:   14px;
+  --radius-lg:   18px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+
+  /* ----- Elevation (minimal) ------------------------------ */
+  --shadow-cta:    0 8px 20px rgba(44, 28, 26, 0.14);
+  --shadow-modal:  0 12px 32px rgba(44, 28, 26, 0.22);
+  --shadow-reveal:
+    0 0 0 12px rgba(212, 168, 90, 0.22),
+    0 0 0 26px rgba(212, 168, 90, 0.12);
+
+  /* ----- Motion ------------------------------------------- */
+  --dur-instant:   80ms;
+  --dur-quick:     150ms;
+  --dur-standard:  220ms;
+  --dur-gate:      420ms;
+  --dur-reveal:    1600ms;
+
+  --ease-standard:  cubic-bezier(.2, 0, 0, 1);
+  --ease-emphasize: cubic-bezier(.16, 1, .3, 1);   /* gate, reveal entrance */
+  --ease-out:       cubic-bezier(.33, 1, .68, 1);
+}
+
+/* ----- Utility classes for the kit & preview --------------- */
+.font-sans      { font-family: var(--font-sans); }
+
+.text-display   { font: var(--text-display-weight) var(--text-display-size)/var(--text-display-lh) var(--font-sans); }
+.text-h1        { font: var(--text-h1-weight)      var(--text-h1-size)/var(--text-h1-lh)           var(--font-sans); }
+.text-h2        { font: var(--text-h2-weight)      var(--text-h2-size)/var(--text-h2-lh)           var(--font-sans); }
+.text-h3        { font: var(--text-h3-weight)      var(--text-h3-size)/var(--text-h3-lh)           var(--font-sans); }
+.text-body      { font: var(--text-body-weight)    var(--text-body-size)/var(--text-body-lh)       var(--font-sans); }
+.text-body-sm   { font: var(--text-body-sm-weight) var(--text-body-sm-size)/var(--text-body-sm-lh) var(--font-sans); }
+.text-caption   { font: var(--text-caption-weight) var(--text-caption-size)/var(--text-caption-lh) var(--font-sans); letter-spacing: var(--tracking-button); }
+.text-button    { font: var(--text-button-weight)  var(--text-button-size)/var(--text-button-lh)   var(--font-sans); letter-spacing: var(--tracking-button); }
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-gate:   200ms;
+    --dur-reveal: 200ms;
+  }
+}
+
+</style>
+<style>
+  html,body{margin:0;background:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans)}
+  .wrap{padding:40px 48px;max-width:860px}
+  .mark{display:flex;align-items:center;gap:18px;margin-bottom:36px}
+  .wordmark{font-weight:900;font-size:64px;letter-spacing:-0.025em;line-height:1}
+  .dot{width:16px;height:16px;border-radius:50%;background:var(--reveal);box-shadow:0 0 0 6px rgba(212,168,90,0.22);transform:translateY(-6px)}
+  .lede{font-size:17px;line-height:1.55;color:var(--text-secondary);max-width:560px;margin:0 0 40px}
+  .lede em{font-style:normal;color:var(--text-primary);font-weight:700}
+  h2{margin:28px 0 12px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--text-muted)}
+  .spectrum{display:grid;gap:0;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .sr{display:grid;grid-template-columns:180px 1fr;gap:16px;padding:14px 18px;border-top:1px solid var(--border);align-items:baseline}
+  .sr:first-child{border-top:none}
+  .sr .m{font-size:12px;font-weight:700;color:var(--text-primary)}
+  .sr .t{font-size:13px;line-height:1.5;color:var(--text-secondary)}
+  .avoid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+  .col{padding:16px 18px;border:1px solid var(--border);border-radius:14px;background:var(--bg-elevated)}
+  .col b{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:10px}
+  .col.no b{color:var(--error)}
+  .col.yes b{color:var(--primary)}
+  .col ul{margin:0;padding-left:18px;color:var(--text-secondary);font-size:13px;line-height:1.7}
+  .col.no li{text-decoration:line-through;text-decoration-color:var(--error);text-decoration-thickness:1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mark"><span class="wordmark">Blinder</span><span class="dot" aria-hidden="true"></span></div>
+  <p class="lede">A conversation-first blind dating app. <em>Dignity before desirability</em> — users are evaluated through interaction quality before visual filtering. Not a better swipe feed: a different first-impression protocol.</p>
+
+  <h2>Voice</h2>
+  <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:var(--text-secondary);max-width:560px">
+    A thoughtful friend, not a system. Calm authority meets warm humanity. Never pressures, never blames, never performs positivity it hasn't earned. Short, specific, forward-looking.
+  </p>
+
+  <h2>Tone by moment</h2>
+  <div class="spectrum">
+    <div class="sr"><span class="m">Onboarding</span><span class="t">Intrigue + quiet confidence — "this is different, you belong here."</span></div>
+    <div class="sr"><span class="m">Waiting</span><span class="t">Calm anticipation, anchored in time.</span></div>
+    <div class="sr"><span class="m">First message</span><span class="t">Courageous warmth — acknowledge the vulnerability of going first.</span></div>
+    <div class="sr"><span class="m">Active conversation</span><span class="t">Receding — let the two humans talk.</span></div>
+    <div class="sr"><span class="m">Decision gate</span><span class="t">Grounded, explanatory, equal-weight.</span></div>
+    <div class="sr"><span class="m">Resolution wait</span><span class="t">Charged but unhurried — "your answer is with them."</span></div>
+    <div class="sr"><span class="m">Mutual reveal</span><span class="t">Warm joy, shared achievement, unhurried.</span></div>
+    <div class="sr"><span class="m">Non-mutual ending</span><span class="t">Gentle acceptance — "this conversation has ended."</span></div>
+  </div>
+
+  <h2>Words</h2>
+  <div class="avoid">
+    <div class="col no">
+      <b>Never</b>
+      <ul>
+        <li>"Rejected", "declined"</li>
+        <li>"They chose not to reveal"</li>
+        <li>"Match expired"</li>
+        <li>"No matches yet"</li>
+        <li>"Error" / "Failed" on their own</li>
+        <li>Exclamation marks in endings</li>
+      </ul>
+    </div>
+    <div class="col yes">
+      <b>Instead</b>
+      <ul>
+        <li>"This conversation has ended."</li>
+        <li>Omit attribution entirely.</li>
+        <li>"This conversation has ended."</li>
+        <li>"Your match arrives daily."</li>
+        <li>Always pair with a human next step.</li>
+        <li>Full stop or no punctuation.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body>
+</html>

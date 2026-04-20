@@ -22,6 +22,9 @@ classification:
 **Author:** Piotr.palej
 **Date:** 2026-04-03
 
+> **Design System Alignment.** Every user-facing requirement below inherits voice, tone, visual language, motion, and copy rules from the packaged Blinder design system: [`README.md`](./README.md), [`SKILL.md`](./SKILL.md), [`colors_and_type.css`](./colors_and_type.css), [`ui_kits/Blinder/index.html`](./ui_kits/Blinder/index.html), and [`ux-design-specification.md`](./ux-design-specification.md). When a requirement references UX tone, copy vocabulary, components, or visual elements, the design system is the source of truth \u2014 in particular NFR28 (no urgency UI) is implemented via the design system's anti-urgency vocabulary and the `--reveal`-exclusivity / equal-weight-gate / non-attributing-endings invariants documented in `SKILL.md`.
+
+
 ## Executive Summary
 
 Blinder is a conversation-first dating platform designed for users who are filtered out too early by photo-first mechanics. The product's core job is to guarantee a fair first chance through dialogue before appearance enters the decision loop. It targets users who are exhausted by rejection-heavy, status-driven dating experiences and want lower-pressure, meaningful interaction.

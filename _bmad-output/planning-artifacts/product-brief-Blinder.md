@@ -120,3 +120,15 @@ Out of scope for v1:
 If Blinder succeeds, it becomes the category leader for emotionally safe, conversation-first dating. Over the next two to three years, the product can evolve from a single-market launch into a broader European platform where relationship intent, conversation quality, and psychological safety are first-class product primitives.
 
 Long term, Blinder's moat is trust plus behavior design: users choose it not because it offers more swipes, but because it consistently produces better human interactions.
+
+---
+
+## Design System Alignment
+
+The product thesis above is the north star for the packaged Blinder design system. Every UX, copy, visual, motion, and component decision in downstream artefacts is bound to that system:
+
+- [`README.md`](./README.md) \u2014 written spec (voice, tone, tokens, copy rules, components)
+- [`SKILL.md`](./SKILL.md) \u2014 core invariants (`--reveal` exclusivity, equal-weight gate, non-attributing endings)
+- [`colors_and_type.css`](./colors_and_type.css) \u2014 packaged token values
+- [`ui_kits/Blinder/index.html`](./ui_kits/Blinder/index.html) \u2014 live component showcase
+- [`ux-design-specification.md`](./ux-design-specification.md) \u2014 full UX specification

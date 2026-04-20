@@ -13,6 +13,25 @@ inputDocuments:
 
 This document provides the complete epic and story breakdown for Blinder, decomposing the requirements from the PRD, UX Design, and Architecture requirements into implementable stories.
 
+## Design System Alignment
+
+All visual, copy, component, motion, and iconography decisions in this epic breakdown are bound to the packaged Blinder design system. Any AC that references a colour, token, component, piece of copy, or interaction pattern inherits from these sources \u2014 if a story AC disagrees with the design system, the design system wins:
+
+- [`README.md`](./README.md) \u2014 written spec (voice, tone, tokens, copy rules, components)
+- [`SKILL.md`](./SKILL.md) \u2014 core invariants (`--reveal` exclusivity, equal-weight gate, non-attributing endings, one primary per screen)
+- [`colors_and_type.css`](./colors_and_type.css) \u2014 CSS variables that are the packaged token source of truth
+- [`ui_kits/Blinder/index.html`](./ui_kits/Blinder/index.html) \u2014 live component showcase
+- [`ux-design-specification.md`](./ux-design-specification.md) \u2014 full UX specification (journeys, patterns, vocabulary)
+
+Key invariants reinforced across every story:
+- **`--reveal` (amber `#D4A85A`)** appears nowhere except the Reveal gate option and the mutual-reveal ceremony.
+- **Equal-weight gate options** \u2014 Reveal / Continue / Abandon share size, radius, and hit area; no visual default.
+- **Non-attributing endings** \u2014 \"This conversation has ended.\" Never \"they didn't respond\" / \"match expired\" / \"declined\".
+- **Confirmation dialogs only for irreversible destructive actions** (account deletion, block). Never for gate decisions, message sends, or reports.
+- **No toasts for emotionally significant outcomes** \u2014 reveal uses `RevealTransition`, endings use `OutcomeScreen`, reports use a dedicated confirmation screen.
+- **One primary action per screen.** Single column. Icon-light. Motion-wise: near-instant for utility, slow and emphasized for emotional moments.
+
+
 ## Requirements Inventory
 
 ### Functional Requirements
@@ -451,9 +470,10 @@ So that all future screen work is built from tokens with zero hardcoded values.
 **And** border radius tokens are defined: `radius.sm` (8px) through `radius.full` (9999px)
 **And** a `motion.ts` file documents the motion vocabulary: what animates, at what duration, with what easing curve — distinguishing in-screen animations from navigation-level transitions
 **And** `color.text.primary` (#2C1C1A) on `color.bg.base` (#FBF5EE) is verified to meet WCAG AA contrast (≥4.5:1), documented in a comment
-**And** a token showcase screen exists at a dev-only route rendering all tokens visually for design review
+**And** the Tamagui token values match the canonical packaged design system one-to-one — `colors_and_type.css` (CSS variables, loaded by HTML prototypes and the live component showcase at `ui_kits/Blinder/index.html`) is the cross-platform source of truth; any drift is resolved in favour of the packaged system
+**And** a token showcase screen exists at a dev-only route rendering all tokens visually for design review, mirroring the sections in `ui_kits/Blinder/index.html` so the two showcases can be visually diffed
 **And** zero hardcoded colour, font-size, or spacing values exist anywhere in the codebase (enforced by ESLint rule)
-**And** this story has a design review gate — a human review of the token showcase screen is required before any screen implementation stories begin in Epic 3+
+**And** this story has a design review gate — a human review of the token showcase screen alongside `ui_kits/Blinder/index.html` is required before any screen implementation stories begin in Epic 3+
 
 ---
 
@@ -1167,9 +1187,9 @@ So that I never lose a message or submit an action that cannot be completed.
 
 - AC1: When `gateState === "open"`, the ConversationScreen surfaces the full-screen gate overlay using `GateOptionCard` components for each of the three choices: Reveal, Continue, Abandon.
 - AC2: All three `GateOptionCard` components are equal weight — same size, same visual prominence. No option is visually preferred over another (NFR28 — no urgency UI).
-- AC3: The Reveal option uses `color.reveal` (`#D4A85A`) token exclusively. Continue and Abandon use standard Warm Dusk tokens. No countdown timer or progress indicator is shown.
-- AC4: Selecting an option shows a confirmation dialog ("Are you sure?") before submitting — prevents accidental taps.
-- AC5: On confirmation, the app calls `POST /api/conversations/{id}/gate-decision` and transitions to the ResolutionWait screen (Story 6.6).
+- AC3: The Reveal option uses `color.reveal` (`#D4A85A`) token exclusively. Continue and Abandon use standard Warm Dusk tokens. No countdown timer, progress indicator, or urgency copy is shown (NFR28).
+- AC4: Selecting an option submits immediately — **no confirmation dialog**. The design system reserves confirmation dialogs for irreversible destructive actions only (account deletion, block); the gate decision is private, reversible in effect (Continue keeps the conversation), and must feel calm and unforced. The pressed option transitions to a brief `submitted` state for all three cards (UX-DR8) while the request is in flight.
+- AC5: On submission, the app calls `POST /api/conversations/{id}/gate-decision` and transitions to the ResolutionWait screen (Story 6.6).
 - AC6: If the user has already submitted (API returns 409), the screen shows the ResolutionWait screen directly without re-prompting.
 - AC7: TypeScript strict mode; all props typed; no `any`.
 
@@ -1242,7 +1262,7 @@ So that I never lose a message or submit an action that cannot be completed.
 - AC2: The screen uses only neutral, non-blaming vocabulary — per UX vocabulary rules, no copy that implies rejection, failure, or suggests who chose what. Copy example: "This conversation has reached its conclusion."
 - AC3: No back navigation is possible from the OutcomeScreen — the back gesture and hardware back button are both disabled.
 - AC4: For `continued` outcome, the OutcomeScreen is NOT shown — the app returns directly to ConversationScreen (normal chat resumes). This screen is only for terminal endings.
-- AC5: The OutcomeScreen provides a CTA to return to the Discover screen (start a new conversation).
+- AC5: The OutcomeScreen provides a forward CTA ("Find my next match") that returns to the Waiting screen (`WaitingState`) plus a "Take a break" text-link — per UX-DR11 anatomy. Copy is non-attributing and forward-looking; never "they didn't respond", "match expired", or "declined".
 - AC6: TypeScript strict mode; all props typed; no `any`.
 
 **Technical Notes:**
@@ -1316,10 +1336,10 @@ So that I never lose a message or submit an action that cannot be completed.
 
 - AC1: A "Report / Block" option is accessible from the conversation header menu (three-dot menu or equivalent) on the ConversationScreen.
 - AC2: Selecting "Report" opens a bottom sheet with a list of reason options (harassment, inappropriate content, spam, other) plus an optional free-text details field.
-- AC3: On submission, the app calls `POST /api/users/{id}/report` and shows a confirmation toast ("Your report has been submitted").
+- AC3: On submission, the app calls `POST /api/users/{id}/report` and navigates to a dedicated **ReportConfirmationScreen** (never a toast — UX-DR30 prohibits toasts for emotionally significant outcomes). The screen uses `OutcomeScreen` layout with calm headline ("Thank you for letting us know"), short compassionate body, and a single forward CTA back to the Waiting screen.
 - AC4: Selecting "Block" shows a confirmation dialog ("Block this person? They won't be able to contact you.") before calling `POST /api/users/{id}/block`.
-- AC5: After a successful block, the conversation is removed from the active conversations list and the user is navigated to the Discover screen.
-- AC6: All Warm Dusk tokens used; no `color.reveal` on this flow. TypeScript strict mode; all props typed; no `any`.
+- AC5: After a successful block, the conversation is removed from the active conversations list and the user is navigated to the Waiting screen (`WaitingState`).
+- AC6: All Warm Dusk tokens used (see `colors_and_type.css` + `ui_kits/Blinder/` for the canonical packaged design system); no `color.reveal` on this flow. TypeScript strict mode; all props typed; no `any`.
 
 **Technical Notes:**
 - FR32 (user-facing report/block).
@@ -1370,7 +1390,7 @@ So that I never lose a message or submit an action that cannot be completed.
   - `mutual_reveal` → "It's a match! See who you've been talking to."
   - `continued` → "Your conversation continues."
   - `ended_anonymized` / `expired` → "This conversation has ended." (neutral copy, no blame)
-- AC4: New starter card assigned (new conversation available in Discover) → send "Someone wants to talk" notification.
+- AC4: New match opportunity available (user has capacity) → send "Someone is waiting to talk with you" notification, matching the `MatchEntryCard` copy for continuity (UX-DR15).
 - AC5: All notification copy follows the vocabulary rules (no "rejected", "unmatched", urgency language).
 - AC6: Notifications are not sent if the user has the app in the foreground and is actively viewing the relevant screen (presence-aware suppression via SignalR connection state).
 - AC7: Unit tests cover all 5 trigger types. Integration test: message sent → notification dispatched.
@@ -1433,9 +1453,9 @@ So that I never lose a message or submit an action that cannot be completed.
 - AC1: Incoming notifications carry a `type` and `conversationId` (or `screenTarget`) payload.
 - AC2: Tapping a "New message" notification navigates to `ConversationScreen` for that conversation ID.
 - AC3: Tapping a gate or match notification navigates to the appropriate screen (ResolutionWait, Reveal Ceremony, or Outcome screen) based on current conversation state fetched on tap.
-- AC4: Tapping a Discover notification navigates to the Discover screen.
+- AC4: Tapping a new-match notification navigates to the Waiting screen (`WaitingState`) in its `match_ready` state, which then advances to the `MatchEntryCard` per the navigation state machine (UX-DR21).
 - AC5: If the app is cold-started from a notification, the navigation state is correctly initialized (deep link handled on startup via Expo Router).
-- AC6: If the target conversation no longer exists (e.g., deleted), the app navigates to the Discover screen with no error crash.
+- AC6: If the target conversation no longer exists (e.g., deleted), the app navigates to the Waiting screen (`WaitingState`) with no error crash.
 - AC7: TypeScript strict mode; all props typed; no `any`.
 
 **Technical Notes:**
@@ -1574,9 +1594,9 @@ So that I never lose a message or submit an action that cannot be completed.
 
 **Acceptance Criteria:**
 
-- AC1: When a new starter card is about to be assigned to a user, the system checks the user's current active conversation count against their tier limit.
+- AC1: When a new match opportunity is about to be assigned to a user, the system checks the user's current active conversation count against their tier limit.
 - AC2: Free tier limit is configurable via platform config (default: 3 active conversations). Premium tier limit is configurable (default: unlimited / 999).
-- AC3: If the user is at their limit, no new starter card is assigned; the user is not notified of missed matches (no urgency signal).
+- AC3: If the user is at their limit, no new match is assigned; the user is not notified of missed matches (no urgency signal — NFR28).
 - AC4: `GET /api/users/me/capacity` returns `{ tier: "free" | "premium", activeConversations: int, limit: int }`.
 - AC5: Unit tests cover: free user at limit → no new assignment; free user under limit → assignment proceeds; premium user → always proceeds.
 
@@ -1616,8 +1636,8 @@ So that I never lose a message or submit an action that cannot be completed.
 
 **Acceptance Criteria:**
 
-- AC1: The Discover screen displays the user's current capacity usage (e.g., "2 of 3 conversations active") fetched from `GET /api/users/me/capacity`.
-- AC2: When the user reaches their limit, the Discover screen shows a non-blocking upgrade prompt (not a modal wall) — a banner or card offering premium upgrade.
+- AC1: The Waiting screen (`WaitingState`) displays the user's current capacity usage (e.g., "2 of 3 conversations active") fetched from `GET /api/users/me/capacity`, rendered as a neutral `Pill` component — not a progress bar, not a counter that reads as a gamified score.
+- AC2: When the user reaches their limit, the Waiting screen shows a non-blocking upgrade prompt (not a modal wall) — a banner or card offering premium upgrade, visually subordinate to the waiting state itself.
 - AC3: The upgrade prompt uses neutral, value-positive language ("Unlock more conversations") — no scarcity or urgency language.
 - AC4: Tapping the upgrade prompt opens the Upgrade screen (Story 10.4).
 - AC5: Premium users see no capacity indicator or upgrade prompt — the feature is invisible to them.
@@ -1625,7 +1645,7 @@ So that I never lose a message or submit an action that cannot be completed.
 
 **Technical Notes:**
 - FR48 (capacity display), FR49 (upgrade entry point).
-- Capacity data is fetched on Discover screen focus (not cached across navigation).
+- Capacity data is fetched on Waiting screen focus (not cached across navigation).
 
 ---
 

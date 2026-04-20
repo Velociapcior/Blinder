@@ -7,26 +7,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet" />
+  <link href="colors_and_type.css" rel="stylesheet" />
   <style>
     :root {
-      --bg-base: #FBF5EE;
-      --bg-surface: #EDE3D8;
-      --bg-elevated: #F5EDE2;
-      --primary: #8B4E6E;
-      --primary-light: #B87A98;
-      --reveal: #D4A85A;
-      --accent: #C4825A;
-      --text-primary: #2C1C1A;
-      --text-secondary: #7A5A52;
-      --text-muted: #A08878;
-      --border: #DDD0C4;
-      --offline: #9A9090;
-      --bg-dark: #2C1C1A;
-      --shadow: 0 12px 32px rgba(44, 28, 26, 0.24);
-      --radius-xl: 20px;
-      --radius-lg: 18px;
-      --radius-md: 14px;
-      --radius-full: 9999px;
+      /* Prototype-only aliases kept for backward-compat with this file's CSS.
+         Canonical token values live in colors_and_type.css — do NOT override
+         colour/type/spacing/radius tokens here; edit the packaged CSS instead. */
+      --shadow: var(--shadow-modal);
     }
 
     * {
@@ -426,8 +413,9 @@
     }
 
     .gate-card.reveal {
-      background: #f2dfb7;
-      border-color: #e5c27f;
+      /* Reveal-token-tinted surface — the only screen allowed to use --reveal. */
+      background: color-mix(in oklab, var(--reveal) 28%, var(--bg-elevated));
+      border-color: color-mix(in oklab, var(--reveal) 55%, var(--border));
     }
 
     .resolution-anim {
@@ -501,7 +489,7 @@
       inset: 0;
       display: none;
       background: rgba(44, 28, 26, 0.88);
-      color: #f6eee5;
+      color: var(--on-dark);
       z-index: 20;
       padding: 22px;
       align-content: center;
@@ -718,7 +706,7 @@
           <div class="top-bar">
             <div class="top-left">
               <button class="icon-btn" data-go="screen-reveal" aria-label="Back">←</button>
-              <div class="avatar" style="background:linear-gradient(135deg,#d18f5f,#8b4e6e);">AP</div>
+              <div class="avatar" style="background:linear-gradient(135deg,var(--accent),var(--primary));">AP</div>
               <div>
                 <div class="person-name">Ania P.</div>
                 <div class="person-sub">Revealed profile and chat</div>
@@ -799,13 +787,13 @@
               <p>This action permanently deletes your account data as required by policy.</p>
             </div>
             <button class="btn secondary" data-go="screen-profile">Cancel</button>
-            <button class="btn secondary" style="color:#B85050;" data-go="screen-waiting">Confirm deletion</button>
+            <button class="btn secondary" style="color:var(--error);" data-go="screen-waiting">Confirm deletion</button>
           </div>
         </section>
 
         <div class="offline" id="offlineOverlay" role="status" aria-live="polite">
           <h3 style="margin:0;font-size:22px;">You are offline</h3>
-          <p style="margin:0;line-height:1.6;color:#e7d7c5;">Write actions are paused. We'll restore everything automatically when connection returns.</p>
+          <p style="margin:0;line-height:1.6;color:var(--on-dark);">Write actions are paused. We'll restore everything automatically when connection returns.</p>
           <button class="btn secondary" id="restoreConnection">Restore connection</button>
         </div>
       </div>

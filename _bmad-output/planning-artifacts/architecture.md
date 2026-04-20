@@ -18,6 +18,8 @@ completedAt: '2026-04-03'
 
 _This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
 
+> **Design System Alignment.** The mobile UI layer described throughout this document is bound to the packaged Blinder design system. Tamagui tokens (`tamagui.config.ts`), the web CSS variables in [`colors_and_type.css`](./colors_and_type.css), the component showcase in [`ui_kits/Blinder/`](./ui_kits/Blinder/), and the written spec in [`ux-design-specification.md`](./ux-design-specification.md) + [`README.md`](./README.md) + [`SKILL.md`](./SKILL.md) are all materializations of the same source. When this architecture document references UI primitives, colour tokens, motion, or component names, treat the packaged design system as canonical and keep token values and semantic intent in lockstep across platforms.
+
 ## Project Context Analysis
 
 ### Requirements Overview
@@ -200,6 +202,7 @@ yarn create tamagui@latest --template expo-router
 - Token-driven theming and component primitives
 - Clear path for enforcing the "no hardcoded values" design rule
 - Good fit for custom reveal, gate, and conversation components
+- **Must stay in lockstep with the packaged web design system.** The Tamagui token file (`mobile/blinder-app/tamagui.config.ts`) and the packaged CSS variables in [`colors_and_type.css`](./colors_and_type.css) are two materializations of the same source (`ux-design-specification.md`, `README.md`, `SKILL.md`). Token names, numeric values, and semantic intent must match one-to-one; drift is a bug. The live web showcase in [`ui_kits/Blinder/`](./ui_kits/Blinder/) is the visual-diff reference for the Tamagui token showcase screen shipped by Story 1.5.
 
 **Build Tooling:**
 - Expo CLI development workflow

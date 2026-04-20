@@ -7,6 +7,24 @@ description: |
   implementing real-time updates via SignalR, or managing local state with Zustand.
   Triggers: "new screen", "React Native", "Expo", "navigation", "screen component",
   "mobile screen", "RN component".
+  ALWAYS combine with blinder-design-system skill for any screen that has UI.
+---
+
+## Design System — mandatory before implementing any screen
+
+**Read first:** [`_bmad-output/design-system/SKILL.md`](_bmad-output/design-system/SKILL.md)
+
+Run the design system checklist before marking any screen task done. Key rules:
+- All colours from `tamagui.config.ts` tokens (mapped from `colors_and_type.css`) — no hardcoded hex
+- `--reveal` amber only on the Reveal gate button and mutual-reveal ceremony
+- Gate options equal weight — no visual default, no confirmation dialog
+- Endings: "This conversation has ended." — never attribute who chose what
+- Navigation home state is `WaitingState`, not "Discover screen"
+- Utility animations 120–180ms; gate entrance 420ms; reveal 1600–2400ms
+- No urgency copy, no toasts for emotionally significant outcomes
+
+**Visual reference:** open [`_bmad-output/design-system/ui_kits/Blinder/index.html`](_bmad-output/design-system/ui_kits/Blinder/index.html) in a browser to pixel-compare your Tamagui implementation.
+
 ---
 
 # Blinder React Native Screen Patterns (Expo SDK 55)

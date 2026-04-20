@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gate · Blinder</title>
+<style>
+/* =============================================================
+   Blinder Design System — Tokens
+   Warm Dusk palette · Lato type · 8pt spacing · anti-urgency motion
+   ============================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap");
+
+:root {
+  /* ----- Colour · Warm Dusk -------------------------------- */
+  --bg-base:       #FBF5EE;
+  --bg-surface:    #EDE3D8;
+  --bg-elevated:   #F5EDE2;
+  --bg-dark:       #2C1C1A;
+
+  --primary:       #8B4E6E;
+  --primary-light: #B87A98;
+  --reveal:        #D4A85A;  /* reserved for reveal ceremony only */
+  --accent:        #C4825A;
+
+  --text-primary:   #2C1C1A;
+  --text-secondary: #7A5A52;
+  --text-muted:     #A08878;
+
+  --border:  #DDD0C4;
+  --error:   #B85050;
+  --offline: #9A9090;
+
+  /* Semantic pairings */
+  --on-primary:  #FFFFFF;
+  --on-reveal:   #2C1C1A;
+  --on-dark:     #F6EEE5;
+
+  /* ----- Type · Lato --------------------------------------- */
+  --font-sans: "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --fw-light:   300;
+  --fw-regular: 400;
+  --fw-bold:    700;
+  --fw-black:   900;
+
+  --text-display-size: 32px; --text-display-lh: 1.2;  --text-display-weight: 900;
+  --text-h1-size:      24px; --text-h1-lh:      1.3;  --text-h1-weight:      700;
+  --text-h2-size:      20px; --text-h2-lh:      1.35; --text-h2-weight:      700;
+  --text-h3-size:      17px; --text-h3-lh:      1.4;  --text-h3-weight:      700;
+  --text-body-size:    15px; --text-body-lh:    1.65; --text-body-weight:    400;
+  --text-body-sm-size: 13px; --text-body-sm-lh: 1.6;  --text-body-sm-weight: 400;
+  --text-caption-size: 11px; --text-caption-lh: 1.5;  --text-caption-weight: 300;
+  --text-button-size:  14px; --text-button-lh:  1;    --text-button-weight:  700;
+
+  --tracking-default: 0;
+  --tracking-button:  0.04em;
+
+  /* ----- Spacing · 8pt grid -------------------------------- */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+  --space-2xl: 48px;
+
+  /* Per UX spec: 16px screen horizontal padding token, but layout
+     preview gets 24px breathing room to feel appropriate on-screen. */
+  --screen-padding: 16px;
+
+  /* ----- Radius ------------------------------------------- */
+  --radius-sm:   8px;
+  --radius-md:   14px;
+  --radius-lg:   18px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+
+  /* ----- Elevation (minimal) ------------------------------ */
+  --shadow-cta:    0 8px 20px rgba(44, 28, 26, 0.14);
+  --shadow-modal:  0 12px 32px rgba(44, 28, 26, 0.22);
+  --shadow-reveal:
+    0 0 0 12px rgba(212, 168, 90, 0.22),
+    0 0 0 26px rgba(212, 168, 90, 0.12);
+
+  /* ----- Motion ------------------------------------------- */
+  --dur-instant:   80ms;
+  --dur-quick:     150ms;
+  --dur-standard:  220ms;
+  --dur-gate:      420ms;
+  --dur-reveal:    1600ms;
+
+  --ease-standard:  cubic-bezier(.2, 0, 0, 1);
+  --ease-emphasize: cubic-bezier(.16, 1, .3, 1);   /* gate, reveal entrance */
+  --ease-out:       cubic-bezier(.33, 1, .68, 1);
+}
+
+/* ----- Utility classes for the kit & preview --------------- */
+.font-sans      { font-family: var(--font-sans); }
+
+.text-display   { font: var(--text-display-weight) var(--text-display-size)/var(--text-display-lh) var(--font-sans); }
+.text-h1        { font: var(--text-h1-weight)      var(--text-h1-size)/var(--text-h1-lh)           var(--font-sans); }
+.text-h2        { font: var(--text-h2-weight)      var(--text-h2-size)/var(--text-h2-lh)           var(--font-sans); }
+.text-h3        { font: var(--text-h3-weight)      var(--text-h3-size)/var(--text-h3-lh)           var(--font-sans); }
+.text-body      { font: var(--text-body-weight)    var(--text-body-size)/var(--text-body-lh)       var(--font-sans); }
+.text-body-sm   { font: var(--text-body-sm-weight) var(--text-body-sm-size)/var(--text-body-sm-lh) var(--font-sans); }
+.text-caption   { font: var(--text-caption-weight) var(--text-caption-size)/var(--text-caption-lh) var(--font-sans); letter-spacing: var(--tracking-button); }
+.text-button    { font: var(--text-button-weight)  var(--text-button-size)/var(--text-button-lh)   var(--font-sans); letter-spacing: var(--tracking-button); }
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-gate:   200ms;
+    --dur-reveal: 200ms;
+  }
+}
+
+</style>
+<style>
+  html,body{margin:0;background:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans)}
+  .wrap{padding:32px 40px;max-width:640px}
+  h1{margin:0 0 4px;font-size:22px;font-weight:900;letter-spacing:-0.01em}
+  .sub{margin:0 0 24px;color:var(--text-secondary);font-size:13px;line-height:1.55}
+  .gate-title{margin:0 0 4px;font-size:20px;font-weight:700}
+  .gate-body{margin:0 0 20px;color:var(--text-secondary);font-size:13px}
+  .stack{display:grid;gap:12px}
+  .rule{margin-top:24px;padding:14px 18px;background:var(--bg-surface);border:1px dashed var(--border);border-radius:12px;font-size:12px;line-height:1.55;color:var(--text-secondary)}
+  .rule b{color:var(--text-primary)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Decision gate</h1>
+  <p class="sub">All three options share the same size, weight and radius. No default is highlighted. Only Reveal uses amber.</p>
+  <h2 class="gate-title">You've had a real conversation.</h2>
+  <p class="gate-body">Your choice is private. You'll find out together.</p>
+  <div class="stack" id="mount"></div>
+  <div class="rule">
+    <b>Design rule.</b> Equal weight is the ethic. The user should never feel the UI has nudged them toward a particular outcome.
+  </div>
+</div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel">
+// GateOptionCard — full-width equal-weight card for Reveal · Continue · Abandon.
+// DESIGN RULE: no default highlighted. All three share the same size, weight, radius.
+// Only the Reveal variant uses --reveal (amber); the others use --bg-surface.
+
+const gateVariants = {
+  reveal: {
+    background: "#F4E3BF",
+    border: "1px solid #E5C97D",
+    titleColor: "var(--text-primary)",
+    bodyColor: "var(--text-secondary)",
+  },
+  continue: {
+    background: "var(--bg-surface)",
+    border: "1px solid var(--border)",
+    titleColor: "var(--text-primary)",
+    bodyColor: "var(--text-secondary)",
+  },
+  abandon: {
+    background: "var(--bg-surface)",
+    border: "1px solid var(--border)",
+    titleColor: "var(--text-secondary)",
+    bodyColor: "var(--text-muted)",
+  },
+};
+
+const GateOptionCard = ({ variant, title, body, onSelect, submitted = false, style }) => {
+  const v = gateVariants[variant] || gateVariants.continue;
+  const [press, setPress] = React.useState(false);
+  return (
+    <button
+      role="radio"
+      aria-checked={submitted ? true : false}
+      onClick={onSelect}
+      onMouseDown={() => setPress(true)}
+      onMouseUp={() => setPress(false)}
+      onMouseLeave={() => setPress(false)}
+      disabled={submitted}
+      style={{
+        appearance: "none",
+        textAlign: "left",
+        width: "100%",
+        padding: "18px 18px",
+        borderRadius: "var(--radius-xl)",
+        background: v.background,
+        border: v.border,
+        color: v.titleColor,
+        fontFamily: "var(--font-sans)",
+        display: "grid",
+        gap: 6,
+        cursor: submitted ? "default" : "pointer",
+        opacity: submitted ? 0.5 : 1,
+        transform: press ? "scale(0.992)" : "scale(1)",
+        transition: "transform var(--dur-quick) var(--ease-out), opacity var(--dur-standard)",
+        ...style,
+      }}
+    >
+      <span
+        style={{
+          fontSize: "var(--text-h3-size)",
+          lineHeight: "var(--text-h3-lh)",
+          fontWeight: "var(--fw-bold)",
+          color: v.titleColor,
+        }}
+      >
+        {title}
+      </span>
+      <span
+        style={{
+          fontSize: "var(--text-body-sm-size)",
+          lineHeight: "var(--text-body-sm-lh)",
+          color: v.bodyColor,
+        }}
+      >
+        {body}
+      </span>
+    </button>
+  );
+};
+
+window.GateOptionCard = GateOptionCard;
+
+
+// --- page ---
+
+ReactDOM.createRoot(document.getElementById("mount")).render(
+  <>
+    <GateOptionCard variant="reveal" title="Reveal" body="Show my photo and see theirs. Decision is private — you find out together." />
+    <GateOptionCard variant="continue" title="Keep talking" body="Stay in conversation for another day. No pressure to decide yet." />
+    <GateOptionCard variant="abandon" title="End here" body="This conversation has ended. Gentle closure — no attribution." />
+  </>
+);
+</script>
+</body>
+</html>

@@ -13,6 +13,20 @@ inputDocuments:
 
 ---
 
+## Design System Packaging
+
+This specification is the authoring source for the Blinder design system. It has been packaged into implementation-ready artefacts that stay in lockstep with this document:
+
+| Artefact | Purpose |
+|---|---|
+| [`README.md`](./README.md) | Written spec \u2014 voice, tone, tokens, copy rules, component inventory |
+| [`SKILL.md`](./SKILL.md) | Core invariants \u2014 quick-reference rules for any new work |
+| [`colors_and_type.css`](./colors_and_type.css) | CSS variables packaging every colour, type, spacing, radius, shadow, and motion token from this spec \u2014 the web / HTML-prototype source of truth |
+| [`ui_kits/Blinder/`](./ui_kits/Blinder/) | Live JSX component showcase implementing every component section below |
+| [`blinder-clickable-prototype.html`](./blinder-clickable-prototype.html) | Original interactive prototype, now re-pointed to `colors_and_type.css` |
+
+The Tamagui token implementation specified below must match these packaged CSS variables one-to-one. When a downstream doc (PRD, epics, architecture) disagrees with the rules here, this spec plus the artefacts above are the source of truth.
+
 <!-- UX design content will be appended sequentially through collaborative workflow steps -->
 
 ## Executive Summary

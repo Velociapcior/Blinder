@@ -115,3 +115,8 @@ purpose: "Token-efficient context for downstream PRD creation"
 - Potential moat is trust and behavior design consistency, not algorithm mystique alone.
 - Complementarity matching informed by psychological expertise is a candidate second-order differentiator after baseline validation.
 - Blind conversation archive and post-reveal narrative artifacts can deepen emotional attachment and brand distinctiveness post-MVP.
+
+## Design System Pointer
+- All visual, copy, motion, and component guidance that downstream artefacts depend on lives in the packaged Blinder design system:
+- `README.md` \u2014 written spec; `SKILL.md` \u2014 core invariants; `colors_and_type.css` \u2014 tokens; `ui_kits/Blinder/` \u2014 live components; `ux-design-specification.md` \u2014 full UX spec.
+- Non-negotiable UX rules downstream work must honour: `--reveal` (amber) reserved for reveal only; equal-weight gate options; non-attributing endings; one primary per screen; no urgency language; confirmation dialogs only for irreversible destructive actions (account deletion, block).
