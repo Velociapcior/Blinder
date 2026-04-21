@@ -90,12 +90,30 @@ public class BoundaryTests
     }
 
     [Fact]
+    public void Api_MustNotDependOnIdentityServerMigrationNamespaces()
+    {
+        AssertAssemblyDoesNotDependOn(
+            ApiAssembly,
+            "Blinder.IdentityServer.Persistence.Migrations",
+            "Blinder.IdentityServer.Persistence.DesignTime");
+    }
+
+    [Fact]
     public void IdentityServer_MustNotDirectlyDependOnApiOrAdminPanel()
     {
         AssertAssemblyDoesNotDependOn(
             IdentityServerAssembly,
             "Blinder.Api",
             "Blinder.AdminPanel");
+    }
+
+    [Fact]
+    public void IdentityServer_MustNotDependOnApiMigrationNamespaces()
+    {
+        AssertAssemblyDoesNotDependOn(
+            IdentityServerAssembly,
+            "Blinder.Api.Persistence.Migrations",
+            "Blinder.Api.Persistence.DesignTime");
     }
 
     [Fact]

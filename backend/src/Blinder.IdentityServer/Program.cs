@@ -1,8 +1,10 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using Blinder.IdentityServer.Persistence;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,9 +14,18 @@ var identityKeysDirectory = new DirectoryInfo(
     Path.Combine(builder.Environment.ContentRootPath, "keys"));
 var identityKeysPassword = builder.Configuration["IdentityKeys:Password"] ?? "blinder-local-identity-password";
 var identityKeyMaterial = LoadIdentityKeyMaterial(identityKeysDirectory, identityKeysPassword);
+var identityConnectionString = GetRequiredConnectionString(builder.Configuration);
 
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
+builder.Services.AddDbContext<IdentityDbContext>(options =>
+{
+    options.UseNpgsql(
+        identityConnectionString,
+        npgsqlOptions => npgsqlOptions.MigrationsHistoryTable(
+            IdentityPersistenceDefaults.MigrationsHistoryTable,
+            IdentityPersistenceDefaults.Schema));
+});
 builder.Services
     .AddDataProtection()
     .SetApplicationName("Blinder")
@@ -43,6 +54,12 @@ app.MapHealthChecks("/health");
 app.Run();
 
 return;
+
+// Fail fast when the identity host is missing its schema-scoped database connection string.
+static string GetRequiredConnectionString(IConfiguration configuration) =>
+    configuration.GetConnectionString(IdentityPersistenceDefaults.ConnectionStringName)
+    ?? throw new InvalidOperationException(
+        $"Connection string '{IdentityPersistenceDefaults.ConnectionStringName}' was not configured for Blinder.IdentityServer.");
 
 static IdentityKeyMaterial LoadIdentityKeyMaterial(DirectoryInfo keysDirectory, string password)
 {

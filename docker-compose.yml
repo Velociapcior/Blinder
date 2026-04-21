@@ -37,14 +37,21 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-blinder}
-      POSTGRES_USER: ${POSTGRES_USER:-blinder_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-blinder_dev_password}
+      POSTGRES_USER: ${POSTGRES_ADMIN_USER:-blinder_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:-blinder_admin_dev_password}
+      IDENTITY_DB_USER: ${IDENTITY_DB_USER:-blinder_identity}
+      IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:-blinder_identity_dev_password}
+      API_DB_USER: ${API_DB_USER:-blinder_api}
+      API_DB_PASSWORD: ${API_DB_PASSWORD:-blinder_api_dev_password}
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
     networks:
       - blinder-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-blinder_user} -d ${POSTGRES_DB:-blinder}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_ADMIN_USER:-blinder_admin} -d ${POSTGRES_DB:-blinder}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -80,9 +87,7 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__DefaultConnection: >-
-        Host=postgres;Database=${POSTGRES_DB:-blinder};
-        Username=${POSTGRES_USER:-blinder_user};Password=${POSTGRES_PASSWORD:-blinder_dev_password}
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=${POSTGRES_DB:-blinder};Username=${IDENTITY_DB_USER:-blinder_identity};Password=${IDENTITY_DB_PASSWORD:-blinder_identity_dev_password}"
       IdentityKeys__Password: ${IDENTITY_KEYS_PASSWORD:-blinder-local-identity-password}
     volumes:
       - identityserver-keys:/app/keys
@@ -114,9 +119,7 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__DefaultConnection: >-
-        Host=postgres;Database=${POSTGRES_DB:-blinder};
-        Username=${POSTGRES_USER:-blinder_user};Password=${POSTGRES_PASSWORD:-blinder_dev_password}
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=${POSTGRES_DB:-blinder};Username=${API_DB_USER:-blinder_api};Password=${API_DB_PASSWORD:-blinder_api_dev_password}"
       Minio__Endpoint: "minio:9000"
       Minio__AccessKey: ${MINIO_ACCESS_KEY:-blinderminio}
       Minio__SecretKey: ${MINIO_SECRET_KEY:-blinderminiosecret}
@@ -143,14 +146,8 @@ services:
       dockerfile: src/Blinder.AdminPanel/Dockerfile
     container_name: blinder-adminpanel
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__DefaultConnection: >-
-        Host=postgres;Database=${POSTGRES_DB:-blinder};
-        Username=${POSTGRES_USER:-blinder_user};Password=${POSTGRES_PASSWORD:-blinder_dev_password}
     volumes:
       - dataprotection-keys:/app/dataprotection-keys
     networks:

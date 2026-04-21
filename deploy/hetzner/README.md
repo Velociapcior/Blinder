@@ -63,7 +63,9 @@ docker compose down && docker compose up -d
 
 - Never commit `.env` or `docker-compose.override.yml` to the repository.
 - Manage secrets manually on the VPS or inject via CI/CD (GitHub Actions SSH deployment).
-- Database password and MinIO credentials must be strong random values.
+- Use a dedicated PostgreSQL bootstrap admin credential plus separate runtime credentials for `identity.*` and `app.*` schema owners.
+- Keep `POSTGRES_HOST_PORT` bound to loopback unless you intentionally need host-level database access on the VPS.
+- Database passwords and MinIO credentials must be strong random values.
 - Traefik stores ACME state in the `traefik-certs` named Docker volume.
 
 ## DNS Setup
@@ -92,6 +94,8 @@ Then run the root stack without the Hetzner override:
 cp .env.example .env
 docker compose up -d
 ```
+
+The PostgreSQL init scripts in `postgres/init/` only run when the database volume is created for the first time. Use `docker compose down -v` before re-testing schema and role bootstrap behavior locally.
 
 The baseline stack routes over HTTP on port `80` using the root `traefik/traefik.yml` config. The Hetzner override switches Traefik to ACME-backed TLS on `443`.
 

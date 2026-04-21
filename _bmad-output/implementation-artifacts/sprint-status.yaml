@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-03
-last_updated: 2026-04-10  # updated by dev agent
+last_updated: 2026-04-20  # updated by dev agent
 project: Blinder
 project_key: NOKEY
 tracking_system: file-system
@@ -44,9 +44,9 @@ story_location: _bmad-output/implementation-artifacts
 development_status:
   # Epic 1: Project Foundation & Infrastructure Setup
   epic-1: in-progress
-  1-1-scaffold-asp-net-core-10-three-project-backend-solution: review
-  1-2-docker-compose-production-stack-with-traefik-postgresql-and-minio: review
-  1-3-postgresql-schema-separation-and-ef-core-migrations-pipeline: backlog
+  1-1-scaffold-asp-net-core-10-three-project-backend-solution: done
+  1-2-docker-compose-production-stack-with-traefik-postgresql-and-minio: done
+  1-3-postgresql-schema-separation-and-ef-core-migrations-pipeline: in-progress
   1-4-scaffold-mobile-app-with-tamagui-expo-router-starter: backlog
   1-5-design-system-foundation-warm-dusk-token-system: backlog
   epic-1-retrospective: optional
