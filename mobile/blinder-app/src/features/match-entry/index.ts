@@ -1,0 +1,1 @@
+export const matchEntryFeatureKey = 'match-entry' as const

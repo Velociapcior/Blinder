@@ -1,0 +1,1 @@
+export const decisionGateFeatureKey = 'decision-gate' as const

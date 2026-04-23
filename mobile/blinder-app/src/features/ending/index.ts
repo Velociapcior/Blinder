@@ -1,0 +1,1 @@
+export const endingFeatureKey = 'ending' as const

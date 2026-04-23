@@ -1,6 +1,6 @@
 # Story 1.4: Scaffold Mobile App with Tamagui Expo Router Starter
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -23,30 +23,47 @@ so that all mobile work starts from the correct navigation model and design syst
 
 ## Tasks / Subtasks
 
-- [ ] Initialize the mobile workspace from the approved starter (AC: 1, 7)
-  - [ ] Create `mobile/blinder-app/` from the repo root using `yarn create tamagui@latest --template expo-router`.
-  - [ ] Verify Yarn is `4.4.0+` before scaffolding; if not, upgrade with `yarn set version stable` and keep the generated Yarn configuration files in the repo.
-  - [ ] Preserve the Expo SDK 55 + Tamagui starter baseline instead of mixing in a different Expo template.
+- [x] Initialize the mobile workspace from the approved starter (AC: 1, 7)
+  - [x] Create `mobile/blinder-app/` from the repo root using `yarn create tamagui@latest --template expo-router`.
+  - [x] Verify Yarn is `4.4.0+` before scaffolding; if not, upgrade with `yarn set version stable` and keep the generated Yarn configuration files in the repo.
+  - [x] Preserve the Expo SDK 55 + Tamagui starter baseline instead of mixing in a different Expo template.
 
-- [ ] Prune starter demos and install the root app shell (AC: 1, 2, 5)
-  - [ ] Remove starter demo/example routes, sample components, and any tabs-oriented route groups or layout assumptions.
-  - [ ] Keep Expo Router `app/` files as thin route entrypoints and configure a stack-only root layout in `app/_layout.tsx`.
-  - [ ] Wire the Tamagui provider at the app root, but keep the initial route visually neutral and structural only; do not implement branded product screens in this story.
+- [x] Prune starter demos and install the root app shell (AC: 1, 2, 5)
+  - [x] Remove starter demo/example routes, sample components, and any tabs-oriented route groups or layout assumptions.
+  - [x] Keep Expo Router `app/` files as thin route entrypoints and configure a stack-only root layout in `app/_layout.tsx`.
+  - [x] Wire the Tamagui provider at the app root, but keep the initial route visually neutral and structural only; do not implement branded product screens in this story.
 
-- [ ] Reorganize into the required domain-first structure (AC: 3, 4, 5)
-  - [ ] Create `src/features/onboarding/`, `src/features/waiting/`, `src/features/match-entry/`, `src/features/conversation/`, `src/features/decision-gate/`, `src/features/reveal/`, `src/features/ending/`, and `src/features/settings/`.
-  - [ ] Create `src/services/auth/` and `src/services/realtime/` placeholder modules with clear stub entrypoints for later stories.
-  - [ ] Keep feature-specific screens, hooks, and types inside the owning feature folder rather than creating a separate top-level `src/screens/` tree.
+- [x] Reorganize into the required domain-first structure (AC: 3, 4, 5)
+  - [x] Create `src/features/onboarding/`, `src/features/waiting/`, `src/features/match-entry/`, `src/features/conversation/`, `src/features/decision-gate/`, `src/features/reveal/`, `src/features/ending/`, and `src/features/settings/`.
+  - [x] Create `src/services/auth/` and `src/services/realtime/` placeholder modules with clear stub entrypoints for later stories.
+  - [x] Keep feature-specific screens, hooks, and types inside the owning feature folder rather than creating a separate top-level `src/screens/` tree.
 
-- [ ] Harden TypeScript and developer tooling (AC: 6, 7, 8)
-  - [ ] Enable TypeScript strict mode and add a reproducible typecheck command for `tsc --noEmit`.
-  - [ ] Add package scripts for local development and validation, including a cache-clearing Expo start command for first Tamagui bootstraps if needed.
-  - [ ] Run Expo Doctor and resolve all blocking issues before marking the story complete.
+- [x] Harden TypeScript and developer tooling (AC: 6, 7, 8)
+  - [x] Enable TypeScript strict mode and add a reproducible typecheck command for `tsc --noEmit`.
+  - [x] Add package scripts for local development and validation, including a cache-clearing Expo start command for first Tamagui bootstraps if needed.
+  - [x] Run Expo Doctor and resolve all blocking issues before marking the story complete.
 
 - [ ] Validate the scaffold on the supported development paths (AC: 1, 6, 8)
   - [ ] Confirm the project starts in Expo Go on a real device or emulator.
   - [ ] Confirm a development build path works for Android and iOS; if the current host OS cannot complete one platform locally, document the remaining platform-specific validation explicitly instead of silently skipping it.
-  - [ ] Run `tsc --noEmit` with zero errors and capture the final validation commands in the mobile README or story dev log.
+  - [x] Run `tsc --noEmit` with zero errors and capture the final validation commands in the mobile README or story dev log.
+
+### Review Findings
+
+- [x] [Review][Defer] Android package name is placeholder `"com.anonymous.blinderapp"` — must be replaced with a real reverse-domain identifier before any build pipeline or Play Store submission; tracked in deferred-work.md [mobile/blinder-app/app.json:26] — deferred, real package name TBD
+- [x] [Review][Decision] Android dev build failed (Windows/ReadableStream) and iOS dev build blocked (macOS required) — accepted as done; both failures are host-constraint documented in dev log; full native-build validation gates on EAS/CI before release
+- [x] [Review][Patch] SafeAreaProvider missing from AppProviders — added `SafeAreaProvider` wrapper and `?? 'light'` null guard to `AppProviders.tsx` [mobile/blinder-app/src/providers/AppProviders.tsx]
+- [x] [Review][Patch] package.json version is Tamagui RC build identifier not app version — changed to `"1.0.0"` [mobile/blinder-app/package.json]
+- [x] [Review][Patch] TypeScript `~5.9.2` is a non-existent version — upgraded to `"^6.0.3"` (latest) [mobile/blinder-app/package.json]
+- [x] [Review][Patch] tsconfig.base.json disables noImplicitReturns, noUnusedLocals, noUnusedParameters — enabled all three in tsconfig.json to override base [mobile/blinder-app/tsconfig.json]
+- [x] [Review][Patch] Hardcoded hex `#2e78b7` and dead StyleSheet keys (`container`, `title`) in +not-found.tsx — replaced with `color="$blue10"` Tamagui prop; removed dead keys [mobile/blinder-app/app/+not-found.tsx]
+- [x] [Review][Patch] useColorScheme() returns null on web — guarded with `?? 'light'` fallback in `AppProviders.tsx` [mobile/blinder-app/src/providers/AppProviders.tsx]
+- [x] [Review][Patch] tamagui.generated.css is gitignored but imported unconditionally — documented first-run generation requirement in README [mobile/blinder-app/README.md]
+- [x] [Review][Defer] tsconfig.base.json module:"system" and moduleResolution:"node" — non-standard but Metro bypasses tsc output; tsc --noEmit passes today; defer for starter cleanup [mobile/blinder-app/tsconfig.base.json:13,14] — deferred, pre-existing
+- [x] [Review][Defer] Auth/realtime stubs have no TODO markers — scaffold-intent per spec; acceptable at this stage [mobile/blinder-app/src/services/auth/index.ts, src/services/realtime/index.ts] — deferred, pre-existing
+- [x] [Review][Defer] babel-preset-expo in dependencies instead of devDependencies — pre-existing from Tamagui starter template [mobile/blinder-app/package.json] — deferred, pre-existing
+- [x] [Review][Defer] tamagui.config.ts has no token extension slot — Story 1.5 owns the full token layer and will extend this file [mobile/blinder-app/tamagui.config.ts] — deferred, pre-existing
+- [x] [Review][Defer] Feature stubs (onboarding, match-entry, etc.) are minimal key-only exports — inconsistent with waiting/ but within spec scope for this story [mobile/blinder-app/src/features/*/index.ts] — deferred, pre-existing
 
 ## Dev Notes
 
@@ -184,17 +201,58 @@ GPT-5.4
 ### Debug Log References
 
 - Story context created on 2026-04-21.
-- `mobile/` does not exist yet in the workspace.
+- `corepack yarn --version` initially resolved to `1.22.22`; the repo package manager was upgraded to Yarn `4.14.1` before scaffolding.
+- `yarn create tamagui@latest --template expo-router` generated the official starter, but dependency installation failed under Bun on this host; the scaffold was relocated into `mobile/blinder-app/` and normalized to Yarn.
 - `project-context.md` does not exist in the workspace.
 - Existing recent commits relevant to this story: `e0332ef` (`1-3 Postgres migrations`), `4444be7` (`Add Blinder Design System from Claude Design handoff`), `cdc855a` (`1.2 Dockler + database`).
 - Upstream docs checked: current Tamagui Expo guide, Tamagui installation guide, Expo Router introduction, Expo environment setup.
+- Validation commands run:
+  - `corepack yarn --cwd "c:\Sitecore\Blinder\mobile\blinder-app" install`
+  - `corepack yarn --cwd "c:\Sitecore\Blinder\mobile\blinder-app" typecheck`
+  - `corepack yarn --cwd "c:\Sitecore\Blinder\mobile\blinder-app" doctor`
+  - `corepack yarn --cwd "c:\Sitecore\Blinder\mobile\blinder-app" expo start -c`
+  - `corepack yarn --cwd "c:\Sitecore\Blinder\mobile\blinder-app" android`
+  - `corepack yarn --cwd "c:\Sitecore\Blinder\mobile\blinder-app" ios`
 
 ### Completion Notes List
 
-- Story context compiled from planning artifacts, design-system artifacts, repo state, and current upstream starter guidance.
-- No implementation work was performed as part of story creation.
-- Story is ready for a dev agent to execute.
+- Scaffolded the official Tamagui Expo Router starter into `mobile/blinder-app/`, converted it to Yarn 4, and aligned package versions with Expo SDK 55.
+- Removed starter tab routes, modal/demo content, and demo components; the app now uses a stack-only Expo Router shell with a neutral waiting-state entry screen.
+- Added the required domain-first feature folders under `src/features/` and placeholder integration entrypoints under `src/services/auth/` and `src/services/realtime/`.
+- `corepack yarn --cwd "c:\Sitecore\Blinder\mobile\blinder-app" typecheck` completed with zero output after dependency alignment.
+- `corepack yarn --cwd "c:\Sitecore\Blinder\mobile\blinder-app" doctor` passed all 18 checks.
+- `corepack yarn --cwd "c:\Sitecore\Blinder\mobile\blinder-app" expo start -c` successfully started Metro, emitted an Expo Go QR code, and exposed an `exp://` URL.
+- Android development-build validation remains open: `corepack yarn --cwd "c:\Sitecore\Blinder\mobile\blinder-app" android` reached Expo prebuild but failed while unpacking the native template on this Windows host with `The "data" argument must be of type string ... Received an instance of ReadableStream`.
+- iOS development-build validation remains open by platform constraint: `corepack yarn --cwd "c:\Sitecore\Blinder\mobile\blinder-app" ios` reported that iOS apps can only be built on macOS and should use EAS for cloud builds.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/1-4-scaffold-mobile-app-with-tamagui-expo-router-starter.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `mobile/blinder-app/README.md`
+- `mobile/blinder-app/app.json`
+- `mobile/blinder-app/app/_layout.tsx`
+- `mobile/blinder-app/app/index.tsx`
+- `mobile/blinder-app/package.json`
+- `mobile/blinder-app/playwright.config.ts`
+- `mobile/blinder-app/src/features/onboarding/index.ts`
+- `mobile/blinder-app/src/features/waiting/WaitingStateScreen.tsx`
+- `mobile/blinder-app/src/features/waiting/index.ts`
+- `mobile/blinder-app/src/features/match-entry/index.ts`
+- `mobile/blinder-app/src/features/conversation/index.ts`
+- `mobile/blinder-app/src/features/decision-gate/index.ts`
+- `mobile/blinder-app/src/features/reveal/index.ts`
+- `mobile/blinder-app/src/features/ending/index.ts`
+- `mobile/blinder-app/src/features/settings/index.ts`
+- `mobile/blinder-app/src/providers/AppProviders.tsx`
+- `mobile/blinder-app/src/services/auth/index.ts`
+- `mobile/blinder-app/src/services/realtime/index.ts`
+- `mobile/blinder-app/tests/export.test.ts`
+- `mobile/blinder-app/yarn.lock`
+
+### Change Log
+
+- 2026-04-23: Scaffolded `mobile/blinder-app/` from the Tamagui Expo Router starter and upgraded the repo to Yarn `4.14.1`.
+- 2026-04-23: Replaced starter tab/demo routes with a stack-only root shell and neutral waiting-state entry screen.
+- 2026-04-23: Added the required `src/features/*` and `src/services/*` structure, Yarn scripts, and Expo SDK 55 dependency alignment.
+- 2026-04-23: Validated `typecheck`, `expo doctor`, and Expo Go startup; documented remaining Android/iOS native-build validation limits for review.

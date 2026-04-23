@@ -1,0 +1,1 @@
+export const revealFeatureKey = 'reveal' as const

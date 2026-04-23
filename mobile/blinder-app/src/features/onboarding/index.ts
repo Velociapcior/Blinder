@@ -1,0 +1,1 @@
+export const onboardingFeatureKey = 'onboarding' as const

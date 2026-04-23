@@ -1,5 +1,10 @@
 # Deferred Work
 
+## Deferred from: code review of 1-4-scaffold-mobile-app-with-tamagui-expo-router-starter (2026-04-23)
+
+- **Android package name placeholder** — `app.json` sets `"android.package": "com.anonymous.blinderapp"` (Expo default stub). Must be replaced with the real reverse-domain identifier (e.g. `com.blinder.app`) before any Play Store submission, APK signing, or deep-link registration. All downstream stories that add push notifications or deep links depend on this being correct.
+- **Android / iOS native-build validation** — `expo run:android` failed on Windows (ReadableStream unpacking error); `expo run:ios` blocked by macOS requirement. Accepted as host-constraint; full native-build validation must complete via EAS Build or a macOS CI agent before any release build is cut.
+
 ## Deferred from: code review of 1-3-postgresql-schema-separation-and-ef-core-migrations-pipeline (2026-04-21)
 
 - BoundaryTests cannot detect wrong-schema DDL argument values inside a valid assembly — NetArchTest IL analysis cannot inspect runtime argument values; a migration in Blinder.Api could call `CreateTable(schema: "identity", ...)` and no test would catch it.
