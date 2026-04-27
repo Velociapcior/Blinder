@@ -1,22 +1,22 @@
 using Microsoft.EntityFrameworkCore;
 
+using EfIdentityDbContext = Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext<
+    Blinder.IdentityServer.Persistence.ApplicationUser>;
+
 namespace Blinder.IdentityServer.Persistence;
 
-/// <summary>
-/// Represents the identity persistence boundary and its schema-scoped EF Core model.
-/// </summary>
 public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> options)
-    : DbContext(options)
+    : EfIdentityDbContext(options)
 {
-    /// <summary>
-    /// Applies the identity schema default and discovers entity configurations for this boundary.
-    /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(IdentityPersistenceDefaults.Schema);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
 
+        // Required by ASP.NET Core Identity — must precede custom configurations
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
+        modelBuilder.UseOpenIddict();
     }
 }
 

@@ -32,6 +32,18 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+builder.Services
+    .AddOpenIddict()
+    .AddValidation(options =>
+    {
+        options.SetIssuer(
+            builder.Configuration["OpenIddict:Issuer"]
+            ?? "http://localhost:5041/");
+        options.AddAudiences("blinder-api");
+        options.UseSystemNetHttp();
+        options.UseAspNetCore();
+    });
+
 var app = builder.Build();
 
 app.UseForwardedHeaders();
@@ -42,6 +54,8 @@ if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapHealthChecks("/health");
 
 app.Run();

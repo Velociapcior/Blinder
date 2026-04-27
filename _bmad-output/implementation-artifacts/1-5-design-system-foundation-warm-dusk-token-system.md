@@ -63,6 +63,47 @@ so that all future screen work is built from tokens with zero hardcoded values.
   - [ ] Compare the mobile token showcase against `_bmad-output/design-system/ui_kits/Blinder/index.html` in a human design review and record the result explicitly in the completion notes before marking the story done.
   - [x] Do not start Epic 3+ screen implementation stories until this design review is accepted.
 
+### Review Findings
+
+> Code review conducted 2026-04-26. 5 decision-needed, 15 patch, 8 deferred, 7 dismissed.
+
+**Decision-needed (resolve before patching):**
+
+- [ ] [Review][Decision] DN1 — AC 11: Design review gate is unchecked — the human visual comparison of `/dev/tokens` against `ui_kits/Blinder/index.html` has not been completed; story must not move to `done` until this gate is recorded in the completion notes.
+- [ ] [Review][Decision] DN2 — Easing constants are CSS `cubic-bezier(...)` strings, not React Native `Easing` objects — consumers passing `easing.emphasize` directly to `Animated.timing` or `withTiming` will get a silent no-op on native; decide: add RN adapters to `motion.ts`, add type branding to prevent misuse, or document as web-only constants.
+- [ ] [Review][Decision] DN3 — `...defaultConfig` spread in `createTamagui` may carry Tamagui v5 sub-themes (`light_blue`, `dark_green`, `light_Card` …) that reference the old numeric token keys now replaced by the Blinder set — silent token resolution failures on built-in components (`Input`, `Button`, `Select`); decide: strip defaultConfig themes entirely, remap sub-themes, or accept risk until components are added.
+- [ ] [Review][Decision] DN4 — `metrics.ts` re-declares all 8 type scales independently from `tamagui.config.ts` (dual source of truth); `TokenShowcase.tsx` imports from `metrics.ts`, not from Tamagui tokens — decide: keep `metrics.ts` as a raw-RN-only contract and validate it stays in sync with `tamagui.config.ts`, or derive `metrics.ts` constants from the config to guarantee consistency.
+- [ ] [Review][Decision] DN5 — `tracking.eyebrow: 1.5` in `metrics.ts` has no counterpart in `colors_and_type.css` (AC 8 requires one-to-one) — decide: remove it and use `tracking.caption` (0.44) in section headings, or add it to the canonical CSS source as a new token.
+
+**Patch findings:**
+
+- [ ] [Review][Patch] P1 — `shadow.reveal` (amber glow, `0 0 0 12px rgba(212,168,90,0.22)…`) missing from `motion.ts` and `ElevationSection` in TokenShowcase — AC 6 + AC 9 [`motion.ts`, `src/design-system/TokenShowcase.tsx`]
+- [ ] [Review][Patch] P2 — `prefersReducedMotion()` returns `false` on error — should return `true` (honour preference when in doubt) [`src/design-system/motion.ts`]
+- [ ] [Review][Patch] P3 — `warmDusk` colour object in `tamagui.config.ts` duplicates `palette.ts` — import from `palette.ts` to eliminate dual definition and drift risk [`mobile/blinder-app/tamagui.config.ts`]
+- [ ] [Review][Patch] P4 — `space` token index `17: 144` duplicates index `16: 144`; v5 default was `152` — correct or remove the duplicate [`mobile/blinder-app/tamagui.config.ts`]
+- [ ] [Review][Patch] P5 — ESLint hex rule uses `Literal` AST selector; template-literal hex strings (`` `#8B4E6E` ``) bypass it — add `TemplateLiteral` selector [`mobile/blinder-app/eslint.config.js`]
+- [ ] [Review][Patch] P6 — `STYLE_NUMERIC_LITERAL_SELECTOR` does not cover `width`, `height`, `borderWidth`, `borderRadius`, `opacity` — hardcoded literals in these props are undetected (e.g. `opacity: 0.85` already in the diff) [`mobile/blinder-app/eslint.config.js`]
+- [ ] [Review][Patch] P7 — `src/design-system/TokenShowcase.tsx` is not in ESLint `ignores` but contains arithmetic magic offsets (`space.md - 2`, `typeScale.caption.fontSize - 1`, etc.) that bypass `Property > Literal` selectors — add it to ignores alongside `motion.ts` / `palette.ts` [`mobile/blinder-app/eslint.config.js`]
+- [ ] [Review][Patch] P8 — `<link rel="preconnect" href="https://fonts.googleapis.com">` missing `crossOrigin="anonymous"` — without it the browser discards the non-credentialed connection when the actual CORS request fires [`mobile/blinder-app/app/+html.tsx`]
+- [ ] [Review][Patch] P9 — `metrics.ts` missing trailing newline (diff shows `\ No newline at end of file`) [`mobile/blinder-app/src/design-system/metrics.ts`]
+- [ ] [Review][Patch] P10 — `Section` heading in `TokenShowcase.tsx` applies `letterSpacing: tracking.eyebrow` (1.5px) — should use `tracking.caption` (0.44) or `tracking.button` (0.56) [`mobile/blinder-app/src/design-system/TokenShowcase.tsx`]
+- [ ] [Review][Patch] P11 — `emotionalDuration(nominalMs)` always returns `duration.reducedMotion` (200ms) when reduced motion is on, even when `nominalMs < 200` — inverse of intended accessibility behaviour for micro-feedback [`mobile/blinder-app/src/design-system/motion.ts`]
+- [ ] [Review][Patch] P12 — `motion.ts` block comment says "intentionally stays import-free" but imports `AccessibilityInfo` and `Platform` from `react-native` — fix or remove the misleading comment [`mobile/blinder-app/src/design-system/motion.ts`]
+- [ ] [Review][Patch] P13 — Font-load timeout race: `setTimeout` callback fires even after `fontsLoaded` flips true (cleanup only guards the effect setup, not the callback body) — use a ref inside the callback [`mobile/blinder-app/src/providers/AppProviders.tsx`]
+- [ ] [Review][Patch] P14 — `+not-found.tsx` uses opaque numeric token `m="$5"` instead of semantic `m="$md"` (both = 24px) [`mobile/blinder-app/app/+not-found.tsx`]
+- [ ] [Review][Patch] P15 — `metrics.ts` `typeScale.*` exports `fontFamily: 'Lato_900Black'` (Expo native asset name) — not resolvable on web where the font loads as `Lato` via Google Fonts; `TokenShowcase` falls back to system font on web [`mobile/blinder-app/src/design-system/metrics.ts`]
+
+**Deferred:**
+
+- [x] [Review][Defer] D1 — `tsconfig.base.json` `ignoreDeprecations: "6.0"` silences all TS6 deprecation warnings globally; scaffold debt from Story 1.4 [`mobile/blinder-app/tsconfig.base.json`] — deferred, pre-existing
+- [x] [Review][Defer] D2 — AC 3: `letterSpacing` stored as absolute px (0.44 / 0.56) — won't scale with `maxFontSizeMultiplier`; React Native limitation, not a fixable code issue in this story [`mobile/blinder-app/src/design-system/metrics.ts`] — deferred, platform limitation
+- [x] [Review][Defer] D3 — `prefersReducedMotion()` is a one-shot async call with no `AccessibilityInfo` event subscription — mid-session OS toggle not reflected; post-MVP enhancement [`mobile/blinder-app/src/design-system/motion.ts`] — deferred, post-MVP
+- [x] [Review][Defer] D4 — `allowedStyleValues: 'somewhat-strict-web'` will type-error if `shadow.cta`/`modal` (which include `elevation`) are spread onto Tamagui `Stack`/`View` — no current violation, risk deferred to when native shadows are used [`mobile/blinder-app/tamagui.config.ts`] — deferred, no current violation
+- [x] [Review][Defer] D5 — AC 7: Only `text.primary` on `bg.base` contrast is documented; `on-primary`, `on-reveal`, `text.secondary` on `bg.surface` etc. are undocumented [`mobile/blinder-app/tamagui.config.ts`] — deferred, informational
+- [x] [Review][Defer] D6 — AC 9: On-colour swatch pairs rendered as isolated chips, not foreground-on-background paired tiles as in the HTML kit [`mobile/blinder-app/src/design-system/TokenShowcase.tsx`] — deferred, minor showcase fidelity
+- [x] [Review][Defer] D7 — AC 2: `reveal` token reservation not lint-enforced; no product screens exist yet to enforce against; revisit when reveal ceremony screen story begins — deferred, no screens yet
+- [x] [Review][Defer] D8 — `duration.revealMax: 2400` has no counterpart in `colors_and_type.css`; additive but not strictly one-to-one per AC 8 [`mobile/blinder-app/src/design-system/motion.ts`] — deferred, additive
+
 ## Dev Notes
 
 ### Story Intent

@@ -2,9 +2,12 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Blinder.IdentityServer.Persistence;
+using Blinder.IdentityServer.Workers;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using OpenIddict.Abstractions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +21,8 @@ var identityConnectionString = GetRequiredConnectionString(builder.Configuration
 
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
+builder.Services.AddRazorPages();
+
 builder.Services.AddDbContext<IdentityDbContext>(options =>
 {
     options.UseNpgsql(
@@ -25,12 +30,79 @@ builder.Services.AddDbContext<IdentityDbContext>(options =>
         npgsqlOptions => npgsqlOptions.MigrationsHistoryTable(
             IdentityPersistenceDefaults.MigrationsHistoryTable,
             IdentityPersistenceDefaults.Schema));
+    options.UseOpenIddict();
 });
+
 builder.Services
     .AddDataProtection()
     .SetApplicationName("Blinder")
     .PersistKeysToFileSystem(dataProtectionKeysDirectory);
+
 builder.Services.AddSingleton(identityKeyMaterial);
+
+builder.Services
+    .AddIdentity<ApplicationUser, IdentityRole>(options =>
+    {
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequiredLength = 10;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.User.RequireUniqueEmail = true;
+        options.SignIn.RequireConfirmedEmail = false;
+    })
+    .AddEntityFrameworkStores<IdentityDbContext>()
+    .AddDefaultTokenProviders();
+
+builder.Services
+    .AddOpenIddict()
+    .AddCore(options =>
+    {
+        options
+            .UseEntityFrameworkCore()
+            .UseDbContext<IdentityDbContext>();
+    })
+    .AddServer(options =>
+    {
+        options
+            .SetAuthorizationEndpointUris("/connect/authorize")
+            .SetTokenEndpointUris("/connect/token")
+            .SetUserInfoEndpointUris("/connect/userinfo")
+            .SetEndSessionEndpointUris("/connect/endsession")
+            .SetIntrospectionEndpointUris("/connect/introspect")
+            .SetRevocationEndpointUris("/connect/revoke");
+
+        options
+            .AllowAuthorizationCodeFlow()
+            .AllowRefreshTokenFlow();
+
+        options
+            .SetAccessTokenLifetime(TimeSpan.FromMinutes(60))
+            .SetRefreshTokenLifetime(TimeSpan.FromDays(30));
+
+        options.RequireProofKeyForCodeExchange();
+
+        if (builder.Environment.IsDevelopment())
+        {
+            options.AddEphemeralEncryptionKey();
+            options.AddEphemeralSigningKey();
+        }
+        else
+        {
+            options.AddSigningCertificate(identityKeyMaterial.SigningCertificate);
+            options.AddEncryptionCertificate(identityKeyMaterial.EncryptionCertificate);
+        }
+
+        options
+            .UseAspNetCore()
+            .EnableAuthorizationEndpointPassthrough()
+            .EnableEndSessionEndpointPassthrough()
+            .EnableTokenEndpointPassthrough()
+            .EnableUserInfoEndpointPassthrough()
+            .EnableStatusCodePagesIntegration();
+    });
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -39,9 +111,12 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+builder.Services.AddHostedService<OpenIddictSeeder>();
+
 var app = builder.Build();
 
 app.UseForwardedHeaders();
+app.UseRouting();
 
 if (app.Environment.IsDevelopment())
 {
@@ -49,13 +124,15 @@ if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapRazorPages();
 app.MapHealthChecks("/health");
 
 app.Run();
 
 return;
 
-// Fail fast when the identity host is missing its schema-scoped database connection string.
 static string GetRequiredConnectionString(IConfiguration configuration) =>
     configuration.GetConnectionString(IdentityPersistenceDefaults.ConnectionStringName)
     ?? throw new InvalidOperationException(
