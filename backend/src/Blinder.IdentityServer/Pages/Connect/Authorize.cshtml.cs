@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Blinder.IdentityServer.Persistence;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

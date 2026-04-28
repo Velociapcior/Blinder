@@ -11,6 +11,7 @@ applyTo: '**/*.cs, **/*.json'
 - Provide educational context for each implementation decision to help users understand the underlying concepts.
 - Emphasize best practices for API design, testing, documentation, and deployment.
 - Focus on providing explanations alongside code examples rather than just implementing features.
+- Never use reflection-based inspection or local assembly/package probing to discover ASP.NET Core, OpenIddict, EF Core, or other backend framework APIs; use official web documentation instead.
 
 ## API Design Fundamentals
 

@@ -13,6 +13,12 @@ Your task is to ensure .NET/C# code in ${selection} meets the best practices spe
 - Include parameter descriptions and return value descriptions in XML comments
 - Follow the established namespace structure: `{Core|Console|App|Service}.{Feature}`
 
+## Research Approach
+
+- Never use reflection-based inspection, assembly loading, or local package-cache probing to discover .NET/backend framework APIs.
+- When verifying framework/package behavior for backend development, use official web documentation first.
+- Prefer Microsoft Learn, official vendor documentation, GitHub documentation, and release notes over local binary inspection.
+
 ## Design Patterns & Architecture
 
 - Use primary constructor syntax for dependency injection (e.g., `public class MyClass(IDependency dependency)`)

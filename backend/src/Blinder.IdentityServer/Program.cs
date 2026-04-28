@@ -38,8 +38,6 @@ builder.Services
     .SetApplicationName("Blinder")
     .PersistKeysToFileSystem(dataProtectionKeysDirectory);
 
-builder.Services.AddSingleton(identityKeyMaterial);
-
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
     {

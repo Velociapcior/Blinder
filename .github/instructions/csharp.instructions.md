@@ -15,6 +15,12 @@ applyTo: '**/*.cs'
 - Handle edge cases and write clear exception handling.
 - For libraries or external dependencies, mention their usage and purpose in comments.
 
+## Research Approach
+
+- Do not use reflection-based inspection, assembly loading, XML-doc scraping from local package caches, or similar package-surface probing to discover .NET/backend framework APIs.
+- For backend C# work, always consult official web documentation first when checking framework or package capabilities, API availability, configuration options, or version-specific behavior.
+- Prefer official sources such as Microsoft Learn, vendor docs, GitHub documentation, and release notes over local binary/package inspection.
+
 ## Naming Conventions
 
 - Follow PascalCase for component names, method names, and public members.

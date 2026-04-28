@@ -44,6 +44,8 @@ builder.Services
         options.UseAspNetCore();
     });
 
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 app.UseForwardedHeaders();
