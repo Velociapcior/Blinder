@@ -55,7 +55,7 @@ development_status:
   epic-2: in-progress
   2-1-identityserver-oauth2-oidc-foundation-with-openiddict: done
   2-2-local-account-registration-and-sign-in-via-identityserver-oidc: done
-  2-3-social-federation-via-identityserver-google-apple-and-facebook: review
+  2-3-social-federation-via-identityserver-google-apple-and-facebook: done
   2-4-age-gate-policy-acceptance-and-gdpr-consent-records: backlog
   2-5-account-deletion-gdpr-right-to-erasure: backlog
   2-6-welcome-registration-and-sign-in-screens-oidc-flow: backlog
