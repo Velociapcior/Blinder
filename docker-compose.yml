@@ -1,5 +1,6 @@
 networks:
   blinder-net:
+    name: blinder-net
     driver: bridge
 
 volumes:

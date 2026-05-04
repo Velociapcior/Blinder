@@ -14,3 +14,13 @@
 **/postgres/data
 **/node_modules
 **/.DS_Store
+**/NuGet.Config
+**/nuget.config
+# directories
+**/bin/
+**/obj/
+**/out/
+
+# files
+Dockerfile*
+**/*.md
