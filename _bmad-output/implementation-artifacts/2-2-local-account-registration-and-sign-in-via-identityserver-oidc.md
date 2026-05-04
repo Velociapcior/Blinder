@@ -20,15 +20,16 @@ so that my credentials are managed entirely by the identity authority and never 
    **When** they complete the OIDC Authorization Code + PKCE flow against IdentityServer
    **Then** IdentityServer issues an access token, ID token, and refresh token
    **And** the access token contains the user's subject ID and configured API scopes consumable by `Blinder.Api`
-   **And** failed authentication attempts return standard OIDC error responses with no credential detail leakage
+    **And** interactive credential failures on `/Account/Login` return only generic UI errors with no credential detail leakage
+    **And** protocol-level errors from OIDC endpoints (`/connect/authorize`, `/connect/token`) follow standard OIDC error responses
    **And** `Blinder.Api` validates incoming access tokens as a resource server — it does not issue or manage tokens itself
 
 ## Tasks / Subtasks
 
 - [x] Create `Pages/Account/Login.cshtml.cs` — LoginModel with InputModel, OnGetAsync, OnPostAsync (AC: 2)
-    - [x] Inject `SignInManager<ApplicationUser>`, `ILogger<LoginModel>`
-    - [x] `OnPostAsync`: call `PasswordSignInAsync`, handle `Succeeded` / `IsLockedOut` / failure cases
-    - [x] Return `LocalRedirect(ReturnUrl ?? Url.Content("~/"))` on success — never open redirect
+    - [x] Inject `UserManager<ApplicationUser>`, `SignInManager<ApplicationUser>`, `ILogger<LoginModel>`
+    - [x] `OnPostAsync`: resolve account by email, then call `PasswordSignInAsync(user, ...)`, handle `Succeeded` / `IsLockedOut` / `IsNotAllowed` / `RequiresTwoFactor` / failure cases
+    - [x] Sanitize `returnUrl` to allow local paths only with safe fallback to `/`, then use `LocalRedirect` on success
     - [x] Lockout: add non-specific `ModelState` error ("Account temporarily locked. Try again later.")
     - [x] Invalid credentials: add `ModelState` error ("Invalid email or password.") — do not reveal which field failed
 - [x] Create `Pages/Account/Login.cshtml` — functional Razor view with email/password form (AC: 2)
@@ -38,7 +39,8 @@ so that my credentials are managed entirely by the identity authority and never 
     - [x] Link to Register page
 - [x] Create `Pages/Account/Register.cshtml.cs` — RegisterModel with InputModel, OnGetAsync, OnPostAsync (AC: 1)
     - [x] Inject `UserManager<ApplicationUser>`, `SignInManager<ApplicationUser>`, `ILogger<RegisterModel>`
-    - [x] `OnPostAsync`: `CreateAsync(user, Input.Password)` → `SignInAsync` → `LocalRedirect` on success
+    - [x] `OnPostAsync`: `CreateAsync(user, Input.Password)` → validate `CanSignInAsync(user)` → `SignInAsync` → `LocalRedirect` on success
+    - [x] Sanitize `returnUrl` to allow local paths only with safe fallback to `/`
     - [x] On `IdentityResult` failure: add each `IdentityError.Description` to `ModelState`
 - [x] Create `Pages/Account/Register.cshtml` — functional Razor view with email/password/confirm form (AC: 1)
     - [x] Preserve `returnUrl` via `asp-route-returnUrl` on form tag

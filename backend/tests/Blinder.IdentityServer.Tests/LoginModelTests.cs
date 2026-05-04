@@ -15,11 +15,12 @@ public sealed class LoginModelTests
     [Fact]
     public async Task OnPostAsync_WhenCredentialsAreValid_ReturnsLocalRedirect()
     {
-        var signInManager = new StubSignInManager
+        var userManager = new StubUserManager();
+        var signInManager = new StubSignInManager(userManager)
         {
             PasswordSignInResult = IdentitySignInResult.Success,
         };
-        var model = new LoginModel(signInManager, NullLogger<LoginModel>.Instance)
+        var model = new LoginModel(userManager, signInManager, NullLogger<LoginModel>.Instance)
         {
             Input = new LoginModel.InputModel
             {
@@ -38,8 +39,10 @@ public sealed class LoginModelTests
     [Fact]
     public async Task OnPostAsync_WhenUserIsLockedOut_ReturnsPageWithGenericLockoutError()
     {
+        var userManager = new StubUserManager();
         var model = new LoginModel(
-            new StubSignInManager
+            userManager,
+            new StubSignInManager(userManager)
             {
                 PasswordSignInResult = IdentitySignInResult.LockedOut,
             },
@@ -62,8 +65,10 @@ public sealed class LoginModelTests
     [Fact]
     public async Task OnPostAsync_WhenCredentialsAreInvalid_ReturnsPageWithGenericError()
     {
+        var userManager = new StubUserManager();
         var model = new LoginModel(
-            new StubSignInManager
+            userManager,
+            new StubSignInManager(userManager)
             {
                 PasswordSignInResult = IdentitySignInResult.Failed,
             },
@@ -83,11 +88,152 @@ public sealed class LoginModelTests
         Assert.Equal("Invalid email or password.", error.ErrorMessage);
     }
 
-    private sealed class StubSignInManager() : SignInManager<ApplicationUser>(
-        CreateUserManager(),
+    [Fact]
+    public async Task OnPostAsync_WhenSignInIsNotAllowed_ReturnsPageWithGenericError()
+    {
+        var userManager = new StubUserManager();
+        var model = new LoginModel(
+            userManager,
+            new StubSignInManager(userManager)
+            {
+                PasswordSignInResult = IdentitySignInResult.NotAllowed,
+            },
+            NullLogger<LoginModel>.Instance)
+        {
+            Input = new LoginModel.InputModel
+            {
+                Email = "person@example.com",
+                Password = "Complex!Pass1",
+            },
+        };
+
+        var result = await model.OnPostAsync("/connect/authorize?client_id=blinder-mobile");
+
+        Assert.IsType<PageResult>(result);
+        var error = Assert.Single(model.ModelState[string.Empty]!.Errors);
+        Assert.Equal("Invalid email or password.", error.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task OnPostAsync_WhenTwoFactorIsRequired_ReturnsPageWithGenericError()
+    {
+        var userManager = new StubUserManager();
+        var model = new LoginModel(
+            userManager,
+            new StubSignInManager(userManager)
+            {
+                PasswordSignInResult = IdentitySignInResult.TwoFactorRequired,
+            },
+            NullLogger<LoginModel>.Instance)
+        {
+            Input = new LoginModel.InputModel
+            {
+                Email = "person@example.com",
+                Password = "Complex!Pass1",
+            },
+        };
+
+        var result = await model.OnPostAsync("/connect/authorize?client_id=blinder-mobile");
+
+        Assert.IsType<PageResult>(result);
+        var error = Assert.Single(model.ModelState[string.Empty]!.Errors);
+        Assert.Equal("Invalid email or password.", error.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task OnPostAsync_WhenReturnUrlIsExternal_FallsBackToRoot()
+    {
+        var userManager = new StubUserManager();
+        var model = new LoginModel(
+            userManager,
+            new StubSignInManager(userManager)
+            {
+                PasswordSignInResult = IdentitySignInResult.Success,
+            },
+            NullLogger<LoginModel>.Instance)
+        {
+            Input = new LoginModel.InputModel
+            {
+                Email = "person@example.com",
+                Password = "Complex!Pass1",
+            },
+        };
+
+        var result = await model.OnPostAsync("https://malicious.example/steal");
+
+        var redirect = Assert.IsType<LocalRedirectResult>(result);
+        Assert.Equal("/", redirect.Url);
+    }
+
+    [Fact]
+    public async Task OnPostAsync_WhenUserIsMissing_ReturnsPageWithGenericError()
+    {
+        var userManager = new StubUserManager
+        {
+            User = null,
+        };
+
+        var model = new LoginModel(
+            userManager,
+            new StubSignInManager(userManager)
+            {
+                PasswordSignInResult = IdentitySignInResult.Success,
+            },
+            NullLogger<LoginModel>.Instance)
+        {
+            Input = new LoginModel.InputModel
+            {
+                Email = "person@example.com",
+                Password = "Complex!Pass1",
+            },
+        };
+
+        var result = await model.OnPostAsync("/connect/authorize?client_id=blinder-mobile");
+
+        Assert.IsType<PageResult>(result);
+        var error = Assert.Single(model.ModelState[string.Empty]!.Errors);
+        Assert.Equal("Invalid email or password.", error.ErrorMessage);
+    }
+
+    private sealed class StubUserManager : UserManager<ApplicationUser>
+    {
+        public StubUserManager()
+            : base(
+                new StubUserStore(),
+                Microsoft.Extensions.Options.Options.Create(new IdentityOptions()),
+                new PasswordHasher<ApplicationUser>(),
+                Array.Empty<IUserValidator<ApplicationUser>>(),
+                Array.Empty<IPasswordValidator<ApplicationUser>>(),
+                new UpperInvariantLookupNormalizer(),
+                new IdentityErrorDescriber(),
+                new EmptyServiceProvider(),
+                NullLogger<UserManager<ApplicationUser>>.Instance)
+        {
+        }
+
+        public ApplicationUser? User { get; init; } = new()
+        {
+            Id = "test-user-id",
+            UserName = "person@example.com",
+            Email = "person@example.com",
+        };
+
+        public override Task<ApplicationUser?> FindByEmailAsync(string email)
+        {
+            if (User is not null && string.Equals(User.Email, email, StringComparison.OrdinalIgnoreCase))
+            {
+                return Task.FromResult<ApplicationUser?>(User);
+            }
+
+            return Task.FromResult<ApplicationUser?>(null);
+        }
+    }
+
+    private sealed class StubSignInManager(StubUserManager userManager) : SignInManager<ApplicationUser>(
+        userManager,
         new HttpContextAccessor { HttpContext = new DefaultHttpContext() },
         new UserClaimsPrincipalFactory<ApplicationUser>(
-            CreateUserManager(),
+            userManager,
             Microsoft.Extensions.Options.Options.Create(new IdentityOptions())),
         Microsoft.Extensions.Options.Options.Create(new IdentityOptions()),
         NullLogger<SignInManager<ApplicationUser>>.Instance,
@@ -99,7 +245,7 @@ public sealed class LoginModelTests
         public required IdentitySignInResult PasswordSignInResult { get; init; }
 
         public override Task<IdentitySignInResult> PasswordSignInAsync(
-            string userName,
+            ApplicationUser user,
             string password,
             bool isPersistent,
             bool lockoutOnFailure)
@@ -107,17 +253,6 @@ public sealed class LoginModelTests
             LockoutOnFailure = lockoutOnFailure;
             return Task.FromResult(PasswordSignInResult);
         }
-
-        private static UserManager<ApplicationUser> CreateUserManager() => new(
-            new StubUserStore(),
-            Microsoft.Extensions.Options.Options.Create(new IdentityOptions()),
-            new PasswordHasher<ApplicationUser>(),
-            Array.Empty<IUserValidator<ApplicationUser>>(),
-            Array.Empty<IPasswordValidator<ApplicationUser>>(),
-            new UpperInvariantLookupNormalizer(),
-            new IdentityErrorDescriber(),
-            new EmptyServiceProvider(),
-            NullLogger<UserManager<ApplicationUser>>.Instance);
     }
 
     private sealed class EmptyServiceProvider : IServiceProvider

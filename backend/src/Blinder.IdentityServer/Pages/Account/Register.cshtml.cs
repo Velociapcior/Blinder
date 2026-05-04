@@ -20,13 +20,13 @@ public sealed class RegisterModel(
 
     public Task OnGetAsync(string? returnUrl = null)
     {
-        ReturnUrl = returnUrl ?? Url.Content("~/");
+        ReturnUrl = GetSafeReturnUrl(returnUrl);
         return Task.CompletedTask;
     }
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
-        ReturnUrl = returnUrl ?? Url.Content("~/");
+        ReturnUrl = GetSafeReturnUrl(returnUrl);
 
         if (!ModelState.IsValid)
         {
@@ -44,6 +44,14 @@ public sealed class RegisterModel(
         if (result.Succeeded)
         {
             logger.LogInformation("New user account created.");
+
+            if (!await signInManager.CanSignInAsync(user))
+            {
+                logger.LogWarning("Newly registered account cannot sign in due to sign-in policy requirements.");
+                ModelState.AddModelError(string.Empty, "Account created. Additional verification is required before sign in.");
+                return Page();
+            }
+
             await signInManager.SignInAsync(user, isPersistent: false);
             return LocalRedirect(ReturnUrl);
         }
@@ -55,6 +63,22 @@ public sealed class RegisterModel(
 
         return Page();
     }
+
+    private string GetSafeReturnUrl(string? returnUrl)
+    {
+        if (IsSafeLocalReturnUrl(returnUrl))
+        {
+            return returnUrl!;
+        }
+
+        return "/";
+    }
+
+    private static bool IsSafeLocalReturnUrl(string? returnUrl) =>
+        !string.IsNullOrWhiteSpace(returnUrl)
+        && returnUrl.StartsWith("/", StringComparison.Ordinal)
+        && !returnUrl.StartsWith("//", StringComparison.Ordinal)
+        && !returnUrl.StartsWith("/\\", StringComparison.Ordinal);
 
     public sealed class InputModel
     {

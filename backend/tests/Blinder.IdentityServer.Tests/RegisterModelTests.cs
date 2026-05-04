@@ -68,6 +68,59 @@ public sealed class RegisterModelTests
         Assert.Null(signInManager.SignedInUser);
     }
 
+    [Fact]
+    public async Task OnPostAsync_WhenReturnUrlIsExternal_FallsBackToRoot()
+    {
+        var userManager = new StubUserManager
+        {
+            CreateResult = IdentityResult.Success,
+        };
+        var signInManager = new StubSignInManager(userManager);
+        var model = new RegisterModel(userManager, signInManager, NullLogger<RegisterModel>.Instance)
+        {
+            Input = new RegisterModel.InputModel
+            {
+                Email = "person@example.com",
+                Password = "Complex!Pass1",
+                ConfirmPassword = "Complex!Pass1",
+            },
+        };
+
+        var result = await model.OnPostAsync("https://malicious.example/steal");
+
+        var redirect = Assert.IsType<LocalRedirectResult>(result);
+        Assert.Equal("/", redirect.Url);
+    }
+
+    [Fact]
+    public async Task OnPostAsync_WhenSignInPolicyBlocksUser_ReturnsPageWithVerificationMessage()
+    {
+        var userManager = new StubUserManager
+        {
+            CreateResult = IdentityResult.Success,
+        };
+        var signInManager = new StubSignInManager(userManager)
+        {
+            CanSignInResult = false,
+        };
+        var model = new RegisterModel(userManager, signInManager, NullLogger<RegisterModel>.Instance)
+        {
+            Input = new RegisterModel.InputModel
+            {
+                Email = "person@example.com",
+                Password = "Complex!Pass1",
+                ConfirmPassword = "Complex!Pass1",
+            },
+        };
+
+        var result = await model.OnPostAsync("/connect/authorize?client_id=blinder-mobile");
+
+        Assert.IsType<PageResult>(result);
+        var error = Assert.Single(model.ModelState[string.Empty]!.Errors);
+        Assert.Equal("Account created. Additional verification is required before sign in.", error.ErrorMessage);
+        Assert.Null(signInManager.SignedInUser);
+    }
+
     private sealed class StubUserManager() : UserManager<ApplicationUser>(
         new StubUserStore(),
         Microsoft.Extensions.Options.Options.Create(new IdentityOptions()),
@@ -104,7 +157,11 @@ public sealed class RegisterModelTests
         new AuthenticationSchemeProvider(Microsoft.Extensions.Options.Options.Create(new AuthenticationOptions())),
         new DefaultUserConfirmation<ApplicationUser>())
     {
+        public bool CanSignInResult { get; init; } = true;
+
         public ApplicationUser? SignedInUser { get; private set; }
+
+        public override Task<bool> CanSignInAsync(ApplicationUser user) => Task.FromResult(CanSignInResult);
 
         public override Task SignInAsync(ApplicationUser user, bool isPersistent, string? authenticationMethod = null)
         {
