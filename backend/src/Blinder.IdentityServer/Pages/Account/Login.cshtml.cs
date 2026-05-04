@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Blinder.IdentityServer.Persistence;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +12,7 @@ namespace Blinder.IdentityServer.Pages.Account;
 public sealed class LoginModel(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
+    IAuthenticationSchemeProvider schemeProvider,
     ILogger<LoginModel> logger) : PageModel
 {
     [BindProperty]
@@ -18,15 +20,18 @@ public sealed class LoginModel(
 
     public string? ReturnUrl { get; private set; }
 
-    public Task OnGetAsync(string? returnUrl = null)
+    public IReadOnlyList<AuthenticationScheme> ExternalProviders { get; private set; } = [];
+
+    public async Task OnGetAsync(string? returnUrl = null)
     {
         ReturnUrl = GetSafeReturnUrl(returnUrl);
-        return Task.CompletedTask;
+        await LoadExternalProvidersAsync();
     }
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
         ReturnUrl = GetSafeReturnUrl(returnUrl);
+        await LoadExternalProvidersAsync();
 
         if (!ModelState.IsValid)
         {
@@ -75,6 +80,40 @@ public sealed class LoginModel(
 
         ModelState.AddModelError(string.Empty, "Invalid email or password.");
         return Page();
+    }
+
+    public async Task<IActionResult> OnPostExternalLogin(string provider, string? returnUrl = null)
+    {
+        ReturnUrl = GetSafeReturnUrl(returnUrl);
+        await LoadExternalProvidersAsync();
+
+        if (string.IsNullOrWhiteSpace(provider)
+            || !ExternalProviders.Any(s => string.Equals(s.Name, provider, StringComparison.Ordinal)))
+        {
+            logger.LogWarning("Rejected external login request for unknown provider '{Provider}'.", provider);
+            ModelState.AddModelError(string.Empty, "Sign in could not be completed. Please try again.");
+            return Page();
+        }
+
+        var redirectUrl = Url.Page("/Account/ExternalLogin", values: new { returnUrl = ReturnUrl });
+        if (string.IsNullOrWhiteSpace(redirectUrl))
+        {
+            logger.LogWarning("Unable to generate external login callback URL for provider '{Provider}'.", provider);
+            ModelState.AddModelError(string.Empty, "Sign in could not be completed. Please try again.");
+            return Page();
+        }
+
+        var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+        return Challenge(properties, provider);
+    }
+
+    private async Task LoadExternalProvidersAsync()
+    {
+        var schemes = await schemeProvider.GetAllSchemesAsync();
+        ExternalProviders = schemes
+            .Where(s => s.DisplayName is not null)
+            .ToList()
+            .AsReadOnly();
     }
 
     private string GetSafeReturnUrl(string? returnUrl)

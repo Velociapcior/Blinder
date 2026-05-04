@@ -10,53 +10,44 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Blinder Identity</title>
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
-        crossorigin="anonymous" />
+    <partial name="_AuthPageStyles" />
 </head>
-<body class="bg-body-tertiary">
-    <main class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-12 col-sm-10 col-md-8 col-lg-5">
-                <section class="card shadow-sm border-0">
-                    <div class="card-body p-4 p-lg-5">
-                        <h1 class="h3 mb-3">Create your Blinder account</h1>
-                        <p class="text-body-secondary mb-4">Register here, then continue straight back into the authorization flow.</p>
+<body class="bl-auth-body">
+    <main class="bl-auth-shell">
+        <section class="bl-auth-card">
+            <p class="bl-auth-mark">Blinder Identity</p>
+            <h1 class="bl-auth-title">Create your Blinder account</h1>
+            <p class="bl-auth-subtitle">Register here, then continue straight back into the authorization flow.</p>
 
-                        <form method="post" asp-route-returnUrl="@Model.ReturnUrl">
-                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+            <form method="post" asp-route-returnUrl="@Model.ReturnUrl" class="bl-form">
+                <div asp-validation-summary="ModelOnly" class="bl-alert" role="alert"></div>
 
-                            <div class="mb-3">
-                                <label asp-for="Input.Email" class="form-label"></label>
-                                <input asp-for="Input.Email" class="form-control" autocomplete="email" />
-                                <span asp-validation-for="Input.Email" class="text-danger"></span>
-                            </div>
+                <div class="bl-field">
+                    <label asp-for="Input.Email" class="bl-field-label"></label>
+                    <input asp-for="Input.Email" class="bl-field-input" autocomplete="email" />
+                    <span asp-validation-for="Input.Email" class="bl-field-error"></span>
+                </div>
 
-                            <div class="mb-3">
-                                <label asp-for="Input.Password" class="form-label"></label>
-                                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
-                                <span asp-validation-for="Input.Password" class="text-danger"></span>
-                            </div>
+                <div class="bl-field">
+                    <label asp-for="Input.Password" class="bl-field-label"></label>
+                    <input asp-for="Input.Password" class="bl-field-input" autocomplete="new-password" />
+                    <span asp-validation-for="Input.Password" class="bl-field-error"></span>
+                </div>
 
-                            <div class="mb-4">
-                                <label asp-for="Input.ConfirmPassword" class="form-label"></label>
-                                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" />
-                                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-                            </div>
+                <div class="bl-field">
+                    <label asp-for="Input.ConfirmPassword" class="bl-field-label"></label>
+                    <input asp-for="Input.ConfirmPassword" class="bl-field-input" autocomplete="new-password" />
+                    <span asp-validation-for="Input.ConfirmPassword" class="bl-field-error"></span>
+                </div>
 
-                            <button type="submit" class="btn btn-primary w-100">Create account</button>
-                        </form>
+                <button type="submit" class="bl-btn bl-btn-primary">Create account</button>
+            </form>
 
-                        <p class="mt-4 mb-0 text-body-secondary">
-                            Already have an account?
-                            <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Sign in</a>
-                        </p>
-                    </div>
-                </section>
-            </div>
-        </div>
+            <p class="bl-auth-link-row">
+                Already have an account?
+                <a class="bl-link" asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Sign in</a>
+            </p>
+        </section>
     </main>
 </body>
 </html>

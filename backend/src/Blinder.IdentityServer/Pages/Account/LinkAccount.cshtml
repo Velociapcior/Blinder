@@ -1,0 +1,49 @@
+@page
+@model Blinder.IdentityServer.Pages.Account.LinkAccountModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    ViewData["Title"] = "Link account";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Blinder Identity</title>
+    <partial name="_AuthPageStyles" />
+</head>
+<body class="bl-auth-body">
+    <main class="bl-auth-shell">
+        <section class="bl-auth-card">
+            <p class="bl-auth-mark">Blinder Identity</p>
+            <h1 class="bl-auth-title">Link your account</h1>
+            <p class="bl-auth-subtitle">
+                An account with this email already exists. Sign in with your Blinder password
+                to link your @Model.ExternalProvider account.
+            </p>
+
+            <form method="post" class="bl-form">
+                <div asp-validation-summary="ModelOnly" class="bl-alert" role="alert"></div>
+
+                <div class="bl-field">
+                    <label asp-for="Input.Email" class="bl-field-label"></label>
+                    <input asp-for="Input.Email" class="bl-field-input" autocomplete="email" readonly />
+                    <span asp-validation-for="Input.Email" class="bl-field-error"></span>
+                </div>
+
+                <div class="bl-field">
+                    <label asp-for="Input.Password" class="bl-field-label"></label>
+                    <input asp-for="Input.Password" class="bl-field-input" autocomplete="current-password" />
+                    <span asp-validation-for="Input.Password" class="bl-field-error"></span>
+                </div>
+
+                <button type="submit" class="bl-btn bl-btn-primary">Link account</button>
+            </form>
+
+            <p class="bl-auth-link-row">
+                <a class="bl-link" asp-page="./Login">Back to sign in</a>
+            </p>
+        </section>
+    </main>
+</body>
+</html>

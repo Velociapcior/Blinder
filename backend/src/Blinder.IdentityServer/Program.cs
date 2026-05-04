@@ -54,15 +54,69 @@ builder.Services
     .AddEntityFrameworkStores<IdentityDbContext>()
     .AddDefaultTokenProviders();
 
-builder.Services
+var googleId = builder.Configuration["Auth:Google:ClientId"];
+var googleSecret = builder.Configuration["Auth:Google:ClientSecret"];
+var hasGoogle = !string.IsNullOrEmpty(googleId) && !string.IsNullOrEmpty(googleSecret);
+
+var facebookId = builder.Configuration["Auth:Facebook:AppId"];
+var facebookSecret = builder.Configuration["Auth:Facebook:AppSecret"];
+var hasFacebook = !string.IsNullOrEmpty(facebookId) && !string.IsNullOrEmpty(facebookSecret);
+
+// Apple requires a real HTTPS domain for redirect URIs (no localhost).
+// The client secret must be a signed JWT derived from an Apple private key.
+var appleId = builder.Configuration["Auth:Apple:ClientId"];
+var appleSecret = builder.Configuration["Auth:Apple:ClientSecret"];
+var hasApple = !string.IsNullOrEmpty(appleId) && !string.IsNullOrEmpty(appleSecret);
+
+var oidcBuilder = builder.Services
     .AddOpenIddict()
     .AddCore(options =>
     {
         options
             .UseEntityFrameworkCore()
             .UseDbContext<IdentityDbContext>();
-    })
-    .AddServer(options =>
+    });
+
+if (hasGoogle || hasFacebook || hasApple)
+{
+    oidcBuilder.AddClient(options =>
+    {
+        options.AllowAuthorizationCodeFlow();
+
+        options.UseAspNetCore()
+            .EnableRedirectionEndpointPassthrough();
+        options.UseSystemNetHttp();
+
+        var webProviders = options.UseWebProviders();
+
+        if (hasGoogle)
+        {
+            webProviders.AddGoogle(o => o
+                .SetClientId(googleId!)
+                .SetClientSecret(googleSecret!)
+                .SetRedirectUri("callback/login/google"));
+        }
+
+        if (hasFacebook)
+        {
+            webProviders.AddFacebook(o => o
+                .SetClientId(facebookId!)
+                .SetClientSecret(facebookSecret!)
+                .SetRedirectUri("callback/login/facebook"));
+        }
+
+        if (hasApple)
+        {
+            webProviders.AddApple(o => o
+                .SetClientId(appleId!)
+                .SetClientSecret(appleSecret!)
+                .SetRedirectUri("callback/login/apple")
+                .AddScopes("name", "email"));
+        }
+    });
+}
+
+oidcBuilder.AddServer(options =>
     {
         options
             .SetAuthorizationEndpointUris("/connect/authorize")

@@ -1,0 +1,35 @@
+@page
+@model Blinder.IdentityServer.Pages.Account.ExternalLoginModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    ViewData["Title"] = "External sign-in";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Blinder Identity</title>
+    <partial name="_AuthPageStyles" />
+</head>
+<body class="bl-auth-body">
+    <main class="bl-auth-shell">
+        <section class="bl-auth-card">
+            <p class="bl-auth-mark">Blinder Identity</p>
+            <h1 class="bl-auth-title">External sign-in</h1>
+
+            @if (Model.ErrorMessage is not null)
+            {
+                <div class="bl-alert" role="alert">@Model.ErrorMessage</div>
+                <p class="bl-auth-link-row">
+                    <a class="bl-link" asp-page="./Login">Back to sign in</a>
+                </p>
+            }
+            else
+            {
+                <p class="bl-helper-copy">Completing sign-in...</p>
+            }
+        </section>
+    </main>
+</body>
+</html>

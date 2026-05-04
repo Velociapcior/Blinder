@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-03
-last_updated: 2026-04-29  # updated by dev-story
+last_updated: 2026-05-04  # updated by create-story
 project: Blinder
 project_key: NOKEY
 tracking_system: file-system
@@ -55,7 +55,7 @@ development_status:
   epic-2: in-progress
   2-1-identityserver-oauth2-oidc-foundation-with-openiddict: done
   2-2-local-account-registration-and-sign-in-via-identityserver-oidc: done
-  2-3-social-federation-via-identityserver-google-apple-and-facebook: backlog
+  2-3-social-federation-via-identityserver-google-apple-and-facebook: review
   2-4-age-gate-policy-acceptance-and-gdpr-consent-records: backlog
   2-5-account-deletion-gdpr-right-to-erasure: backlog
   2-6-welcome-registration-and-sign-in-screens-oidc-flow: backlog

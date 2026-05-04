@@ -98,7 +98,8 @@ services:
     labels:
       traefik.enable: "true"
       traefik.http.routers.identityserver.rule: "Host(`auth.${DOMAIN:-blinder.local}`)"
-      traefik.http.routers.identityserver.entrypoints: "web"
+      traefik.http.routers.identityserver.entrypoints: "websecure"
+      traefik.http.routers.identityserver.tls: "true"
       traefik.http.services.identityserver.loadbalancer.server.port: "8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -132,7 +133,8 @@ services:
     labels:
       traefik.enable: "true"
       traefik.http.routers.api.rule: "Host(`api.${DOMAIN:-blinder.local}`)"
-      traefik.http.routers.api.entrypoints: "web"
+      traefik.http.routers.api.entrypoints: "websecure"
+      traefik.http.routers.api.tls: "true"
       traefik.http.services.api.loadbalancer.server.port: "8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -156,7 +158,8 @@ services:
     labels:
       traefik.enable: "true"
       traefik.http.routers.adminpanel.rule: "Host(`admin.${DOMAIN:-blinder.local}`)"
-      traefik.http.routers.adminpanel.entrypoints: "web"
+      traefik.http.routers.adminpanel.entrypoints: "websecure"
+      traefik.http.routers.adminpanel.tls: "true"
       traefik.http.services.adminpanel.loadbalancer.server.port: "8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]

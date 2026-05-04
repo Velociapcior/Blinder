@@ -6,12 +6,22 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Blinder.IdentityServer.Tests;
 
 public sealed class LoginModelTests
 {
+    private static IAuthenticationSchemeProvider EmptySchemeProvider() =>
+        new StubAuthenticationSchemeProvider([]);
+
+    private static IAuthenticationSchemeProvider ProviderWithExternalSchemes() =>
+        new StubAuthenticationSchemeProvider([
+            new AuthenticationScheme("Google", "Google", typeof(StubAuthHandler)),
+        ]);
+
     [Fact]
     public async Task OnPostAsync_WhenCredentialsAreValid_ReturnsLocalRedirect()
     {
@@ -20,7 +30,7 @@ public sealed class LoginModelTests
         {
             PasswordSignInResult = IdentitySignInResult.Success,
         };
-        var model = new LoginModel(userManager, signInManager, NullLogger<LoginModel>.Instance)
+        var model = new LoginModel(userManager, signInManager, EmptySchemeProvider(), NullLogger<LoginModel>.Instance)
         {
             Input = new LoginModel.InputModel
             {
@@ -46,6 +56,7 @@ public sealed class LoginModelTests
             {
                 PasswordSignInResult = IdentitySignInResult.LockedOut,
             },
+            EmptySchemeProvider(),
             NullLogger<LoginModel>.Instance)
         {
             Input = new LoginModel.InputModel
@@ -72,6 +83,7 @@ public sealed class LoginModelTests
             {
                 PasswordSignInResult = IdentitySignInResult.Failed,
             },
+            EmptySchemeProvider(),
             NullLogger<LoginModel>.Instance)
         {
             Input = new LoginModel.InputModel
@@ -98,6 +110,7 @@ public sealed class LoginModelTests
             {
                 PasswordSignInResult = IdentitySignInResult.NotAllowed,
             },
+            EmptySchemeProvider(),
             NullLogger<LoginModel>.Instance)
         {
             Input = new LoginModel.InputModel
@@ -124,6 +137,7 @@ public sealed class LoginModelTests
             {
                 PasswordSignInResult = IdentitySignInResult.TwoFactorRequired,
             },
+            EmptySchemeProvider(),
             NullLogger<LoginModel>.Instance)
         {
             Input = new LoginModel.InputModel
@@ -150,6 +164,7 @@ public sealed class LoginModelTests
             {
                 PasswordSignInResult = IdentitySignInResult.Success,
             },
+            EmptySchemeProvider(),
             NullLogger<LoginModel>.Instance)
         {
             Input = new LoginModel.InputModel
@@ -179,6 +194,7 @@ public sealed class LoginModelTests
             {
                 PasswordSignInResult = IdentitySignInResult.Success,
             },
+            EmptySchemeProvider(),
             NullLogger<LoginModel>.Instance)
         {
             Input = new LoginModel.InputModel
@@ -193,6 +209,53 @@ public sealed class LoginModelTests
         Assert.IsType<PageResult>(result);
         var error = Assert.Single(model.ModelState[string.Empty]!.Errors);
         Assert.Equal("Invalid email or password.", error.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task OnPostExternalLogin_WhenProviderIsUnknown_ReturnsPageWithGenericError()
+    {
+        var userManager = new StubUserManager();
+        var model = new LoginModel(
+            userManager,
+            new StubSignInManager(userManager)
+            {
+                PasswordSignInResult = IdentitySignInResult.Success,
+            },
+            EmptySchemeProvider(),
+            NullLogger<LoginModel>.Instance);
+
+        await model.OnGetAsync("/connect/authorize?client_id=blinder-mobile");
+
+        var result = await model.OnPostExternalLogin("UnknownProvider", "/connect/authorize?client_id=blinder-mobile");
+
+        Assert.IsType<PageResult>(result);
+        var error = Assert.Single(model.ModelState[string.Empty]!.Errors);
+        Assert.Equal("Sign in could not be completed. Please try again.", error.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task OnPostExternalLogin_WhenProviderIsKnown_ReturnsChallenge()
+    {
+        var userManager = new StubUserManager();
+        var model = new LoginModel(
+            userManager,
+            new StubSignInManager(userManager)
+            {
+                PasswordSignInResult = IdentitySignInResult.Success,
+            },
+            ProviderWithExternalSchemes(),
+            NullLogger<LoginModel>.Instance)
+        {
+            Url = new StubUrlHelper(),
+        };
+
+        await model.OnGetAsync("/connect/authorize?client_id=blinder-mobile");
+
+        var result = await model.OnPostExternalLogin("Google", "/connect/authorize?client_id=blinder-mobile");
+
+        var challenge = Assert.IsType<ChallengeResult>(result);
+        Assert.Contains("Google", challenge.AuthenticationSchemes);
+        Assert.NotNull(challenge.Properties?.RedirectUri);
     }
 
     private sealed class StubUserManager : UserManager<ApplicationUser>
@@ -258,6 +321,69 @@ public sealed class LoginModelTests
     private sealed class EmptyServiceProvider : IServiceProvider
     {
         public object? GetService(Type serviceType) => null;
+    }
+
+    private sealed class StubAuthenticationSchemeProvider(IEnumerable<AuthenticationScheme> schemes) : IAuthenticationSchemeProvider
+    {
+        private readonly List<AuthenticationScheme> _schemes = [.. schemes];
+
+        public Task<IEnumerable<AuthenticationScheme>> GetAllSchemesAsync() =>
+            Task.FromResult<IEnumerable<AuthenticationScheme>>(_schemes);
+
+        public Task<AuthenticationScheme?> GetSchemeAsync(string name) =>
+            Task.FromResult(_schemes.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.Ordinal)));
+
+        public void AddScheme(AuthenticationScheme scheme)
+        {
+            _schemes.RemoveAll(existing => string.Equals(existing.Name, scheme.Name, StringComparison.Ordinal));
+            _schemes.Add(scheme);
+        }
+
+        public void RemoveScheme(string name)
+        {
+            _schemes.RemoveAll(s => string.Equals(s.Name, name, StringComparison.Ordinal));
+        }
+
+        public Task<AuthenticationScheme?> GetDefaultAuthenticateSchemeAsync() => Task.FromResult<AuthenticationScheme?>(null);
+
+        public Task<AuthenticationScheme?> GetDefaultChallengeSchemeAsync() => Task.FromResult<AuthenticationScheme?>(null);
+
+        public Task<AuthenticationScheme?> GetDefaultForbidSchemeAsync() => Task.FromResult<AuthenticationScheme?>(null);
+
+        public Task<AuthenticationScheme?> GetDefaultSignInSchemeAsync() => Task.FromResult<AuthenticationScheme?>(null);
+
+        public Task<AuthenticationScheme?> GetDefaultSignOutSchemeAsync() => Task.FromResult<AuthenticationScheme?>(null);
+
+        public Task<IEnumerable<AuthenticationScheme>> GetRequestHandlerSchemesAsync() =>
+            Task.FromResult<IEnumerable<AuthenticationScheme>>([]);
+    }
+
+    private sealed class StubAuthHandler : IAuthenticationHandler
+    {
+        public Task InitializeAsync(AuthenticationScheme scheme, HttpContext context) => Task.CompletedTask;
+
+        public Task<AuthenticateResult> AuthenticateAsync() =>
+            Task.FromResult(AuthenticateResult.NoResult());
+
+        public Task ChallengeAsync(AuthenticationProperties? properties) => Task.CompletedTask;
+
+        public Task ForbidAsync(AuthenticationProperties? properties) => Task.CompletedTask;
+    }
+
+    private sealed class StubUrlHelper : IUrlHelper
+    {
+        public ActionContext ActionContext { get; } =
+            new(new DefaultHttpContext(), new RouteData(), new PageActionDescriptor());
+
+        public string? Action(UrlActionContext actionContext) => "/Account/ExternalLogin";
+
+        public string Content(string? contentPath) => contentPath ?? string.Empty;
+
+        public bool IsLocalUrl(string? url) => true;
+
+        public string? Link(string? routeName, object? values) => "/Account/ExternalLogin";
+
+        public string? RouteUrl(UrlRouteContext routeContext) => "/Account/ExternalLogin";
     }
 
     private sealed class StubUserStore : IUserStore<ApplicationUser>
